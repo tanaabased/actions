@@ -6,7 +6,14 @@ and a definitive result, because “pending somewhere” is not a release outcom
 
 Use [`npm-pack`](../npm-pack/README.md) to produce the artifact.
 
-## Live publication
+Supported runner: Linux (`ubuntu-24.04`).
+
+## Usage
+
+Create the token in ClawHub and store it as a GitHub Actions secret. The action
+uses the token only for `clawhub login`, stores the resulting CLI state in an
+isolated temporary configuration, and removes that configuration afterward.
+The token's ClawHub actor must have publisher access to `owner`.
 
 ```yaml
 - name: Pack plugin
@@ -23,30 +30,6 @@ Use [`npm-pack`](../npm-pack/README.md) to produce the artifact.
     source-commit: ${{ github.sha }}
     clawhub-token: ${{ secrets.CLAWHUB_TOKEN }}
 ```
-
-Create the token in ClawHub and store it as a GitHub Actions secret. The action
-uses the token only for `clawhub login`, stores the resulting CLI state in an
-isolated temporary configuration, and removes that configuration afterward.
-The token's ClawHub actor must have publisher access to `owner`.
-
-## Test behavior
-
-```yaml
-- name: Validate ClawHub package
-  uses: tanaabased/actions/publish-clawhub@v1
-  with:
-    test-mode: true
-    tarball: ${{ steps.pack.outputs.tarball-path }}
-    owner: tanaab
-    tags: edge
-    source-repo: ${{ github.repository }}
-    source-commit: ${{ github.event.pull_request.head.sha }}
-```
-
-Test mode uses ClawHub's native dry-run path to validate the supplied tarball
-and publication metadata without logging in or changing ClawHub. It does not
-prove token access, asynchronous security checks, final channel visibility, or
-timeout behavior.
 
 ## Inputs
 
@@ -71,7 +54,32 @@ The package family is fixed to `code-plugin`.
 | --- | --- |
 | `tarball-path` | Absolute path to the supplied tarball. |
 
-## Waiting and retries
+## Examples
+
+### Dry-run publication
+
+```yaml
+- name: Validate ClawHub package
+  uses: tanaabased/actions/publish-clawhub@v1
+  with:
+    test-mode: true
+    tarball: ${{ steps.pack.outputs.tarball-path }}
+    owner: tanaab
+    tags: edge
+    source-repo: ${{ github.repository }}
+    source-commit: ${{ github.event.pull_request.head.sha }}
+```
+
+## Test behavior
+
+Test mode uses ClawHub's native dry-run path to validate the supplied tarball
+and publication metadata without logging in or changing ClawHub. It does not
+prove token access, asynchronous security checks, final channel visibility, or
+timeout behavior.
+
+## Notes
+
+### Waiting and retries
 
 Live runs call `clawhub package publish` once with `--wait` and the bounded
 `--wait-timeout`. The step succeeds only when ClawHub reports successful

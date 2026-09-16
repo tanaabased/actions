@@ -7,11 +7,16 @@ ample time to wish otherwise.
 
 Use [`npm-pack`](../npm-pack/README.md) to produce the artifact.
 
-For a complete workflow, see [the release example](examples/release.yml), which
-publishes npm and repository changes in independent jobs after a GitHub Release
-is published. Adapt its preparation commands and moving tag to the consumer.
+Supported runner: Linux (`ubuntu-24.04`).
 
-## npm trusted publishing
+## Usage
+
+Configure npm's trusted publisher for the calling repository and workflow. The
+action installs Node.js 24 and npm 11 at or above `11.5.1`, then leaves
+`registry-token` unset so npm can exchange GitHub's OIDC identity. Trusted
+publishing authorizes publication but not `npm dist-tag`; the optional
+stable-to-`edge` update needs a separate granular token through
+`channel-token`.
 
 ```yaml
 permissions:
@@ -28,27 +33,6 @@ steps:
       update-prerelease-tag-on-stable: true
       channel-token: ${{ secrets.NPM_CHANNEL_TOKEN }}
 ```
-
-Configure npm's trusted publisher for the calling repository and workflow. The
-action installs Node.js 24 and npm 11 at or above `11.5.1`, then leaves
-`registry-token` unset so npm can exchange GitHub's OIDC identity. Trusted
-publishing authorizes publication but not `npm dist-tag`; the optional
-stable-to-`edge` update needs a separate granular token through
-`channel-token`.
-
-## Token-authenticated registry
-
-```yaml
-- uses: tanaabased/actions/publish-npm@v1
-  with:
-    tarball: ${{ steps.pack.outputs.tarball-path }}
-    registry-url: https://npm.pkg.github.com
-    registry-token: ${{ github.token }}
-```
-
-The token is scoped to registry commands and temporary npm configuration is
-removed afterward. For GitHub Packages, grant the job `packages: write` and use
-an owner-scoped package name such as `@tanaabased/example`.
 
 ## Inputs
 
@@ -76,7 +60,40 @@ an owner-scoped package name such as `@tanaabased/example`.
 | `channel` | Selected distribution tag. |
 | `release-type` | `stable` or `prerelease`. |
 
-## Publication and retries
+## Examples
+
+### Token-authenticated registry
+
+```yaml
+- uses: tanaabased/actions/publish-npm@v1
+  with:
+    tarball: ${{ steps.pack.outputs.tarball-path }}
+    registry-url: https://npm.pkg.github.com
+    registry-token: ${{ github.token }}
+```
+
+The token is scoped to registry commands and temporary npm configuration is
+removed afterward. For GitHub Packages, grant the job `packages: write` and use
+an owner-scoped package name such as `@tanaabased/example`.
+
+### Complete release
+
+For a complete workflow, see [the release example](examples/release.yml), which
+publishes npm and repository changes in independent jobs after a GitHub Release
+is published. Adapt its preparation commands and moving tag to the consumer.
+
+## Test behavior
+
+With `test-mode: true`, the action inspects the supplied tarball, selects its
+stable or prerelease channel, and runs npm's native publication dry run. It
+skips registry existence checks, live publication, and distribution-tag
+updates, and requires no registry or channel token. Pull requests exercise both
+stable and prerelease packages; only a real downstream release proves registry
+authentication, immutability checks, publication, and channel mutation.
+
+## Notes
+
+### Publication and retries
 
 The action inspects the tarball offline, checks the registry for the exact
 package version, dry-runs that tarball, and performs one live
@@ -91,12 +108,3 @@ exists, but registry state remains the authority. A stable publication updates
 the prerelease tag only when `update-prerelease-tag-on-stable` is `true`; the
 action validates the required token before publishing so a missing tag
 credential cannot create a half-finished release.
-
-## Test behavior
-
-With `test-mode: true`, the action inspects the supplied tarball, selects its
-stable or prerelease channel, and runs npm's native publication dry run. It
-skips registry existence checks, live publication, and distribution-tag
-updates, and requires no registry or channel token. Pull requests exercise both
-stable and prerelease packages; only a real downstream release proves registry
-authentication, immutability checks, publication, and channel mutation.

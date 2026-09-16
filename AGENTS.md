@@ -3,8 +3,7 @@
 ## Product boundaries
 
 - Default to a composite action when the reusable product is a sequence of
-  steps that belongs inside a caller-owned job. A convenience wrapper around
-  steps is not a reusable workflow merely because YAML permits the ceremony.
+  steps that belongs inside a caller-owned job.
 - Put each public composite action in a root-level `<name>/` directory. Require
   `action.yml` and `README.md`; keep optional runtime helpers under `scripts/`
   and action-owned fixtures under `test/fixture/`. An action may compose another
@@ -24,6 +23,16 @@
   actions link to that copy. Keep executable test fixtures under
   `<name>/test/fixture/`.
 
+## Action documentation
+
+- Use this README order: description, Usage, Inputs, Outputs, Examples,
+  Test behavior, then action-specific Notes. Omit sections with no useful
+  content; put required permissions and credentials beside the relevant usage.
+- Keep the root README focused on the catalog. Action contracts and examples
+  belong in the owning action; link to them rather than duplicating them.
+- State supported operating systems in each action README and back those
+  claims with its PR runner matrix. Add platforms for actual consumer needs.
+
 ## Test-mode contract
 
 - Every public action exposes `test-mode`, defaults it to `false`, and rejects
@@ -41,6 +50,9 @@
   misconfigured live publication must fail rather than quietly become a test.
 - Each action README includes a **Test behavior** section naming what test mode
   exercises and what only a live lifecycle can prove.
+- Test mode is not a sandbox for caller-supplied commands. PR fixtures must use
+  commands without external side effects; local installation and artifact
+  preparation are expected behavior.
 
 ## Pull-request validation
 
@@ -59,6 +71,7 @@
   publication packages, branches, or tags merely to impersonate production.
 - Keep lint checks separate from action behavior tests. Avoid conditionally
   skipped test jobs and workflows created only to manufacture event coverage.
+- Include action-owned example workflows in the existing static lint check.
 
 ### Testing vectors
 

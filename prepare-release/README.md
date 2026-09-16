@@ -5,6 +5,8 @@ Prepares a release in the caller's checkout without pushing changes. It wraps
 with the shared release date and `CHANGELOG.md` contract used by Tanaab
 publishers.
 
+Supported runner: Linux (`ubuntu-24.04`).
+
 ## Usage
 
 ```yaml
@@ -42,7 +44,16 @@ explicitly.
 | --- | --- |
 | `resolved-version` | Semver-valid version resolved by the upstream preparation action. |
 
-## File behavior
+## Test behavior
+
+Release preparation already fixes synchronization to `false`, so
+`test-mode: true` runs the normal action against a local fixture. Pull requests
+verify the resolved version, package metadata, changelog, project commands, and
+unchanged Git history.
+
+## Notes
+
+### File behavior
 
 `package.json` is required at `root` and its version is updated. An existing
 `CHANGELOG.md` has its current unreleased tokens resolved and receives a fresh
@@ -53,10 +64,3 @@ Each invocation performs preparation again. In particular, a retry can add
 another changelog header if it starts from already-prepared files. Consumers
 should publish from the original release source and should not mistake
 `sync: false` for an unconditional no-op.
-
-## Test behavior
-
-Release preparation already fixes synchronization to `false`, so
-`test-mode: true` runs the normal action against a local fixture. Pull requests
-verify the resolved version, package metadata, changelog, project commands, and
-unchanged Git history.
