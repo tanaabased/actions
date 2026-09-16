@@ -98,11 +98,14 @@ runs:
           leia_args+=(--cleanup-header "$CLEANUP_HEADER")
         fi
 
-        TMPDIR="$temporary_directory" \
-        TMP="$temporary_directory" \
-        TEMP="$temporary_directory" \
-          bun run leia "${leia_args[@]}"
-        leia_status=$?
+        if TMPDIR="$temporary_directory" \
+          TMP="$temporary_directory" \
+          TEMP="$temporary_directory" \
+            bun run leia "${leia_args[@]}"; then
+          leia_status=0
+        else
+          leia_status=$?
+        fi
         echo "exit-code=$leia_status" >> "$GITHUB_OUTPUT"
 
         cleanup_status=0
