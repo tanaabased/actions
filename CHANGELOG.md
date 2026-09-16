@@ -6,11 +6,13 @@
 - Added a reusable VitePress build check with optional preparation. [#12](https://github.com/tanaabased/actions/issues/12)
 - Added Agent System setup from exact releases or source checkouts in isolated OpenClaw profiles. [#20](https://github.com/tanaabased/actions/issues/20)
 - Added an npm packing action that exposes the exact tarball and package metadata.
+- Added canonical Task, Bug, and Feature intake forms.
 - Added consistent `debug` controls across every public action. [#27](https://github.com/tanaabased/actions/issues/27)
 - Added isolated OpenClaw CLI setup for Linux and macOS. [#19](https://github.com/tanaabased/actions/issues/19)
 - Added pinned Codex plugin validation and explicit GitHub Release archive publication actions. [#5](https://github.com/tanaabased/actions/issues/5)
 - Added shared release preparation and repository publication actions.
 - Added SSH test-key generation for Linux and macOS fixtures. [#11](https://github.com/tanaabased/actions/issues/11)
 - Added the initial action catalog and repository structure.
+- Fixed gateway cleanup accepting unrelated processes or unsafe PID values.
 - Replaced directory-based npm publication with tested-tarball publication, trusted publishing, explicit channels, and immutable-version checks.
 - Standardized the catalog on root-level composite actions with explicit non-mutating test modes and one pull-request workflow per action.
