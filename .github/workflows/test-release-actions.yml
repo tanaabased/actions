@@ -44,6 +44,162 @@ jobs:
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           ! git ls-remote --exit-code origin "refs/tags/$RELEASE_VERSION"
 
+  npm-pack:
+    name: Pack npm fixture
+    runs-on: ubuntu-24.04
+    env:
+      PACKAGE_NAME: '@tanaabased/actions-npm-fixture'
+      PACKAGE_VERSION: 0.${{ github.run_id }}.${{ github.run_attempt }}-pack
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Set fixture version
+        working-directory: tests/fixtures/npm
+        run: npm pkg set "version=$PACKAGE_VERSION"
+      - name: Pack fixture
+        id: pack
+        uses: ./actions/npm-pack
+        with:
+          package-directory: tests/fixtures/npm
+      - name: Verify and install packed artifact
+        env:
+          PACKED_NAME: ${{ steps.pack.outputs.package-name }}
+          PACKED_VERSION: ${{ steps.pack.outputs.package-version }}
+          TARBALL_PATH: ${{ steps.pack.outputs.tarball-path }}
+        run: |
+          test "$PACKED_NAME" = "$PACKAGE_NAME"
+          test "$PACKED_VERSION" = "$PACKAGE_VERSION"
+          test -f "$TARBALL_PATH"
+          test "$(tar -tzf "$TARBALL_PATH" | sort)" = $'package/index.js\npackage/package.json'
+
+          consumer="$(mktemp -d)"
+          (
+            cd "$consumer"
+            npm init --yes >/dev/null
+            npm install --ignore-scripts --no-audit --no-fund "$TARBALL_PATH"
+            npm list "$PACKAGE_NAME@$PACKAGE_VERSION" --depth=0
+            node --input-type=module -e "import('$PACKAGE_NAME').then(({ fixture }) => { if (fixture !== 'actions-npm-fixture') process.exit(1) })"
+          )
+
+  publish-npm:
+    name: Publish and install npm fixture
+    if: github.event_name != 'pull_request' && github.repository == 'tanaabased/actions'
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: npm-package-test-${{ github.repository }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: write
+    env:
+      PACKAGE_NAME: '@tanaabased/actions-npm-fixture'
+      PRERELEASE_VERSION: 0.${{ github.run_id }}.${{ github.run_attempt }}-edge
+      REGISTRY_URL: https://npm.pkg.github.com
+      STABLE_VERSION: 0.${{ github.run_id }}.${{ github.run_attempt }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Set prerelease fixture version
+        working-directory: tests/fixtures/npm
+        run: npm pkg set "version=$PRERELEASE_VERSION"
+      - name: Pack prerelease fixture
+        id: prerelease-pack
+        uses: ./actions/npm-pack
+        with:
+          package-directory: tests/fixtures/npm
+      - name: Publish prerelease fixture
+        id: prerelease
+        uses: ./actions/publish-npm
+        with:
+          registry-token: ${{ github.token }}
+          registry-url: ${{ env.REGISTRY_URL }}
+          tarball: ${{ steps.prerelease-pack.outputs.tarball-path }}
+      - name: Configure authenticated package checks
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          registry-url: ${{ env.REGISTRY_URL }}
+          scope: '@tanaabased'
+      - name: Verify prerelease result
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+          PUBLISHED_CHANNEL: ${{ steps.prerelease.outputs.channel }}
+          PUBLISHED_NAME: ${{ steps.prerelease.outputs.package-name }}
+          PUBLISHED_TYPE: ${{ steps.prerelease.outputs.release-type }}
+          PUBLISHED_VERSION: ${{ steps.prerelease.outputs.package-version }}
+        run: |
+          test "$PUBLISHED_NAME" = "$PACKAGE_NAME"
+          test "$PUBLISHED_VERSION" = "$PRERELEASE_VERSION"
+          test "$PUBLISHED_CHANNEL" = edge
+          test "$PUBLISHED_TYPE" = prerelease
+          edge="$(npm view "$PACKAGE_NAME" dist-tags.edge --json --registry "$REGISTRY_URL")"
+          EDGE_JSON="$edge" node -e '
+            if (JSON.parse(process.env.EDGE_JSON) !== process.env.PRERELEASE_VERSION) {
+              throw new Error(`unexpected edge tag: ${process.env.EDGE_JSON}`);
+            }
+          '
+      - name: Set stable fixture version
+        working-directory: tests/fixtures/npm
+        run: npm pkg set "version=$STABLE_VERSION"
+      - name: Pack stable fixture
+        id: stable-pack
+        uses: ./actions/npm-pack
+        with:
+          package-directory: tests/fixtures/npm
+      - name: Publish stable fixture and update edge
+        id: stable
+        uses: ./actions/publish-npm
+        with:
+          channel-token: ${{ github.token }}
+          registry-token: ${{ github.token }}
+          registry-url: ${{ env.REGISTRY_URL }}
+          tarball: ${{ steps.stable-pack.outputs.tarball-path }}
+          update-prerelease-tag-on-stable: true
+      - name: Verify stable result
+        env:
+          PUBLISHED_CHANNEL: ${{ steps.stable.outputs.channel }}
+          PUBLISHED_NAME: ${{ steps.stable.outputs.package-name }}
+          PUBLISHED_TYPE: ${{ steps.stable.outputs.release-type }}
+          PUBLISHED_VERSION: ${{ steps.stable.outputs.package-version }}
+        run: |
+          test "$PUBLISHED_NAME" = "$PACKAGE_NAME"
+          test "$PUBLISHED_VERSION" = "$STABLE_VERSION"
+          test "$PUBLISHED_CHANNEL" = latest
+          test "$PUBLISHED_TYPE" = stable
+      - name: Verify channels and authenticated installs
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+        run: |
+          tags="$(npm view "$PACKAGE_NAME" dist-tags --json --registry "$REGISTRY_URL")"
+          TAGS_JSON="$tags" node -e '
+            const tags = JSON.parse(process.env.TAGS_JSON);
+            if (tags.latest !== process.env.STABLE_VERSION) throw new Error(`unexpected latest tag: ${tags.latest}`);
+            if (tags.edge !== process.env.STABLE_VERSION) throw new Error(`unexpected edge tag: ${tags.edge}`);
+          '
+
+          for version in "$PRERELEASE_VERSION" "$STABLE_VERSION"; do
+            consumer="$(mktemp -d)"
+            (
+              cd "$consumer"
+              npm init --yes >/dev/null
+              npm install --ignore-scripts --no-audit --no-fund "$PACKAGE_NAME@$version" --registry "$REGISTRY_URL"
+              npm list "$PACKAGE_NAME@$version" --depth=0
+              node --input-type=module -e "import('$PACKAGE_NAME').then(({ fixture }) => { if (fixture !== 'actions-npm-fixture') process.exit(1) })"
+            )
+          done
+      - name: Reject conflicting package version
+        id: conflict
+        continue-on-error: true
+        uses: ./actions/publish-npm
+        with:
+          registry-token: ${{ github.token }}
+          registry-url: ${{ env.REGISTRY_URL }}
+          tarball: ${{ steps.stable-pack.outputs.tarball-path }}
+      - name: Verify immutable-version failure
+        env:
+          CONFLICT_OUTCOME: ${{ steps.conflict.outcome }}
+        run: test "$CONFLICT_OUTCOME" = failure
+
   publish-repo:
     name: Publish repository and retry
     if: github.event_name != 'pull_request' && github.repository == 'tanaabased/actions'

@@ -1,49 +1,88 @@
 # `publish-npm`
 
-Publishes one npm package from the caller repository. It does not create a
-release, tag a commit, or retry a registry write. Those are separate decisions,
-as they should be.
+Publishes one supplied, tested npm tarball without repacking the checkout. The
+action selects `latest` for stable versions and `edge` for prereleases by
+default. Registry versions remain immutable, despite the industry having had
+ample time to wish otherwise.
 
-The canonical reusable workflow is [workflow.yml](workflow.yml).
+Use [`npm-pack`](../npm-pack/README.md) to produce the artifact.
 
-## Usage
+## npm trusted publishing
 
 ```yaml
-jobs:
-  publish-npm:
-    uses: tanaabased/actions/.github/workflows/publish-npm.yml@v1
+permissions:
+  contents: read
+  id-token: write
+
+steps:
+  - uses: actions/checkout@v7
+  - id: pack
+    uses: tanaabased/actions/actions/npm-pack@v1
+  - uses: tanaabased/actions/actions/publish-npm@v1
     with:
-      package-directory: packages/cli
-    secrets:
-      npm-token: ${{ secrets.NPM_TOKEN }}
+      tarball: ${{ steps.pack.outputs.tarball-path }}
+      update-prerelease-tag-on-stable: true
+      channel-token: ${{ secrets.NPM_CHANNEL_TOKEN }}
 ```
+
+Configure npm's trusted publisher for the calling repository and workflow. The
+action installs Node.js 24 and npm 11 at or above `11.5.1`, then leaves
+`registry-token` unset so npm can exchange GitHub's OIDC identity. Trusted
+publishing authorizes publication but not `npm dist-tag`; the optional
+stable-to-`edge` update needs a separate granular token through
+`channel-token`.
+
+## Token-authenticated registry
+
+```yaml
+- uses: tanaabased/actions/actions/publish-npm@v1
+  with:
+    tarball: ${{ steps.pack.outputs.tarball-path }}
+    registry-url: https://npm.pkg.github.com
+    registry-token: ${{ github.token }}
+```
+
+The token is scoped to registry commands and temporary npm configuration is
+removed afterward. For GitHub Packages, grant the job `packages: write` and use
+an owner-scoped package name such as `@tanaabased/example`.
 
 ## Inputs
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
-| `package-directory` | No | `.` | Directory containing `package.json`. |
+| `tarball` | Yes | — | Tested npm tarball, relative to the workspace or absolute. |
 | `registry-url` | No | `https://registry.npmjs.org` | npm-compatible registry URL. |
-
-## Secrets
-
-| Secret | Required | Description |
-| --- | --- | --- |
-| `npm-token` | Yes | Token authorized to publish to `registry-url`. |
+| `registry-token` | No | — | Token for registry reads and publication; omit for npm trusted publishing. |
+| `channel-token` | No | — | Token used only to move the prerelease tag after a stable publication. |
+| `stable-tag` | No | `latest` | Distribution tag for stable versions. |
+| `prerelease-tag` | No | `edge` | Distribution tag for prerelease versions. |
+| `update-prerelease-tag-on-stable` | No | `false` | Move `prerelease-tag` to a published stable version. |
+| `access` | No | `public` | Access passed to `npm publish`; leave empty for registry defaults. |
+| `node-version` | No | `24` | Node.js version used for publication. |
+| `npm-version` | No | `^11.5.1` | npm version range installed for publication. |
 
 ## Outputs
 
 | Output | Description |
 | --- | --- |
-| `package-version` | The version read from the published package's `package.json`. |
+| `tarball-path` | Absolute path to the published tarball. |
+| `package-name` | Package name read from the tarball. |
+| `package-version` | Package version read from the tarball. |
+| `channel` | Selected distribution tag. |
+| `release-type` | `stable` or `prerelease`. |
 
-## Permissions
+## Publication and retries
 
-The workflow requires `contents: read` to check out the caller repository.
-Registry authorization comes from `npm-token`, not a broad GitHub token.
+The action inspects the tarball offline, checks the registry for the exact
+package version, dry-runs that tarball, and performs one live
+`npm publish --ignore-scripts` attempt. An existing version fails before
+publication with an immutable-version error. Other lookup failures also stop
+the action; an authentication outage is not evidence that a version is
+available.
 
-## Retry behavior
-
-The workflow makes one `npm publish` attempt. Re-run only after determining
-whether the version reached the registry: retries of a successful publish fail
-because versions are immutable, a detail npm has chosen to make everyone learn.
+Do not retry the same version blindly after an interrupted publication. The
+action checks again after a failed publish and reports when the version now
+exists, but registry state remains the authority. A stable publication updates
+the prerelease tag only when `update-prerelease-tag-on-stable` is `true`; the
+action validates the required token before publishing so a missing tag
+credential cannot create a half-finished release.

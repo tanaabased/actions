@@ -1,0 +1,13 @@
+{
+  "name": "@tanaabased/actions-npm-fixture",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": "./index.js",
+  "files": [
+    "index.js"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tanaabased/actions.git"
+  }
+}

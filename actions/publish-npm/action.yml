@@ -1,0 +1,264 @@
+name: Publish npm package
+description: Publish one tested npm tarball to an npm-compatible registry.
+
+inputs:
+  tarball:
+    description: Tested npm tarball to publish, relative to the workspace or absolute.
+    required: true
+  registry-url:
+    description: npm-compatible registry URL.
+    required: false
+    default: https://registry.npmjs.org
+  registry-token:
+    description: Token used for registry reads and publication; omit for npm trusted publishing.
+    required: false
+  channel-token:
+    description: Token used only to update the prerelease channel after a stable publication.
+    required: false
+  stable-tag:
+    description: Distribution tag used for stable versions.
+    required: false
+    default: latest
+  prerelease-tag:
+    description: Distribution tag used for prerelease versions.
+    required: false
+    default: edge
+  update-prerelease-tag-on-stable:
+    description: Move the prerelease tag to a successfully published stable version.
+    required: false
+    default: 'false'
+  access:
+    description: npm package access passed to npm publish; leave empty to use registry defaults.
+    required: false
+    default: public
+  node-version:
+    description: Node.js version used for publication.
+    required: false
+    default: '24'
+  npm-version:
+    description: npm version range installed for publication and trusted-publishing support.
+    required: false
+    default: '^11.5.1'
+
+outputs:
+  tarball-path:
+    description: Absolute path to the published tarball.
+    value: ${{ steps.package.outputs.tarball-path }}
+  package-name:
+    description: Published package name read from the tarball.
+    value: ${{ steps.package.outputs.package-name }}
+  package-version:
+    description: Published package version read from the tarball.
+    value: ${{ steps.package.outputs.package-version }}
+  channel:
+    description: Distribution tag selected for the package version.
+    value: ${{ steps.package.outputs.channel }}
+  release-type:
+    description: Whether the package version is stable or prerelease.
+    value: ${{ steps.package.outputs.release-type }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Install supported npm
+      shell: bash
+      env:
+        NPM_VERSION: ${{ inputs.npm-version }}
+      run: npm install --global "npm@$NPM_VERSION"
+
+    - id: package
+      name: Inspect tarball
+      shell: bash
+      env:
+        PRERELEASE_TAG: ${{ inputs.prerelease-tag }}
+        STABLE_TAG: ${{ inputs.stable-tag }}
+        TARBALL: ${{ inputs.tarball }}
+      run: |
+        set -euo pipefail
+
+        tarball_path="$(node -e "process.stdout.write(require('node:path').resolve(process.argv[1]))" "$TARBALL")"
+        if [[ ! -f "$tarball_path" ]]; then
+          echo "::error::npm tarball does not exist: $tarball_path"
+          exit 1
+        fi
+
+        metadata_root="$(mktemp -d)"
+        metadata_json="$metadata_root/package.json"
+        trap 'rm -rf "$metadata_root"' EXIT
+
+        (
+          cd "$metadata_root"
+          npm pack "$tarball_path" --dry-run --ignore-scripts --json --offline > "$metadata_json"
+        )
+
+        METADATA_JSON="$metadata_json" PRERELEASE_TAG="$PRERELEASE_TAG" STABLE_TAG="$STABLE_TAG" TARBALL_PATH="$tarball_path" node <<'NODE' >> "$GITHUB_OUTPUT"
+        const fs = require('node:fs');
+
+        const result = JSON.parse(fs.readFileSync(process.env.METADATA_JSON, 'utf8'));
+        if (!Array.isArray(result) || result.length !== 1) {
+          throw new Error(`tarball inspection must return exactly one package; received ${result.length ?? 'invalid output'}`);
+        }
+
+        const [{ name, version }] = result;
+        if (!name || !version) {
+          throw new Error('tarball inspection did not return package name and version');
+        }
+
+        const releaseType = version.split('+', 1)[0].includes('-') ? 'prerelease' : 'stable';
+        const channel = releaseType === 'prerelease' ? process.env.PRERELEASE_TAG : process.env.STABLE_TAG;
+        if (!channel) {
+          throw new Error(`${releaseType} channel must not be empty`);
+        }
+
+        process.stdout.write(`tarball-path=${process.env.TARBALL_PATH}\n`);
+        process.stdout.write(`package-name=${name}\n`);
+        process.stdout.write(`package-version=${version}\n`);
+        process.stdout.write(`channel=${channel}\n`);
+        process.stdout.write(`release-type=${releaseType}\n`);
+        NODE
+
+    - id: npm-config
+      name: Configure registry access
+      shell: bash
+      env:
+        CHANNEL_TOKEN: ${{ inputs.channel-token }}
+        REGISTRY_TOKEN: ${{ inputs.registry-token }}
+        REGISTRY_URL: ${{ inputs.registry-url }}
+      run: |
+        set -euo pipefail
+
+        publish_config="$(mktemp "$RUNNER_TEMP/publish-npm.XXXXXX")"
+        channel_config="$(mktemp "$RUNNER_TEMP/publish-npm-channel.XXXXXX")"
+        auth_key="$(node -e '
+          const url = new URL(process.argv[1]);
+          const path = url.pathname.endsWith("/") ? url.pathname : `${url.pathname}/`;
+          process.stdout.write(`//${url.host}${path}:_authToken`);
+        ' "$REGISTRY_URL")"
+
+        printf 'registry=%s\n' "$REGISTRY_URL" > "$publish_config"
+        printf 'registry=%s\n' "$REGISTRY_URL" > "$channel_config"
+
+        if [[ -n "$REGISTRY_TOKEN" ]]; then
+          printf '%s=${NODE_AUTH_TOKEN}\n' "$auth_key" >> "$publish_config"
+        fi
+        if [[ -n "$CHANNEL_TOKEN" || -n "$REGISTRY_TOKEN" ]]; then
+          printf '%s=${NODE_AUTH_TOKEN}\n' "$auth_key" >> "$channel_config"
+        fi
+
+        echo "publish-config=$publish_config" >> "$GITHUB_OUTPUT"
+        echo "channel-config=$channel_config" >> "$GITHUB_OUTPUT"
+
+    - name: Validate channel update authentication
+      if: ${{ inputs.update-prerelease-tag-on-stable == 'true' && steps.package.outputs.release-type == 'stable' }}
+      shell: bash
+      env:
+        CHANNEL_TOKEN: ${{ inputs.channel-token || inputs.registry-token }}
+      run: |
+        if [[ -z "$CHANNEL_TOKEN" ]]; then
+          echo "::error::Updating the prerelease tag after a stable publication requires channel-token or registry-token; npm trusted publishing does not authorize dist-tag changes."
+          exit 1
+        fi
+
+    - name: Check immutable package version
+      shell: bash
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.registry-token }}
+        NPM_CONFIG_USERCONFIG: ${{ steps.npm-config.outputs.publish-config }}
+        PACKAGE_NAME: ${{ steps.package.outputs.package-name }}
+        PACKAGE_VERSION: ${{ steps.package.outputs.package-version }}
+        REGISTRY_URL: ${{ inputs.registry-url }}
+      run: |
+        set -euo pipefail
+
+        query_root="$(mktemp -d)"
+        trap 'rm -rf "$query_root"' EXIT
+
+        set +e
+        npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version --json --registry "$REGISTRY_URL" > "$query_root/stdout" 2> "$query_root/stderr"
+        status=$?
+        set -e
+
+        if [[ $status -eq 0 ]]; then
+          echo "::error::Package version $PACKAGE_NAME@$PACKAGE_VERSION already exists in $REGISTRY_URL; registry versions are immutable and will not be retried."
+          exit 1
+        fi
+
+        if ! grep --quiet 'E404' "$query_root/stdout" "$query_root/stderr"; then
+          cat "$query_root/stderr" >&2
+          echo "::error::Could not determine whether $PACKAGE_NAME@$PACKAGE_VERSION already exists in $REGISTRY_URL."
+          exit "$status"
+        fi
+
+    - name: Dry-run publication
+      shell: bash
+      env:
+        ACCESS: ${{ inputs.access }}
+        CHANNEL: ${{ steps.package.outputs.channel }}
+        NODE_AUTH_TOKEN: ${{ inputs.registry-token }}
+        NPM_CONFIG_USERCONFIG: ${{ steps.npm-config.outputs.publish-config }}
+        REGISTRY_URL: ${{ inputs.registry-url }}
+        TARBALL_PATH: ${{ steps.package.outputs.tarball-path }}
+      run: |
+        set -euo pipefail
+
+        publish_args=(publish "$TARBALL_PATH" --dry-run --ignore-scripts --tag "$CHANNEL" --registry "$REGISTRY_URL")
+        if [[ -n "$ACCESS" ]]; then
+          publish_args+=(--access "$ACCESS")
+        fi
+        npm "${publish_args[@]}"
+
+    - name: Publish tarball
+      shell: bash
+      env:
+        ACCESS: ${{ inputs.access }}
+        CHANNEL: ${{ steps.package.outputs.channel }}
+        NODE_AUTH_TOKEN: ${{ inputs.registry-token }}
+        NPM_CONFIG_USERCONFIG: ${{ steps.npm-config.outputs.publish-config }}
+        PACKAGE_NAME: ${{ steps.package.outputs.package-name }}
+        PACKAGE_VERSION: ${{ steps.package.outputs.package-version }}
+        REGISTRY_URL: ${{ inputs.registry-url }}
+        TARBALL_PATH: ${{ steps.package.outputs.tarball-path }}
+      run: |
+        set -euo pipefail
+
+        publish_args=(publish "$TARBALL_PATH" --ignore-scripts --tag "$CHANNEL" --registry "$REGISTRY_URL")
+        if [[ -n "$ACCESS" ]]; then
+          publish_args+=(--access "$ACCESS")
+        fi
+
+        set +e
+        npm "${publish_args[@]}"
+        status=$?
+        set -e
+
+        if [[ $status -ne 0 ]]; then
+          if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version --json --registry "$REGISTRY_URL" >/dev/null 2>&1; then
+            echo "::error::Package version $PACKAGE_NAME@$PACKAGE_VERSION now exists in $REGISTRY_URL; the publish may have won a race and must not be retried with the same version."
+          fi
+          exit "$status"
+        fi
+
+    - name: Update prerelease channel
+      if: ${{ inputs.update-prerelease-tag-on-stable == 'true' && steps.package.outputs.release-type == 'stable' }}
+      shell: bash
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.channel-token || inputs.registry-token }}
+        NPM_CONFIG_USERCONFIG: ${{ steps.npm-config.outputs.channel-config }}
+        PACKAGE_NAME: ${{ steps.package.outputs.package-name }}
+        PACKAGE_VERSION: ${{ steps.package.outputs.package-version }}
+        PRERELEASE_TAG: ${{ inputs.prerelease-tag }}
+        REGISTRY_URL: ${{ inputs.registry-url }}
+      run: npm dist-tag add "$PACKAGE_NAME@$PACKAGE_VERSION" "$PRERELEASE_TAG" --registry "$REGISTRY_URL"
+
+    - name: Remove temporary npm configuration
+      if: always()
+      shell: bash
+      env:
+        CHANNEL_CONFIG: ${{ steps.npm-config.outputs.channel-config }}
+        PUBLISH_CONFIG: ${{ steps.npm-config.outputs.publish-config }}
+      run: rm -f "$CHANNEL_CONFIG" "$PUBLISH_CONFIG"

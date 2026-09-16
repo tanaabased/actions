@@ -1,0 +1,72 @@
+name: Pack npm package
+description: Pack one npm package and expose the resulting tarball and package metadata.
+
+inputs:
+  package-directory:
+    description: Directory containing the package manifest, relative to the workspace or absolute.
+    required: false
+    default: .
+  node-version:
+    description: Node.js version used to run npm pack.
+    required: false
+    default: '24'
+
+outputs:
+  tarball-path:
+    description: Absolute path to the produced npm tarball.
+    value: ${{ steps.pack.outputs.tarball-path }}
+  package-name:
+    description: Package name recorded in the tarball.
+    value: ${{ steps.pack.outputs.package-name }}
+  package-version:
+    description: Package version recorded in the tarball.
+    value: ${{ steps.pack.outputs.package-version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - id: pack
+      name: Pack package
+      shell: bash
+      env:
+        PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
+      run: |
+        set -euo pipefail
+
+        package_root="$(cd "$PACKAGE_DIRECTORY" && pwd -P)"
+        pack_json="$(mktemp)"
+        trap 'rm -f "$pack_json"' EXIT
+
+        (
+          cd "$package_root"
+          npm pack --ignore-scripts --json > "$pack_json"
+        )
+
+        PACK_JSON="$pack_json" PACKAGE_ROOT="$package_root" node <<'NODE' >> "$GITHUB_OUTPUT"
+        const fs = require('node:fs');
+        const path = require('node:path');
+
+        const result = JSON.parse(fs.readFileSync(process.env.PACK_JSON, 'utf8'));
+        if (!Array.isArray(result) || result.length !== 1) {
+          throw new Error(`npm pack must produce exactly one tarball; received ${result.length ?? 'invalid output'}`);
+        }
+
+        const [{ filename, name, version }] = result;
+        if (!filename || !name || !version) {
+          throw new Error('npm pack did not return filename, name, and version metadata');
+        }
+
+        const tarballPath = path.resolve(process.env.PACKAGE_ROOT, filename);
+        if (!fs.statSync(tarballPath).isFile()) {
+          throw new Error(`npm pack reported a missing tarball: ${tarballPath}`);
+        }
+
+        process.stdout.write(`tarball-path=${tarballPath}\n`);
+        process.stdout.write(`package-name=${name}\n`);
+        process.stdout.write(`package-version=${version}\n`);
+        NODE
