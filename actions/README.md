@@ -1,8 +1,10 @@
-# Composite actions
+# Action catalog
 
-Place each composite action in `actions/<action>/action.yml`. Keep its runtime
-files in the same directory and document its public contract in
-`docs/<action>.md`.
+Each public surface has one entry at `actions/<name>/`. Start there: its
+`README.md` contains the user-facing contract, including usage, inputs,
+outputs, permissions, and retry behavior.
 
-There are no composite actions in the first release. The reusable workflows in
-`.github/workflows/` are the public surfaces currently shipped here.
+- A composite action contains `action.yml` and every runtime file it needs.
+- A reusable workflow contains `workflow.yml`, a symlink to its canonical
+  `.github/workflows/<name>.yml` file. GitHub requires the actual workflow to
+  remain there; the symlink exists for human navigation, not execution.

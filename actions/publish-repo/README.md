@@ -4,6 +4,8 @@ Creates a GitHub release for an existing tag in the caller repository. If the
 release already exists, it returns that release instead of manufacturing a
 second ceremony around the same tag.
 
+The canonical reusable workflow is [workflow.yml](workflow.yml).
+
 ## Usage
 
 ```yaml

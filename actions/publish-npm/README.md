@@ -4,6 +4,8 @@ Publishes one npm package from the caller repository. It does not create a
 release, tag a commit, or retry a registry write. Those are separate decisions,
 as they should be.
 
+The canonical reusable workflow is [workflow.yml](workflow.yml).
+
 ## Usage
 
 ```yaml

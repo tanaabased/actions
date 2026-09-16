@@ -8,17 +8,17 @@ strategy.
 
 | Reusable workflow | Purpose | Documentation |
 | --- | --- | --- |
-| `publish-npm` | Publish one npm package from a checked-out repository. | [docs/publish-npm.md](docs/publish-npm.md) |
-| `publish-repo` | Create a GitHub release for an existing tag. | [docs/publish-repo.md](docs/publish-repo.md) |
+| `publish-npm` | Publish one npm package from a checked-out repository. | [actions/publish-npm](actions/publish-npm/README.md) |
+| `publish-repo` | Create a GitHub release for an existing tag. | [actions/publish-repo](actions/publish-repo/README.md) |
 
 ## Layout
 
-- `actions/<action>/action.yml` contains a composite action and only the files
-  it needs at runtime.
+- `actions/<name>/` is the catalog entry for every public surface. Its README
+  documents the contract. Composite actions contain `action.yml`; reusable
+  workflows contain `workflow.yml`, a navigation symlink to their canonical
+  workflow file.
 - `.github/workflows/<workflow>.yml` contains a reusable workflow invoked with
   `uses: tanaabased/actions/.github/workflows/<workflow>.yml@<ref>`.
-- `docs/<name>.md` is the public contract for an action or reusable workflow:
-  usage, inputs, outputs, permissions, and retry behavior belong there.
 - `examples/` contains complete consumer workflows. It is not executable
   production configuration; copy the portions that fit the caller.
 
