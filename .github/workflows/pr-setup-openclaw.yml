@@ -1,0 +1,142 @@
+name: PR / setup-openclaw
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  setup-openclaw:
+    name: setup-openclaw (${{ matrix.os }} / ${{ matrix.selection }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-24.04
+          - macos-26
+        selection:
+          - explicit
+          - package
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Install OpenClaw
+        id: openclaw
+        uses: ./setup-openclaw
+        env:
+          RUNNER_DEBUG: '1'
+        with:
+          test-mode: true
+          debug: ${{ matrix.selection == 'explicit' && 'false' || 'true' }}
+          version: ${{ matrix.selection == 'explicit' && '2026.9.3' || '' }}
+          package-json: ${{ matrix.selection == 'explicit' && 'does-not-need-to-exist.json' || 'setup-openclaw/test/fixture/package.json' }}
+      - name: Verify installation and exported commands
+        shell: bash
+        env:
+          EXECUTABLE_PATH: ${{ steps.openclaw.outputs.executable-path }}
+          EXPECTED_DEBUG: ${{ matrix.selection == 'explicit' && 'false' || 'true' }}
+          HELPER_PATH: ${{ steps.openclaw.outputs.helper-path }}
+          RESOLVED_VERSION: ${{ steps.openclaw.outputs.version }}
+          SELECTION: ${{ matrix.selection }}
+        run: |
+          set -euo pipefail
+
+          test "$RESOLVED_VERSION" = '2026.9.3'
+          test "$SETUP_OPENCLAW_DEBUG" = "$EXPECTED_DEBUG"
+          test "$(command -v openclaw)" = "$EXECUTABLE_PATH"
+          test "$(command -v openclaw-setup)" = "$HELPER_PATH/openclaw-setup"
+          test "$(command -v openclaw-gateway)" = "$HELPER_PATH/openclaw-gateway"
+          test "$(command -v openclaw-diagnostics)" = "$HELPER_PATH/openclaw-diagnostics"
+          openclaw --version | grep --fixed-strings "$RESOLVED_VERSION"
+
+          profile="ci-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$SELECTION"
+          workspace="$RUNNER_TEMP/setup-openclaw-$SELECTION-workspace"
+          state_dir="$RUNNER_TEMP/setup-openclaw-$SELECTION-state"
+          echo "OPENCLAW_TEST_PROFILE=$profile" >> "$GITHUB_ENV"
+          echo "OPENCLAW_TEST_WORKSPACE=$workspace" >> "$GITHUB_ENV"
+          echo "OPENCLAW_TEST_STATE_DIR=$state_dir" >> "$GITHUB_ENV"
+
+          openclaw-setup \
+            --profile "$profile" \
+            --workspace "$workspace" \
+            --state-dir "$state_dir"
+          openclaw-gateway start \
+            --profile "$profile" \
+            --workspace "$workspace" \
+            --state-dir "$state_dir" \
+            --timeout 90
+          gateway_pid="$(cat "$state_dir/gateway/gateway.pid")"
+          echo "OPENCLAW_TEST_GATEWAY_PID=$gateway_pid" >> "$GITHUB_ENV"
+
+      - name: Verify later-step readiness and failure preservation
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          openclaw-gateway wait \
+            --profile "$OPENCLAW_TEST_PROFILE" \
+            --workspace "$OPENCLAW_TEST_WORKSPACE" \
+            --state-dir "$OPENCLAW_TEST_STATE_DIR" \
+            --timeout 30
+
+          set +e
+          openclaw-diagnostics \
+            --profile "$OPENCLAW_TEST_PROFILE" \
+            --workspace "$OPENCLAW_TEST_WORKSPACE" \
+            --state-dir "$OPENCLAW_TEST_STATE_DIR" \
+            --exit-code 23
+          diagnostic_status=$?
+          set -e
+          test "$diagnostic_status" = 23
+
+      - name: Stop isolated gateway
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if command -v openclaw-gateway >/dev/null 2>&1 && [[ -n "${OPENCLAW_TEST_STATE_DIR:-}" ]]; then
+            openclaw-gateway stop \
+              --profile "$OPENCLAW_TEST_PROFILE" \
+              --workspace "$OPENCLAW_TEST_WORKSPACE" \
+              --state-dir "$OPENCLAW_TEST_STATE_DIR" \
+              --timeout 30
+            test ! -f "$OPENCLAW_TEST_STATE_DIR/gateway/gateway.pid"
+            if [[ -n "${OPENCLAW_TEST_GATEWAY_PID:-}" ]]; then
+              ! kill -0 "$OPENCLAW_TEST_GATEWAY_PID" 2>/dev/null
+            fi
+          fi
+
+  invalid-inputs:
+    name: setup-openclaw invalid inputs (${{ matrix.os }} / ${{ matrix.case }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-24.04
+          - macos-26
+        case:
+          - dist-tag
+          - missing-field
+          - debug
+          - test-mode
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Reject invalid input
+        id: invalid
+        continue-on-error: true
+        uses: ./setup-openclaw
+        with:
+          test-mode: ${{ matrix.case == 'test-mode' && 'maybe' || 'true' }}
+          debug: ${{ matrix.case == 'debug' && 'verbose' || 'false' }}
+          version: ${{ matrix.case == 'dist-tag' && 'latest' || '' }}
+          package-json: setup-openclaw/test/fixture/package.json
+          package-field: ${{ matrix.case == 'missing-field' && 'dependencies.openclaw' || 'devDependencies.openclaw' }}
+      - name: Verify rejection
+        env:
+          INVALID_OUTCOME: ${{ steps.invalid.outcome }}
+        run: test "$INVALID_OUTCOME" = failure

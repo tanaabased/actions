@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+command_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=setup-openclaw/scripts/lib/openclaw-common.sh
+source "$command_dir/lib/openclaw-common.sh"
+
+profile=''
+workspace=''
+state_dir=''
+exit_code=0
+debug_setting="${SETUP_OPENCLAW_DEBUG:-auto}"
+
+usage() {
+  cat <<'EOF'
+Usage: openclaw-diagnostics --profile <name> --workspace <path> --state-dir <path> [options]
+
+Options:
+  --profile <name>                  selects the isolated OpenClaw profile
+  --workspace <path>                verifies the isolated agent workspace
+  --state-dir <path>                locates isolated OpenClaw and process state
+  --exit-code <code>                exits with an original failure code after reporting [default: 0]
+  --debug <auto|true|false>         controls diagnostic detail [default: action setting or auto]
+  -h, --help                        displays this help message
+EOF
+}
+
+while (($# > 0)); do
+  case "$1" in
+    --profile | --workspace | --state-dir | --exit-code | --debug)
+      (($# >= 2)) || error "$1 requires a value" 2
+      case "$1" in
+        --profile) profile="$2" ;;
+        --workspace) workspace="$2" ;;
+        --state-dir) state_dir="$2" ;;
+        --exit-code) exit_code="$2" ;;
+        --debug) debug_setting="$2" ;;
+      esac
+      shift 2
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage >&2
+      error "unrecognized option: $1" 2
+      ;;
+  esac
+done
+
+[[ "$exit_code" =~ ^[0-9]+$ ]] && ((10#$exit_code <= 255)) || error "exit-code must be an integer from 0 through 255: $exit_code" 2
+require_github_actions
+configure_debug "$debug_setting"
+configure_context "$profile" "$workspace" "$state_dir"
+verify_context
+
+printf 'OpenClaw diagnostics\n' >&2
+if ! run_openclaw --version 2>&1 | redact_stream >&2; then
+  error_message 'OpenClaw version inspection failed'
+fi
+
+set +e
+validation_report="$(run_openclaw config validate --json 2>&1)"
+validation_status=$?
+set -e
+if ((validation_status == 0)); then
+  printf 'configuration: valid\n' >&2
+else
+  printf 'configuration: invalid\n' >&2
+  printf '%s\n' "$validation_report" | tail -n 20 | redact_stream >&2
+fi
+print_gateway_diagnostics
+
+exit "$exit_code"
