@@ -185,6 +185,10 @@ redacted process and log evidence. Readiness defaults to 90 seconds and stop to
 30 seconds. A failed start reports diagnostics, attempts cleanup, and returns
 the original readiness failure.
 
+The helper records the process start time alongside its PID and checks both
+before signaling it. Invalid records, including older PID-only files, fail
+closed; a reused PID does not authorize stopping the replacement process.
+
 #### `openclaw-diagnostics`
 
 ```text

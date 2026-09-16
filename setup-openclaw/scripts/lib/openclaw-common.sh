@@ -36,7 +36,7 @@ configure_debug() {
       debug_enabled="$setting"
       ;;
     *)
-      error "debug must be auto, true, or false: $setting" 2
+      error 'debug must be auto, true, or false' 2
       ;;
   esac
 
@@ -120,11 +120,20 @@ read_gateway_pid() {
   pid_path="$gateway_state_dir/gateway.pid"
   [[ -f "$pid_path" ]] || return 1
   gateway_pid="$(sed -n '1p' "$pid_path")"
-  [[ "$gateway_pid" =~ ^[0-9]+$ ]] || return 1
+  [[ "$gateway_pid" =~ ^[1-9][0-9]{0,9}$ ]] || return 1
+  ((gateway_pid > 1 && gateway_pid <= 2147483647)) || return 1
+  gateway_started="$(sed -n '2p' "$pid_path")"
+  [[ -n "$gateway_started" ]] || return 1
+}
+
+gateway_process_start() {
+  LC_ALL=C ps -p "$1" -o lstart= 2>/dev/null
 }
 
 gateway_is_running() {
   read_gateway_pid || return 1
+  # A reused PID must not grant authority over the replacement process.
+  [[ "$(gateway_process_start "$gateway_pid")" == "$gateway_started" ]] || return 1
   kill -0 "$gateway_pid" 2>/dev/null || return 1
 }
 
