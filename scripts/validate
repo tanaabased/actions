@@ -37,3 +37,28 @@ entries.each do |path|
     abort "catalog entry has neither action manifest nor workflow link: #{path}"
   end
 end
+
+prepare = YAML.load_file(File.join(root, "actions/prepare-release/action.yml"))
+prepare_step = prepare.fetch("runs").fetch("steps").find do |step|
+  step["uses"] == "tanaabased/prepare-release-action@v1"
+end
+abort "prepare-release does not wrap prepare-release-action@v1" unless prepare_step
+abort "prepare-release does not disable synchronization" unless prepare_step.fetch("with").fetch("sync") == false
+
+publish = YAML.load_file(File.join(root, "actions/publish-repo/action.yml"))
+publish_step = publish.fetch("runs").fetch("steps").find do |step|
+  step["uses"] == "tanaabased/prepare-release-action@v1"
+end
+abort "publish-repo does not wrap prepare-release-action@v1" unless publish_step
+publish_inputs = publish_step.fetch("with")
+abort "publish-repo does not enable verified synchronization" unless publish_inputs.fetch("sync") == true && publish_inputs.fetch("sync-verified") == true
+abort "publish-repo does not use tanaabot" unless publish_inputs.fetch("sync-username") == "tanaabot" && publish_inputs.fetch("sync-email") == "tanaabot@tanaab.dev"
+abort "publish-repo does not forward moving tags" unless publish_inputs.fetch("sync-tags") == "${{ inputs.sync-tags }}"
+
+release = YAML.load_file(File.join(root, ".github/workflows/release.yml"))
+steps = release.fetch("jobs").fetch("publish-repo").fetch("steps")
+publisher = steps.find { |step| step["uses"] == "./actions/publish-repo" }
+abort "release workflow does not use the local publish-repo action" unless publisher
+abort "release workflow does not synchronize v1" unless publisher.fetch("with").fetch("sync-tags") == "v1"
+
+puts "release workflow synchronizes v1"

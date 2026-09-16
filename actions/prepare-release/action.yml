@@ -1,0 +1,73 @@
+name: Prepare release
+description: Prepare release files without publishing Git changes.
+
+inputs:
+  version:
+    description: Semver-valid release version.
+    required: false
+    default: ${{ github.event.release.tag_name }}
+  release-date:
+    description: Release date or timestamp used in CHANGELOG.md.
+    required: false
+    default: ${{ github.event.release.published_at }}
+  release-url:
+    description: Release URL used in CHANGELOG.md.
+    required: false
+    default: ${{ github.event.release.html_url }}
+  commands:
+    description: Commands that prepare project-specific release files.
+    required: false
+  root:
+    description: Root of the project being prepared.
+    required: false
+    default: ${{ github.workspace }}
+  bun-version:
+    description: Bun version to install, or auto to resolve it from the project.
+    required: false
+    default: auto
+
+outputs:
+  resolved-version:
+    description: Semver-valid version resolved for this release.
+    value: ${{ steps.prepare.outputs.resolved-version }}
+
+runs:
+  using: composite
+  steps:
+    - id: release-date
+      name: Format release date
+      shell: bash
+      env:
+        RELEASE_DATE: ${{ inputs.release-date }}
+      run: |
+        node <<'NODE' >> "$GITHUB_OUTPUT"
+        const value = process.env.RELEASE_DATE;
+        const date = new Date(value);
+        if (!value || Number.isNaN(date.getTime())) {
+          throw new Error('release-date must be a valid date or timestamp');
+        }
+        const formatted = new Intl.DateTimeFormat('en-US', {
+          day: 'numeric',
+          month: 'long',
+          timeZone: 'UTC',
+          year: 'numeric',
+        }).format(date);
+        process.stdout.write(`value=${formatted}\n`);
+        NODE
+
+    - id: prepare
+      name: Prepare release
+      uses: tanaabased/prepare-release-action@v1
+      with:
+        bun-version: ${{ inputs.bun-version }}
+        commands: ${{ inputs.commands }}
+        root: ${{ inputs.root }}
+        sync: false
+        update-files: CHANGELOG.md
+        update-files-header: |
+          ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
+        update-files-meta: |
+          UNRELEASED_DATE=${{ steps.release-date.outputs.value }}
+          UNRELEASED_LINK=${{ inputs.release-url }}
+          UNRELEASED_VERSION=${{ inputs.version }}
+        version: ${{ inputs.version }}
