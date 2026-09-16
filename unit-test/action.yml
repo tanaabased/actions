@@ -1,0 +1,39 @@
+name: Run unit tests
+description: Run one caller-selected unit-test command.
+
+inputs:
+  test-mode:
+    description: Exercise the selected command without changing the action behavior.
+    required: false
+    default: 'false'
+  command:
+    description: Unit-test command to run from the workspace root.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Validate inputs
+      shell: bash
+      env:
+        COMMAND: ${{ inputs.command }}
+        TEST_MODE: ${{ inputs.test-mode }}
+      run: |
+        set -euo pipefail
+
+        if [[ "$TEST_MODE" != "true" && "$TEST_MODE" != "false" ]]; then
+          echo "::error::test-mode must be true or false"
+          exit 1
+        fi
+        if [[ -z "$COMMAND" ]]; then
+          echo "::error::command must not be empty"
+          exit 1
+        fi
+
+    - name: Run unit tests
+      shell: bash
+      env:
+        COMMAND: ${{ inputs.command }}
+      run: |
+        set -euo pipefail
+        bash -o pipefail -c "$COMMAND"

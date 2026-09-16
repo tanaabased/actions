@@ -16,17 +16,20 @@
 
 | Action | Purpose | PR tests |
 | --- | --- | --- |
+| [lint](lint/README.md) | Run one caller-selected lint command. | [![lint](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-lint.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-lint.yml) |
 | [npm-pack](npm-pack/README.md) | Pack a package and expose its exact artifact and metadata. | [![npm-pack](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-npm-pack.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-npm-pack.yml) |
 | [prepare-release](prepare-release/README.md) | Prepare release files without pushing Git changes. | [![prepare-release](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-prepare-release.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-prepare-release.yml) |
 | [publish-clawhub](publish-clawhub/README.md) | Publish a code-plugin tarball and wait for the result. | [![publish-clawhub](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-publish-clawhub.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-publish-clawhub.yml) |
 | [publish-npm](publish-npm/README.md) | Publish a tested tarball with explicit registry channels. | [![publish-npm](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-publish-npm.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-publish-npm.yml) |
 | [publish-repo](publish-repo/README.md) | Synchronize prepared release changes and Git tags. | [![publish-repo](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-publish-repo.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-publish-repo.yml) |
+| [unit-test](unit-test/README.md) | Run one caller-selected unit-test command. | [![unit-test](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-unit-test.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-unit-test.yml) |
 
 ## Usage
 
 Choose an action above for its inputs, outputs, permissions, and examples.
 Each action runs inside a caller-owned job; callers choose runners and job
-dependencies. Current actions are tested on Linux (`ubuntu-24.04`).
+dependencies. Supported operating systems are documented and tested by each
+action's PR workflow.
 
 The first release is in preparation. Examples use the planned `@v1` reference;
 pin a reviewed commit until that tag is published.

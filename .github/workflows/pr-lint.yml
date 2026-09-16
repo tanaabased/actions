@@ -1,0 +1,35 @@
+name: PR / lint
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: lint (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-26]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Run passing lint fixture
+        uses: ./lint
+        with:
+          test-mode: true
+          command: bash lint/test/fixture/passing.sh
+      - name: Run failing lint fixture
+        id: failing-fixture
+        continue-on-error: true
+        uses: ./lint
+        with:
+          test-mode: true
+          command: bash lint/test/fixture/failing.sh
+      - name: Verify failure propagation
+        env:
+          OUTCOME: ${{ steps.failing-fixture.outcome }}
+        run: test "$OUTCOME" = failure

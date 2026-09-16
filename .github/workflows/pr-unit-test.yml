@@ -1,0 +1,35 @@
+name: PR / unit-test
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-test:
+    name: unit-test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-26]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Run passing unit-test fixture
+        uses: ./unit-test
+        with:
+          test-mode: true
+          command: bash unit-test/test/fixture/passing.sh
+      - name: Run failing unit-test fixture
+        id: failing-fixture
+        continue-on-error: true
+        uses: ./unit-test
+        with:
+          test-mode: true
+          command: bash unit-test/test/fixture/failing.sh
+      - name: Verify failure propagation
+        env:
+          OUTCOME: ${{ steps.failing-fixture.outcome }}
+        run: test "$OUTCOME" = failure
