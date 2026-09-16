@@ -2,16 +2,15 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 const [versionInput = '', packageJsonPath = '', packageField = ''] = process.argv.slice(2);
+const automaticFields = ['devDependencies.openclaw', 'dependencies.openclaw'];
 
 function fail(message) {
   process.stderr.write(`error: ${message}\n`);
   process.exit(1);
 }
 
-function packageVersionSpec(path, field) {
-  if (!path) fail('package-json must not be empty when version is omitted');
-  if (!field) fail('package-field must not be empty when version is omitted');
-
+function readPackageJson(path) {
+  if (!path) fail('package-json must not be empty when version is auto');
   let packageJson;
   try {
     packageJson = JSON.parse(readFileSync(path, 'utf8'));
@@ -19,6 +18,10 @@ function packageVersionSpec(path, field) {
     fail(`cannot read valid JSON from ${path}: ${error.message}`);
   }
 
+  return packageJson;
+}
+
+function packageFieldValue(packageJson, field, required = true) {
   const segments = field.split('.');
   if (segments.some(segment => !segment || ['__proto__', 'constructor', 'prototype'].includes(segment))) {
     fail(`package-field is invalid: ${field}`);
@@ -27,7 +30,8 @@ function packageVersionSpec(path, field) {
   let value = packageJson;
   for (const segment of segments) {
     if (value === null || typeof value !== 'object' || !Object.hasOwn(value, segment)) {
-      fail(`package.json field is missing: ${field}`);
+      if (required) fail(`package.json field is missing: ${field}`);
+      return undefined;
     }
     value = value[segment];
   }
@@ -36,6 +40,27 @@ function packageVersionSpec(path, field) {
     fail(`package.json field must contain a non-empty string: ${field}`);
   }
   return value.trim();
+}
+
+function packageVersionSpec(path, field) {
+  const packageJson = readPackageJson(path);
+  const selectedField = field.trim();
+  if (selectedField) return packageFieldValue(packageJson, selectedField);
+
+  const [developmentSpec, runtimeSpec] = automaticFields.map(candidate =>
+    packageFieldValue(packageJson, candidate, false),
+  );
+  if (developmentSpec && runtimeSpec && developmentSpec !== runtimeSpec) {
+    fail(
+      `package.json declares conflicting OpenClaw versions: ${automaticFields[0]}=${developmentSpec} and ${automaticFields[1]}=${runtimeSpec}`,
+    );
+  }
+  if (!developmentSpec && !runtimeSpec) {
+    fail(
+      `package.json does not declare OpenClaw in ${automaticFields.join(' or ')}; provide an explicit version or package-field`,
+    );
+  }
+  return developmentSpec ?? runtimeSpec;
 }
 
 function npmView(spec, field) {
@@ -51,7 +76,9 @@ function npmView(spec, field) {
   }
 }
 
-const requestedSpec = versionInput.trim() || packageVersionSpec(packageJsonPath, packageField);
+const versionSpec = versionInput.trim() || 'auto';
+const requestedSpec =
+  versionSpec === 'auto' ? packageVersionSpec(packageJsonPath, packageField) : versionSpec;
 const semverCharacters = /^[0-9A-Za-z*<>=~^|._+\-\s]+$/;
 const semverStart = /^\s*(?:[<>=~^]+\s*)?(?:v?\d|[xX*])/;
 if (

@@ -11,17 +11,17 @@ inputs:
     required: false
     default: auto
   version:
-    description: OpenClaw version or range; overrides package-json and package-field when set.
+    description: OpenClaw version or range; auto discovers the package-tested declaration.
     required: false
-    default: ''
+    default: auto
   package-json:
-    description: package.json used when version is empty, relative to the workspace or absolute.
+    description: package.json used when version is auto, relative to the workspace or absolute.
     required: false
     default: package.json
   package-field:
-    description: Dot-delimited package.json field used when version is empty.
+    description: Optional dot-delimited package.json field overriding auto discovery.
     required: false
-    default: devDependencies.openclaw
+    default: ''
 
 outputs:
   version:

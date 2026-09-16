@@ -20,10 +20,12 @@ Pin the version explicitly when the workflow owns the tested version:
     version: 2026.9.3
 ```
 
-When `version` is empty, the action reads `package-json` and `package-field`.
-The default field is `devDependencies.openclaw`, which should describe the
-version a project actually tests. A broad peer compatibility range is a
-different claim and is not consulted implicitly.
+The default `version: auto` reads `devDependencies.openclaw`, then
+`dependencies.openclaw`, from `package-json`. If both fields are present, their
+declarations must match. A broad peer compatibility range is a different claim,
+so `peerDependencies` is never consulted automatically. If neither installation
+field is present, the action requires an explicit version instead of making the
+usual regrettable pilgrimage to `latest`.
 
 ```yaml
 - name: Install the package-tested OpenClaw version
@@ -31,15 +33,20 @@ different claim and is not consulted implicitly.
   uses: tanaabased/actions/setup-openclaw@v1
   with:
     package-json: package.json
-    package-field: devDependencies.openclaw
 ```
 
-An explicit `version` always wins and does not require `package-json` to exist.
-The accepted value is an exact semantic version or npm semantic-version range,
-not a dist-tag or URL. A range resolves through npm to the highest matching
-published version at run time; the exact result is returned as `version` and
-installed. Use an exact version when reproducibility matters, which is most of
-the time and all of the time people later pretend mattered.
+Set `package-field` to a dot-delimited field when the project intentionally
+stores its tested version somewhere else. That explicit override reads only the
+selected field. An explicit `version` always wins and does not require
+`package-json` to exist, even when the manifest's automatic declarations
+conflict.
+
+The accepted explicit value is an exact semantic version or npm
+semantic-version range, not a dist-tag or URL. A range resolves through npm to
+the highest matching published version at run time; the exact result is
+returned as `version` and installed. Use an exact version when reproducibility
+matters, which is most of the time and all of the time people later pretend
+mattered.
 
 ## Inputs
 
@@ -47,15 +54,16 @@ the time and all of the time people later pretend mattered.
 | --- | --- | --- | --- |
 | `test-mode` | No | `false` | Must be `true` or `false`; both values perform the same real local installation. |
 | `debug` | No | `auto` | `auto`, `true`, or `false`. `auto` enables extra detail only when `RUNNER_DEBUG=1`; explicit values override it. |
-| `version` | No | — | Exact OpenClaw semantic version or range. When set, it overrides package selection. |
-| `package-json` | No | `package.json` | Package manifest used only when `version` is empty; relative paths resolve from the workspace. |
-| `package-field` | No | `devDependencies.openclaw` | Dot-delimited manifest field used only when `version` is empty. |
+| `version` | No | `auto` | `auto`, an exact OpenClaw semantic version, or a range. An explicit version overrides package selection. |
+| `package-json` | No | `package.json` | Package manifest used only when `version` is `auto`; relative paths resolve from the workspace. |
+| `package-field` | No | — | Optional dot-delimited field that replaces automatic `devDependencies`/`dependencies` discovery. |
 
 The action rejects missing files, invalid JSON, missing or non-string fields,
-tags such as `latest`, URLs, invalid ranges, ranges with no published match,
-and packages without a declared `engines.node` requirement. It installs a
-Node.js version satisfying the selected OpenClaw package's requirement before
-installing the exact resolved package.
+conflicting automatic declarations, tags such as `latest`, URLs, invalid
+ranges, ranges with no published match, and packages without a declared
+`engines.node` requirement. It installs a Node.js version satisfying the
+selected OpenClaw package's requirement before installing the exact resolved
+package.
 
 `debug` changes action and helper verbosity, not GitHub's runner logging. Useful
 failure summaries remain visible when it is `false`. The action persists its
@@ -134,6 +142,8 @@ and is started as a caller-owned process with bounded readiness and shutdown.
 Test mode does not configure a remote system, publish an artifact, send a
 message, or prove model-provider access. The Linux and macOS pull-request checks
 install and invoke the real CLI, exercise package and explicit selection,
+cover automatic dependency fallback, matching and conflicting declarations,
+missing values, explicit field selection, and explicit-version precedence,
 reject invalid inputs, call the exported helpers from later steps, and verify
 gateway readiness and cleanup.
 

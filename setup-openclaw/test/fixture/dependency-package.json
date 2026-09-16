@@ -1,0 +1,8 @@
+{
+  "name": "setup-openclaw-dependency-fixture",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "openclaw": "2026.9.3"
+  }
+}

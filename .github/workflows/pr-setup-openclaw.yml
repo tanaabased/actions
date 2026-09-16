@@ -18,7 +18,7 @@ jobs:
           - macos-26
         selection:
           - explicit
-          - package
+          - auto
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -29,9 +29,9 @@ jobs:
           RUNNER_DEBUG: '1'
         with:
           test-mode: true
-          debug: ${{ matrix.selection == 'explicit' && 'false' || 'true' }}
-          version: ${{ matrix.selection == 'explicit' && '2026.9.3' || '' }}
-          package-json: ${{ matrix.selection == 'explicit' && 'does-not-need-to-exist.json' || 'setup-openclaw/test/fixture/package.json' }}
+          debug: ${{ matrix.selection == 'explicit' && 'false' || 'auto' }}
+          version: ${{ matrix.selection == 'explicit' && '2026.9.3' || 'auto' }}
+          package-json: ${{ matrix.selection == 'explicit' && 'setup-openclaw/test/fixture/conflict-package.json' || 'setup-openclaw/test/fixture/dependency-package.json' }}
       - name: Verify installation and exported commands
         shell: bash
         env:
@@ -54,9 +54,11 @@ jobs:
           profile="ci-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$SELECTION"
           workspace="$RUNNER_TEMP/setup-openclaw-$SELECTION-workspace"
           state_dir="$RUNNER_TEMP/setup-openclaw-$SELECTION-state"
-          echo "OPENCLAW_TEST_PROFILE=$profile" >> "$GITHUB_ENV"
-          echo "OPENCLAW_TEST_WORKSPACE=$workspace" >> "$GITHUB_ENV"
-          echo "OPENCLAW_TEST_STATE_DIR=$state_dir" >> "$GITHUB_ENV"
+          {
+            echo "OPENCLAW_TEST_PROFILE=$profile"
+            echo "OPENCLAW_TEST_WORKSPACE=$workspace"
+            echo "OPENCLAW_TEST_STATE_DIR=$state_dir"
+          } >> "$GITHUB_ENV"
 
           openclaw-setup \
             --profile "$profile" \
@@ -105,9 +107,38 @@ jobs:
               --timeout 30
             test ! -f "$OPENCLAW_TEST_STATE_DIR/gateway/gateway.pid"
             if [[ -n "${OPENCLAW_TEST_GATEWAY_PID:-}" ]]; then
-              ! kill -0 "$OPENCLAW_TEST_GATEWAY_PID" 2>/dev/null
+              if kill -0 "$OPENCLAW_TEST_GATEWAY_PID" 2>/dev/null; then
+                exit 1
+              fi
             fi
           fi
+
+  version-resolution:
+    name: setup-openclaw version resolution
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Verify version selection contract
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          resolver="$GITHUB_WORKSPACE/setup-openclaw/scripts/lib/resolve-openclaw.mjs"
+          fixture_dir="$GITHUB_WORKSPACE/setup-openclaw/test/fixture"
+
+          resolve_version() {
+            local version="$1"
+            local fixture="$2"
+            local field="$3"
+            node "$resolver" "$version" "$fixture_dir/$fixture" "$field" | sed -n '1p'
+          }
+
+          test "$(resolve_version auto package.json '')" = '2026.9.3'
+          test "$(resolve_version auto dependency-package.json '')" = '2026.9.3'
+          test "$(resolve_version auto matching-package.json '')" = '2026.9.3'
+          test "$(resolve_version auto field-package.json 'openclaw.testedVersion')" = '2026.9.3'
+          test "$(resolve_version 2026.9.3 conflict-package.json '')" = '2026.9.3'
 
   invalid-inputs:
     name: setup-openclaw invalid inputs (${{ matrix.os }} / ${{ matrix.case }})
@@ -120,6 +151,9 @@ jobs:
           - macos-26
         case:
           - dist-tag
+          - conflict
+          - missing
+          - peer-only
           - missing-field
           - debug
           - test-mode
@@ -133,9 +167,9 @@ jobs:
         with:
           test-mode: ${{ matrix.case == 'test-mode' && 'maybe' || 'true' }}
           debug: ${{ matrix.case == 'debug' && 'verbose' || 'false' }}
-          version: ${{ matrix.case == 'dist-tag' && 'latest' || '' }}
-          package-json: setup-openclaw/test/fixture/package.json
-          package-field: ${{ matrix.case == 'missing-field' && 'dependencies.openclaw' || 'devDependencies.openclaw' }}
+          version: ${{ matrix.case == 'dist-tag' && 'latest' || 'auto' }}
+          package-json: ${{ matrix.case == 'conflict' && 'setup-openclaw/test/fixture/conflict-package.json' || matrix.case == 'missing' && 'setup-openclaw/test/fixture/missing-package.json' || matrix.case == 'peer-only' && 'setup-openclaw/test/fixture/peer-package.json' || 'setup-openclaw/test/fixture/package.json' }}
+          package-field: ${{ matrix.case == 'missing-field' && 'dependencies.openclaw' || '' }}
       - name: Verify rejection
         env:
           INVALID_OUTCOME: ${{ steps.invalid.outcome }}

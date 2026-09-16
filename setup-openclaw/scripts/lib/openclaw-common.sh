@@ -119,14 +119,8 @@ read_gateway_pid() {
 }
 
 gateway_is_running() {
-  local process_command
-
   read_gateway_pid || return 1
   kill -0 "$gateway_pid" 2>/dev/null || return 1
-  process_command="$(ps -p "$gateway_pid" -o command= 2>/dev/null)" || return 1
-  [[ "$process_command" == *openclaw* ]]
-  [[ "$process_command" == *"--profile $profile"* ]]
-  [[ "$process_command" == *'gateway run'* ]]
 }
 
 print_gateway_diagnostics() {
