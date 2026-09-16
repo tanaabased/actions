@@ -1,0 +1,17 @@
+{
+  "name": "archive-fixture",
+  "version": "1.0.0",
+  "description": "Codex plugin archive fixture",
+  "author": {
+    "name": "Tanaab"
+  },
+  "interface": {
+    "displayName": "Archive fixture",
+    "shortDescription": "Exercises archive preparation",
+    "longDescription": "A fixture owned by the Codex plugin publisher.",
+    "developerName": "Tanaab",
+    "category": "developer-tools",
+    "capabilities": ["archive"],
+    "defaultPrompt": "Prepare this fixture."
+  }
+}

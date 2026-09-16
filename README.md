@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  Reusable composite actions for preparing releases, packing artifacts, and publishing them to Git, npm, and ClawHub.
+  Reusable composite actions for validating plugins, preparing releases, packing artifacts, and publishing them to GitHub, npm, and ClawHub.
 </p>
 
 <p align="center">
@@ -19,14 +19,17 @@
 | [npm-pack](npm-pack/README.md) | Pack a package and expose its exact artifact and metadata. | [![npm-pack](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-npm-pack.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-npm-pack.yml) |
 | [prepare-release](prepare-release/README.md) | Prepare release files without pushing Git changes. | [![prepare-release](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-prepare-release.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-prepare-release.yml) |
 | [publish-clawhub](publish-clawhub/README.md) | Publish a code-plugin tarball and wait for the result. | [![publish-clawhub](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-publish-clawhub.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-publish-clawhub.yml) |
+| [publish-codex-plugin](publish-codex-plugin/README.md) | Prepare and optionally upload a Codex plugin release archive. | [![publish-codex-plugin](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-publish-codex-plugin.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-publish-codex-plugin.yml) |
 | [publish-npm](publish-npm/README.md) | Publish a tested tarball with explicit registry channels. | [![publish-npm](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-publish-npm.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-publish-npm.yml) |
 | [publish-repo](publish-repo/README.md) | Synchronize prepared release changes and Git tags. | [![publish-repo](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-publish-repo.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-publish-repo.yml) |
+| [validate-codex-plugin](validate-codex-plugin/README.md) | Validate a Codex plugin against a pinned OpenAI validator snapshot. | [![validate-codex-plugin](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-validate-codex-plugin.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-validate-codex-plugin.yml) |
 
 ## Usage
 
 Choose an action above for its inputs, outputs, permissions, and examples.
 Each action runs inside a caller-owned job; callers choose runners and job
-dependencies. Current actions are tested on Linux (`ubuntu-24.04`).
+dependencies. Current actions are tested on Linux (`ubuntu-24.04`);
+`validate-codex-plugin` is also tested on macOS (`macos-26`).
 
 The first release is in preparation. Examples use the planned `@v1` reference;
 pin a reviewed commit until that tag is published.

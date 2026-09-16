@@ -1,0 +1,11 @@
+{
+  "name": "@tanaabased/actions-codex-archive-fixture",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "runtime-fixture": "file:packages/runtime-fixture"
+  },
+  "devDependencies": {
+    "dev-fixture": "file:packages/dev-fixture"
+  }
+}

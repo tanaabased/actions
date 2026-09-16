@@ -80,5 +80,7 @@
 | `prepare-release` | Prepare and inspect its local fixture | None |
 | `npm-pack` | Pack, inspect, install, and exercise its exact tarball | None |
 | `publish-clawhub` | Pack its code-plugin fixture and exercise ClawHub's dry-run path | First real Agent System ClawHub publication |
+| `publish-codex-plugin` | Prepare both dependency-policy archives and compare their exact unpacked contents | First real consumer GitHub Release upload and download |
 | `publish-npm` | Exercise stable and prerelease tarballs through npm's dry-run path | Real downstream npm publication |
 | `publish-repo` | Prepare and inspect its local fixture without synchronizing Git | This repository's real release |
+| `validate-codex-plugin` | Accept a valid fixture and reject an invalid fixture on Linux and macOS | None |
