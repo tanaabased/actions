@@ -1,0 +1,74 @@
+name: Create SSH test key
+description: Generate an isolated Ed25519 SSH key pair for local test fixtures.
+
+inputs:
+  test-mode:
+    description: Run the local fixture behavior without contacting an external system.
+    required: false
+    default: 'false'
+  destination:
+    description: Private-key destination. Omit it to create a key in an isolated temporary directory.
+    required: false
+    default: ''
+  comment:
+    description: Comment recorded in the generated public key.
+    required: false
+    default: ssh-test-key
+
+outputs:
+  private-key-path:
+    description: Absolute path to the generated private key.
+    value: ${{ steps.generate.outputs.private-key-path }}
+  public-key-path:
+    description: Absolute path to the generated public key.
+    value: ${{ steps.generate.outputs.public-key-path }}
+
+runs:
+  using: composite
+  steps:
+    - id: generate
+      name: Generate Ed25519 key pair
+      shell: bash
+      env:
+        COMMENT: ${{ inputs.comment }}
+        DESTINATION: ${{ inputs.destination }}
+        TEST_MODE: ${{ inputs.test-mode }}
+      run: |
+        set -euo pipefail
+
+        if [[ "$TEST_MODE" != 'true' && "$TEST_MODE" != 'false' ]]; then
+          echo '::error::test-mode must be true or false'
+          exit 1
+        fi
+        if [[ -z "$COMMENT" ]]; then
+          echo '::error::comment must not be empty'
+          exit 1
+        fi
+
+        if [[ -z "$DESTINATION" ]]; then
+          key_directory="$(mktemp -d "$RUNNER_TEMP/ssh-test-key.XXXXXX")"
+          key_path="$key_directory/id_ed25519"
+        else
+          if ! mkdir -p "$(dirname "$DESTINATION")"; then
+            echo "::error::Failed to create SSH test-key destination directory: $(dirname "$DESTINATION")"
+            exit 1
+          fi
+          key_path="$(cd "$(dirname "$DESTINATION")" && pwd)/$(basename "$DESTINATION")"
+        fi
+        public_key_path="$key_path.pub"
+
+        if [[ -e "$key_path" || -e "$public_key_path" ]]; then
+          echo "::error::SSH test-key destination already exists: $key_path or $public_key_path"
+          exit 1
+        fi
+
+        umask 077
+        if ! ssh-keygen -q -t ed25519 -f "$key_path" -C "$COMMENT" -N ''; then
+          echo "::error::Failed to generate SSH test key at $key_path"
+          exit 1
+        fi
+        chmod 600 "$key_path"
+        chmod 644 "$public_key_path"
+
+        echo "private-key-path=$key_path" >> "$GITHUB_OUTPUT"
+        echo "public-key-path=$public_key_path" >> "$GITHUB_OUTPUT"
