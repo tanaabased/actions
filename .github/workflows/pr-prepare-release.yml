@@ -39,4 +39,4 @@ jobs:
           grep --fixed-strings "## $RELEASE_VERSION - [September 16, 2026]($RELEASE_URL)" CHANGELOG.md
           test "$(grep --count --fixed-strings '## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})' CHANGELOG.md)" = 1
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          ! git show-ref --verify --quiet "refs/tags/$RELEASE_VERSION"
+          ! git ls-remote --exit-code origin "refs/tags/$RELEASE_VERSION"
