@@ -1,0 +1,24 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to publish as a GitHub release.
+        required: true
+        type: string
+
+jobs:
+  publish-npm:
+    uses: tanaabased/actions/.github/workflows/publish-npm.yml@v1
+    with:
+      package-directory: .
+    secrets:
+      npm-token: ${{ secrets.NPM_TOKEN }}
+
+  publish-repo:
+    uses: tanaabased/actions/.github/workflows/publish-repo.yml@v1
+    with:
+      tag: ${{ inputs.tag }}
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}

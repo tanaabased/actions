@@ -1,0 +1,39 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "yaml"
+
+root = File.expand_path("..", __dir__)
+manifests = Dir.glob(File.join(root, ".github/workflows/*.{yml,yaml}")) +
+  Dir.glob(File.join(root, "actions/*/action.{yml,yaml}")) +
+  Dir.glob(File.join(root, "examples/*.{yml,yaml}"))
+
+manifests.each do |path|
+  YAML.load_file(path)
+  relative_path = path.delete_prefix("#{root}/")
+  puts "parsed #{relative_path}"
+end
+
+readme = File.read(File.join(root, "README.md"))
+entries = readme.scan(/\]\((actions\/[^)#]+\/README\.md)\)/).flatten
+abort "README does not link to catalog entries" if entries.empty?
+
+entries.each do |path|
+  entry = File.join(root, path)
+  abort "missing catalog entry: #{path}" unless File.file?(entry)
+
+  directory = File.dirname(entry)
+  action = Dir.glob(File.join(directory, "action.{yml,yaml}")).first
+  workflow = File.join(directory, "workflow.yml")
+
+  if action
+    puts "found composite action #{path}"
+  elsif File.symlink?(workflow)
+    target = File.realpath(workflow)
+    expected = File.join(root, ".github/workflows/")
+    abort "workflow link escapes .github/workflows: #{path}" unless target.start_with?(expected) && File.file?(target)
+    puts "found reusable workflow #{path}"
+  else
+    abort "catalog entry has neither action manifest nor workflow link: #{path}"
+  end
+end
