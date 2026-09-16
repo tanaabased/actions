@@ -1,0 +1,112 @@
+name: PR / run-leia
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  run-leia:
+    name: run-leia (${{ matrix.os }} / ${{ matrix.shell }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            shell: bash
+            success-scenario: run-leia/test/fixture/success-bash.md
+            failure-scenario: run-leia/test/fixture/failure-bash.md
+          - os: macos-26
+            shell: bash
+            success-scenario: run-leia/test/fixture/success-bash.md
+            failure-scenario: run-leia/test/fixture/failure-bash.md
+          - os: windows-2025
+            shell: pwsh
+            success-scenario: run-leia/test/fixture/success-pwsh.md
+            failure-scenario: run-leia/test/fixture/failure-pwsh.md
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+      - name: Install Leia
+        run: bun add --no-save --ignore-scripts @lando/leia@1.0.0-beta.9
+
+      - name: Run successful scenario
+        id: success
+        uses: ./run-leia
+        env:
+          RUN_LEIA_CLEANUP_EVIDENCE: ${{ runner.temp }}/run-leia-cleanup.txt
+          RUN_LEIA_EVIDENCE: ${{ runner.temp }}/run-leia-success.txt
+        with:
+          test-mode: true
+          scenarios: ${{ matrix.success-scenario }}
+          shell: ${{ matrix.shell }}
+          retry: 0
+          stdin: true
+          cleanup-header: Destroy tests
+
+      - name: Verify successful Bash scenario
+        if: ${{ matrix.shell == 'bash' }}
+        shell: bash
+        env:
+          CLEANUP_EVIDENCE: ${{ runner.temp }}/run-leia-cleanup.txt
+          EXIT_CODE: ${{ steps.success.outputs.exit-code }}
+          RUN_EVIDENCE: ${{ runner.temp }}/run-leia-success.txt
+          TEMPORARY_DIRECTORY: ${{ steps.success.outputs.temporary-directory }}
+        run: |
+          test "$EXIT_CODE" = 0
+          test "$(cat "$RUN_EVIDENCE")" = "$TEMPORARY_DIRECTORY"
+          test "$(cat "$CLEANUP_EVIDENCE")" = cleanup
+          test ! -e "$TEMPORARY_DIRECTORY"
+
+      - name: Verify successful PowerShell scenario
+        if: ${{ matrix.shell == 'pwsh' }}
+        shell: pwsh
+        env:
+          CLEANUP_EVIDENCE: ${{ runner.temp }}/run-leia-cleanup.txt
+          EXIT_CODE: ${{ steps.success.outputs.exit-code }}
+          RUN_EVIDENCE: ${{ runner.temp }}/run-leia-success.txt
+          TEMPORARY_DIRECTORY: ${{ steps.success.outputs.temporary-directory }}
+        run: |
+          if ($env:EXIT_CODE -ne '0') { exit 1 }
+          if ((Get-Content -Raw $env:RUN_EVIDENCE).Trim() -ne $env:TEMPORARY_DIRECTORY) { exit 1 }
+          if ((Get-Content -Raw $env:CLEANUP_EVIDENCE).Trim() -ne 'cleanup') { exit 1 }
+          if (Test-Path -LiteralPath $env:TEMPORARY_DIRECTORY) { exit 1 }
+
+      - name: Run failing scenario
+        id: failure
+        continue-on-error: true
+        uses: ./run-leia
+        with:
+          test-mode: true
+          scenarios: ${{ matrix.failure-scenario }}
+          shell: ${{ matrix.shell }}
+          retry: 0
+          stdin: false
+
+      - name: Verify failed Bash scenario
+        if: ${{ matrix.shell == 'bash' }}
+        shell: bash
+        env:
+          EXIT_CODE: ${{ steps.failure.outputs.exit-code }}
+          OUTCOME: ${{ steps.failure.outcome }}
+          TEMPORARY_DIRECTORY: ${{ steps.failure.outputs.temporary-directory }}
+        run: |
+          test "$OUTCOME" = failure
+          test "$EXIT_CODE" = 1
+          test ! -e "$TEMPORARY_DIRECTORY"
+
+      - name: Verify failed PowerShell scenario
+        if: ${{ matrix.shell == 'pwsh' }}
+        shell: pwsh
+        env:
+          EXIT_CODE: ${{ steps.failure.outputs.exit-code }}
+          OUTCOME: ${{ steps.failure.outcome }}
+          TEMPORARY_DIRECTORY: ${{ steps.failure.outputs.temporary-directory }}
+        run: |
+          if ($env:OUTCOME -ne 'failure') { exit 1 }
+          if ($env:EXIT_CODE -ne '1') { exit 1 }
+          if (Test-Path -LiteralPath $env:TEMPORARY_DIRECTORY) { exit 1 }

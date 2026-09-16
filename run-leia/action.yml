@@ -1,0 +1,206 @@
+name: Run Leia scenarios
+description: Run Leia scenarios with isolated temporary state and explicit cross-platform options.
+
+inputs:
+  test-mode:
+    description: Exercise the normal non-mutating runner behavior against caller-provided scenarios.
+    required: false
+    default: 'false'
+  scenarios:
+    description: Newline-delimited Leia scenario paths or glob patterns.
+    required: true
+  shell:
+    description: Shell Leia uses for scenario commands; supported values are bash and pwsh.
+    required: true
+  retry:
+    description: Non-negative number of times Leia retries each failed test.
+    required: false
+    default: '0'
+  stdin:
+    description: Attach standard input while Leia runs scenario commands.
+    required: false
+    default: 'true'
+  cleanup-header:
+    description: Optional comma-separated H2 prefixes Leia treats as cleanup sections.
+    required: false
+outputs:
+  exit-code:
+    description: Exit code returned by Leia.
+    value: ${{ steps.run-bash.outputs.exit-code || steps.run-pwsh.outputs.exit-code }}
+  temporary-directory:
+    description: Temporary directory used and removed by this invocation.
+    value: ${{ steps.run-bash.outputs.temporary-directory || steps.run-pwsh.outputs.temporary-directory }}
+
+runs:
+  using: composite
+  steps:
+    - name: Reject unsupported shell
+      if: ${{ inputs.shell != 'bash' && inputs.shell != 'pwsh' }}
+      shell: pwsh
+      env:
+        LEIA_SHELL: ${{ inputs.shell }}
+      run: |
+        Write-Output "::error::shell must be bash or pwsh; received '$env:LEIA_SHELL'"
+        exit 1
+
+    - id: run-bash
+      name: Run Leia with Bash
+      if: ${{ inputs.shell == 'bash' }}
+      shell: bash
+      env:
+        CLEANUP_HEADER: ${{ inputs.cleanup-header }}
+        RETRY: ${{ inputs.retry }}
+        SCENARIOS: ${{ inputs.scenarios }}
+        STDIN: ${{ inputs.stdin }}
+        TEST_MODE: ${{ inputs.test-mode }}
+      run: |
+        set -uo pipefail
+
+        if [[ "$TEST_MODE" != "true" && "$TEST_MODE" != "false" ]]; then
+          echo "::error::test-mode must be true or false"
+          exit 1
+        fi
+        if [[ ! "$RETRY" =~ ^[0-9]+$ ]]; then
+          echo "::error::retry must be a non-negative integer"
+          exit 1
+        fi
+        if [[ "$STDIN" != "true" && "$STDIN" != "false" ]]; then
+          echo "::error::stdin must be true or false"
+          exit 1
+        fi
+        scenario_args=()
+        while IFS= read -r scenario || [[ -n "$scenario" ]]; do
+          scenario="${scenario%$'\r'}"
+          if [[ -n "$scenario" ]]; then
+            scenario_args+=("$scenario")
+          fi
+        done <<< "$SCENARIOS"
+        if [[ ${#scenario_args[@]} -eq 0 ]]; then
+          echo "::error::scenarios must contain at least one path or pattern"
+          exit 1
+        fi
+
+        if ! temporary_directory="$(mktemp -d "$RUNNER_TEMP/run-leia.XXXXXX")"; then
+          echo "::error::Could not create a Leia temporary directory beneath RUNNER_TEMP"
+          exit 1
+        fi
+        echo "temporary-directory=$temporary_directory" >> "$GITHUB_OUTPUT"
+
+        leia_args=(
+          "${scenario_args[@]}"
+          --shell bash
+          --retry "$RETRY"
+        )
+        if [[ "$STDIN" == "true" ]]; then
+          leia_args+=(--stdin)
+        fi
+        if [[ -n "$CLEANUP_HEADER" ]]; then
+          leia_args+=(--cleanup-header "$CLEANUP_HEADER")
+        fi
+
+        if TMPDIR="$temporary_directory" \
+          TMP="$temporary_directory" \
+          TEMP="$temporary_directory" \
+            bun run leia "${leia_args[@]}"; then
+          leia_status=0
+        else
+          leia_status=$?
+        fi
+        echo "exit-code=$leia_status" >> "$GITHUB_OUTPUT"
+
+        cleanup_status=0
+        rm -rf "$temporary_directory" || cleanup_status=$?
+        if [[ -e "$temporary_directory" ]]; then
+          cleanup_status=1
+        fi
+
+        if [[ $cleanup_status -ne 0 ]]; then
+          echo "::error::Could not remove Leia temporary directory: $temporary_directory"
+        fi
+        if [[ $leia_status -ne 0 ]]; then
+          echo "::error::Leia failed with exit code $leia_status"
+          exit "$leia_status"
+        fi
+        exit "$cleanup_status"
+
+    - id: run-pwsh
+      name: Run Leia with PowerShell
+      if: ${{ inputs.shell == 'pwsh' }}
+      shell: pwsh
+      env:
+        CLEANUP_HEADER: ${{ inputs.cleanup-header }}
+        RETRY: ${{ inputs.retry }}
+        SCENARIOS: ${{ inputs.scenarios }}
+        STDIN: ${{ inputs.stdin }}
+        TEST_MODE: ${{ inputs.test-mode }}
+      run: |
+        $ErrorActionPreference = 'Stop'
+
+        if ($env:TEST_MODE -notin @('true', 'false')) {
+          Write-Output '::error::test-mode must be true or false'
+          exit 1
+        }
+        if ($env:RETRY -notmatch '^\d+$') {
+          Write-Output '::error::retry must be a non-negative integer'
+          exit 1
+        }
+        if ($env:STDIN -notin @('true', 'false')) {
+          Write-Output '::error::stdin must be true or false'
+          exit 1
+        }
+        $scenarioArgs = @(
+          $env:SCENARIOS -split "`r?`n" |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+        )
+        if ($scenarioArgs.Count -eq 0) {
+          Write-Output '::error::scenarios must contain at least one path or pattern'
+          exit 1
+        }
+
+        $temporaryDirectory = Join-Path $env:RUNNER_TEMP ("run-leia.{0}" -f [guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path $temporaryDirectory | Out-Null
+        "temporary-directory=$temporaryDirectory" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+        $leiaArgs = @($scenarioArgs) + @('--shell', 'pwsh', '--retry', $env:RETRY)
+        if ($env:STDIN -eq 'true') {
+          $leiaArgs += '--stdin'
+        }
+        if (-not [string]::IsNullOrWhiteSpace($env:CLEANUP_HEADER)) {
+          $leiaArgs += @('--cleanup-header', $env:CLEANUP_HEADER)
+        }
+
+        $env:TMPDIR = $temporaryDirectory
+        $env:TMP = $temporaryDirectory
+        $env:TEMP = $temporaryDirectory
+        $invocationError = $null
+        try {
+          & bun run leia @leiaArgs
+          $leiaStatus = $LASTEXITCODE
+        }
+        catch {
+          $invocationError = $_
+          $leiaStatus = if ($LASTEXITCODE) { $LASTEXITCODE } else { 1 }
+        }
+        "exit-code=$leiaStatus" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+        $cleanupStatus = 0
+        try {
+          Remove-Item -LiteralPath $temporaryDirectory -Recurse -Force
+          if (Test-Path -LiteralPath $temporaryDirectory) {
+            $cleanupStatus = 1
+          }
+        }
+        catch {
+          $cleanupStatus = 1
+          Write-Output "::error::Could not remove Leia temporary directory: $temporaryDirectory"
+          Write-Error $_ -ErrorAction Continue
+        }
+
+        if ($leiaStatus -ne 0) {
+          Write-Output "::error::Leia failed with exit code $leiaStatus"
+          if ($null -ne $invocationError) {
+            Write-Error $invocationError -ErrorAction Continue
+          }
+          exit $leiaStatus
+        }
+        exit $cleanupStatus
