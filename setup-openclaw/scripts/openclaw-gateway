@@ -86,6 +86,13 @@ verify_context
 pid_path="$gateway_state_dir/gateway.pid"
 log_path="$gateway_state_dir/gateway.log"
 call_log_path="$gateway_state_dir/gateway-call.log"
+if ! gateway_port="$(run_openclaw config get gateway.port 2>/dev/null)"; then
+  error 'OpenClaw gateway port is unavailable'
+fi
+if [[ ! "$gateway_port" =~ ^[1-9][0-9]*$ ]] || ((gateway_port > 65535)); then
+  error "OpenClaw gateway port is invalid: $gateway_port"
+fi
+gateway_health_url="http://127.0.0.1:$gateway_port/health"
 
 wait_for_gateway() {
   local wait_timeout="$1"
@@ -100,7 +107,7 @@ wait_for_gateway() {
     return 1
   fi
   debug "waiting for gateway pid=$gateway_pid timeout=$wait_timeout"
-  until run_openclaw gateway call health --json --timeout 3000 > /dev/null 2> "$call_log_path"; do
+  until node "$command_dir/lib/probe-health.mjs" "$gateway_health_url" > /dev/null 2> "$call_log_path"; do
     if ! gateway_is_running; then
       error_message 'gateway exited before becoming ready'
       return 1
@@ -178,7 +185,10 @@ start_gateway() {
       OPENCLAW_CONFIG_PATH="$openclaw_config_path" \
       OPENCLAW_LOG_LEVEL="$OPENCLAW_LOG_LEVEL" \
       OPENCLAW_STATE_DIR="$openclaw_state_dir" \
-      openclaw --profile "$profile" gateway run --bind loopback --auth none >> "$log_path" 2>&1 < /dev/null
+      openclaw --profile "$profile" gateway run \
+        --bind loopback \
+        --auth none \
+        --port "$gateway_port" >> "$log_path" 2>&1 < /dev/null
   ) &
   gateway_pid="$!"
   printf '%s\n' "$gateway_pid" > "$pid_path"
