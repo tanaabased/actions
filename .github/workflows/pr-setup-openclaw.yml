@@ -77,6 +77,9 @@ jobs:
         run: |
           set -euo pipefail
 
+          test "$OPENCLAW_PROFILE" = "$OPENCLAW_TEST_PROFILE"
+          test "$OPENCLAW_CONFIG_PATH" = "$OPENCLAW_TEST_STATE_DIR/openclaw/openclaw.json"
+          test "$OPENCLAW_STATE_DIR" = "$OPENCLAW_TEST_STATE_DIR/openclaw"
           openclaw-gateway wait \
             --profile "$OPENCLAW_TEST_PROFILE" \
             --workspace "$OPENCLAW_TEST_WORKSPACE" \

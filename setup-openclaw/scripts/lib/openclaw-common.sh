@@ -88,6 +88,11 @@ configure_context() {
 
 write_context() {
   printf 'profile=%s\nworkspace=%s\n' "$profile" "$workspace" > "$context_path"
+  {
+    printf 'OPENCLAW_PROFILE=%s\n' "$profile"
+    printf 'OPENCLAW_CONFIG_PATH=%s\n' "$openclaw_config_path"
+    printf 'OPENCLAW_STATE_DIR=%s\n' "$openclaw_state_dir"
+  } >> "$GITHUB_ENV"
 }
 
 verify_context() {

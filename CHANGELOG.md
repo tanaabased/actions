@@ -1,11 +1,12 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
-- Added pinned Codex plugin validation and explicit GitHub Release archive publication actions. [#5](https://github.com/tanaabased/actions/issues/5)
-- Added a cross-platform Leia runner with explicit retries, shell, standard-input, and temporary-directory handling. [#9](https://github.com/tanaabased/actions/issues/9)
 - Added a ClawHub publisher for tested code-plugin tarballs with source metadata, channels, and bounded waits. [#4](https://github.com/tanaabased/actions/issues/4)
-- Standardized the catalog on root-level composite actions with explicit non-mutating test modes and one pull-request workflow per action.
+- Added a cross-platform Leia runner with explicit retries, shell, standard-input, and temporary-directory handling. [#9](https://github.com/tanaabased/actions/issues/9)
+- Added Agent System setup from exact releases or source checkouts in isolated OpenClaw profiles. [#20](https://github.com/tanaabased/actions/issues/20)
 - Added an npm packing action that exposes the exact tarball and package metadata.
+- Added pinned Codex plugin validation and explicit GitHub Release archive publication actions. [#5](https://github.com/tanaabased/actions/issues/5)
 - Added shared release preparation and repository publication actions.
 - Added the initial action catalog and repository structure.
 - Replaced directory-based npm publication with tested-tarball publication,
   trusted-publishing support, explicit channels, and immutable-version checks.
+- Standardized the catalog on root-level composite actions with explicit non-mutating test modes and one pull-request workflow per action.

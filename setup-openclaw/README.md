@@ -162,8 +162,12 @@ openclaw-setup --profile <name> --workspace <path> --state-dir <path> [--debug <
 
 Creates the workspace and state directory when needed, performs unattended
 local onboarding with provider authentication skipped, validates the generated
-configuration, and records the isolated context for later helpers. It requires
-GitHub Actions and rejects the default profile and root paths.
+configuration, and records the isolated context for later helpers. After
+successful setup it exports `OPENCLAW_PROFILE`, `OPENCLAW_CONFIG_PATH`, and
+`OPENCLAW_STATE_DIR` through `GITHUB_ENV`, allowing later public actions and
+commands to use the same profile without reading this action's private helper
+state. It requires GitHub Actions and rejects the default profile and root
+paths.
 
 #### `openclaw-gateway`
 
