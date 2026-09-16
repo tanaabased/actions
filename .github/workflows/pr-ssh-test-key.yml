@@ -19,11 +19,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+      - name: Verify debug contract
+        run: bash scripts/check-debug-contract.sh ssh-test-key
       - name: Generate SSH test key
         id: key
         uses: ./ssh-test-key
         with:
           test-mode: true
+          debug: true
           destination: ${{ runner.temp }}/ssh-test-key/id_ed25519
           comment: tanaab-ssh-test-key@example.test
       - name: Verify generated key pair

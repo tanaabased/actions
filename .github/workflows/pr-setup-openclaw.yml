@@ -22,6 +22,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+      - name: Verify debug contract
+        run: bash scripts/check-debug-contract.sh setup-openclaw
       - name: Install OpenClaw
         id: openclaw
         uses: ./setup-openclaw

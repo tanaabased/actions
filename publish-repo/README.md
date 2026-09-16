@@ -36,6 +36,7 @@ explicitly.
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `test-mode` | No | `false` | Prepare locally without committing, pushing, or requiring publication credentials. |
+| `debug` | No | `auto` | Action diagnostics: `auto`, `true`, or `false`. |
 | `version` | No | Release tag | Semver-valid exact tag and project version. |
 | `release-date` | No | Release publication timestamp | Date or timestamp formatted as `Month D, YYYY` for the changelog. |
 | `release-url` | No | Release URL | Link recorded in the changelog. |
@@ -45,6 +46,11 @@ explicitly.
 | `sync-branch` | No | Release target or current branch | Branch that receives the release commit. |
 | `sync-tags` | No | — | Additional moving tags, such as `v1`, forced to the release commit. |
 | `sync-token` | No | `${{ github.token }}` | Token authorized to create the verified commit and push tags. |
+
+Set `debug: true` for extra action detail, or use GitHub's **Enable debug
+logging** rerun option with `auto`. Explicit `true` or `false` overrides runner
+debug. The upstream preparation action has no debug input, and caller-supplied
+`commands` are never rewritten.
 
 The local synchronization identity is fixed to
 `tanaabot <tanaabot@tanaab.dev>` and verified commit mode. GitHub attributes

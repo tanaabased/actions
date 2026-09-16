@@ -24,8 +24,13 @@ Supported runner: Linux (`ubuntu-24.04`).
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `test-mode` | No | `false` | Exercise the action without external mutation or publication credentials. |
+| `debug` | No | `auto` | Action and npm verbosity: `auto`, `true`, or `false`. |
 | `package-directory` | No | `.` | Directory containing `package.json`, relative to the workspace or absolute. |
 | `node-version` | No | `24` | Node.js version used to run `npm pack`. |
+
+Set `debug: true` for verbose npm and action diagnostics, or use GitHub's
+**Enable debug logging** rerun option with `auto`. Explicit `true` or `false`
+overrides runner debug. Useful failure output remains enabled in every mode.
 
 ## Outputs
 

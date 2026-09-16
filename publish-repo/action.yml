@@ -6,6 +6,10 @@ inputs:
     description: Exercise the action without mutating external state or requiring publication credentials.
     required: false
     default: 'false'
+  debug:
+    description: Action diagnostics; auto follows RUNNER_DEBUG=1.
+    required: false
+    default: auto
   version:
     description: Semver-valid release version.
     required: false
@@ -49,6 +53,16 @@ outputs:
 runs:
   using: composite
   steps:
+    - id: debug
+      name: Resolve debug mode
+      shell: bash
+      env:
+        DEBUG_INPUT: ${{ inputs.debug }}
+      run: |
+        effective_debug="$(bash "$GITHUB_ACTION_PATH/../scripts/resolve-debug.sh" "$DEBUG_INPUT")"
+        echo "enabled=$effective_debug" >> "$GITHUB_OUTPUT"
+        [[ "$effective_debug" != 'true' ]] || echo 'Diagnostics enabled for repository publication; the upstream preparation action has no debug input.'
+
     - name: Validate test mode
       shell: bash
       env:

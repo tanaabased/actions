@@ -38,11 +38,17 @@ action with the same exit code after removing its temporary directory.
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `test-mode` | No | `false` | Run the normal local behavior without changing the contract. |
+| `debug` | No | `auto` | Action diagnostics: `auto`, `true`, or `false`. |
 | `scenarios` | Yes | — | Newline-delimited scenario paths or glob patterns, relative to the caller's workspace unless absolute. |
 | `shell` | Yes | — | Scenario shell: `bash` or `pwsh`. |
 | `retry` | No | `0` | Non-negative number of retries for each failed test. |
 | `stdin` | No | `true` | Whether Leia attaches standard input to scenario commands. |
 | `cleanup-header` | No | — | Optional comma-separated H2 prefixes Leia treats as cleanup sections. |
+
+Set `debug: true` for extra action detail, or use GitHub's **Enable debug
+logging** rerun option with `auto`. Explicit `true` or `false` overrides runner
+debug. Leia exposes no supported verbosity control, so its invocation and retry
+behavior are unchanged.
 
 Blank lines in `scenarios` are ignored. Each nonblank line is passed to Leia as
 one argument, so glob patterns should remain quoted by YAML rather than expanded

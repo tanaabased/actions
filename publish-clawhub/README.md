@@ -36,6 +36,7 @@ The token's ClawHub actor must have publisher access to `owner`.
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `test-mode` | No | `false` | Exercise the action without authenticating or publishing. |
+| `debug` | No | `auto` | Action and npm verbosity: `auto`, `true`, or `false`. |
 | `tarball` | Yes | — | Code-plugin tarball, relative to the workspace or absolute. |
 | `owner` | Yes | — | ClawHub user or organization publisher handle. |
 | `clawhub-token` | Live publication | — | ClawHub API token; omit in test mode. |
@@ -45,6 +46,11 @@ The token's ClawHub actor must have publisher access to `owner`.
 | `wait-timeout` | No | `1800` | Maximum seconds to wait for definitive live publication. |
 | `node-version` | No | `24` | Node.js version used to install and run the CLI. |
 | `clawhub-version` | No | `0.23.3` | ClawHub CLI version installed for publication. |
+
+Set `debug: true` for verbose npm and action diagnostics, or use GitHub's
+**Enable debug logging** rerun option with `auto`. Explicit `true` or `false`
+overrides runner debug. ClawHub exposes no supported verbosity control, so its
+invocation is unchanged and bounded action context supplements its output.
 
 The package family is fixed to `code-plugin`.
 

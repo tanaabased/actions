@@ -6,6 +6,10 @@ inputs:
     description: Run the local fixture behavior without contacting an external system.
     required: false
     default: 'false'
+  debug:
+    description: Action diagnostics; auto follows RUNNER_DEBUG=1.
+    required: false
+    default: auto
   destination:
     description: Private-key destination. Omit it to create a key in an isolated temporary directory.
     required: false
@@ -26,6 +30,16 @@ outputs:
 runs:
   using: composite
   steps:
+    - id: debug
+      name: Resolve debug mode
+      shell: bash
+      env:
+        DEBUG_INPUT: ${{ inputs.debug }}
+      run: |
+        effective_debug="$(bash "$GITHUB_ACTION_PATH/../scripts/resolve-debug.sh" "$DEBUG_INPUT")"
+        echo "enabled=$effective_debug" >> "$GITHUB_OUTPUT"
+        [[ "$effective_debug" != 'true' ]] || echo 'Diagnostics enabled for SSH test-key generation.'
+
     - id: generate
       name: Generate Ed25519 key pair
       shell: bash
@@ -33,6 +47,7 @@ runs:
         COMMENT: ${{ inputs.comment }}
         DESTINATION: ${{ inputs.destination }}
         TEST_MODE: ${{ inputs.test-mode }}
+        ACTION_DEBUG: ${{ steps.debug.outputs.enabled }}
       run: |
         set -euo pipefail
 
@@ -72,3 +87,6 @@ runs:
 
         echo "private-key-path=$key_path" >> "$GITHUB_OUTPUT"
         echo "public-key-path=$public_key_path" >> "$GITHUB_OUTPUT"
+        if [[ "$ACTION_DEBUG" == 'true' ]]; then
+          echo "Generated $(ssh-keygen -lf "$public_key_path" | awk '{print $1, $2, $4}') at $public_key_path"
+        fi

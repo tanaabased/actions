@@ -28,6 +28,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+      - name: Verify debug contract
+        run: bash scripts/check-debug-contract.sh publish-npm
       - name: Set fixture version
         working-directory: publish-npm/test/fixture
         run: npm pkg set "version=$PACKAGE_VERSION"
@@ -36,12 +38,14 @@ jobs:
         uses: ./npm-pack
         with:
           test-mode: true
+          debug: true
           package-directory: publish-npm/test/fixture
       - name: Validate npm publication
         id: publish
         uses: ./publish-npm
         with:
           test-mode: true
+          debug: true
           tarball: ${{ steps.pack.outputs.tarball-path }}
           update-prerelease-tag-on-stable: true
       - name: Verify publication metadata

@@ -29,6 +29,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+      - name: Verify debug contract
+        shell: bash
+        run: bash scripts/check-debug-contract.sh run-leia
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
       - name: Install Leia
@@ -42,6 +45,7 @@ jobs:
           RUN_LEIA_EVIDENCE: ${{ runner.temp }}/run-leia-success.txt
         with:
           test-mode: true
+          debug: true
           scenarios: ${{ matrix.success-scenario }}
           shell: ${{ matrix.shell }}
           retry: 0

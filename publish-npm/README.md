@@ -39,6 +39,7 @@ steps:
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `test-mode` | No | `false` | Exercise the action without registry mutation or publication credentials. |
+| `debug` | No | `auto` | Action and npm verbosity: `auto`, `true`, or `false`. |
 | `tarball` | Yes | — | Tested npm tarball, relative to the workspace or absolute. |
 | `registry-url` | No | `https://registry.npmjs.org` | npm-compatible registry URL. |
 | `registry-token` | No | — | Token for registry reads and publication; omit for npm trusted publishing. |
@@ -49,6 +50,11 @@ steps:
 | `access` | No | `public` | Access passed to `npm publish`; leave empty for registry defaults. |
 | `node-version` | No | `24` | Node.js version used for publication. |
 | `npm-version` | No | `^11.5.1` | npm version range installed for publication. |
+
+Set `debug: true` for verbose npm and action diagnostics, or use GitHub's
+**Enable debug logging** rerun option with `auto`. Explicit `true` or `false`
+overrides runner debug. Registry and channel tokens remain environment-only and
+are never printed by the action.
 
 ## Outputs
 

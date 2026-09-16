@@ -26,8 +26,13 @@ Omit `destination` to create the pair in an isolated directory below
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `test-mode` | No | `false` | Must be `true` or `false`; both values create a real local pair. |
+| `debug` | No | `auto` | Safe action diagnostics: `auto`, `true`, or `false`. |
 | `destination` | No | — | Private-key destination; the public key is written at `<destination>.pub`. |
 | `comment` | No | `ssh-test-key` | Comment recorded in the public key. |
+
+Set `debug: true` for the generated public-key fingerprint and path, or use
+GitHub's **Enable debug logging** rerun option with `auto`. Explicit `true` or
+`false` overrides runner debug. Private-key contents are never printed.
 
 ## Outputs
 

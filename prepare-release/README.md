@@ -31,12 +31,18 @@ explicitly.
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `test-mode` | No | `false` | Exercise the action without external mutation or publication credentials. |
+| `debug` | No | `auto` | Action diagnostics: `auto`, `true`, or `false`. |
 | `version` | No | Release tag | Semver-valid release version. |
 | `release-date` | No | Release publication timestamp | Date or timestamp formatted as `Month D, YYYY` for the changelog. |
 | `release-url` | No | Release URL | Link recorded in the changelog. |
 | `commands` | No | — | Project-specific preparation commands. |
 | `root` | No | `${{ github.workspace }}` | Root containing the release source and `package.json`. |
 | `bun-version` | No | `auto` | Bun version, or automatic project resolution. |
+
+Set `debug: true` for extra action detail, or use GitHub's **Enable debug
+logging** rerun option with `auto`. Explicit `true` or `false` overrides runner
+debug. The upstream preparation action has no debug input, and caller-supplied
+`commands` are never rewritten.
 
 ## Outputs
 

@@ -36,6 +36,7 @@ stamping.
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `test-mode` | No | `false` | Prepare the real archive without uploading it or requiring credentials. |
+| `debug` | No | `auto` | Action and Bun verbosity: `auto`, `true`, or `false`. |
 | `plugin-directory` | No | `.` | Plugin root to archive, relative to the workspace or absolute. |
 | `archive-name` | Yes | — | Archive filename ending in `.tar.gz`, using letters, digits, dots, underscores, or hyphens. |
 | `dependency-policy` | No | `include-production` | `include-production` or `exclude-node-modules`. |
@@ -43,6 +44,10 @@ stamping.
 | `release-tag` | Yes | — | Existing GitHub Release tag that receives the archive. |
 | `repository` | No | `${{ github.repository }}` | GitHub repository containing the release. |
 | `github-token` | Live publication | — | Token with `contents: write`; omit in test mode. |
+
+Set `debug: true` for verbose Bun and action diagnostics, or use GitHub's
+**Enable debug logging** rerun option with `auto`. Explicit `true` or `false`
+overrides runner debug. Credentials are never included in diagnostic output.
 
 `include-production` removes the plugin root's existing `node_modules` and runs
 `bun install --production --frozen-lockfile --ignore-scripts` before packing.

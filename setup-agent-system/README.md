@@ -48,11 +48,16 @@ Agent System credentials; those decisions remain with the caller.
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `test-mode` | No | `false` | Must be `true` or `false`; both values perform the same real isolated local installation. |
+| `debug` | No | `auto` | Action and owned tool verbosity: `auto`, `true`, or `false`. |
 | `version` | One source | — | Exact published `@tanaab/openclaw-agent-system` semantic version. |
 | `source-directory` | One source | — | Absolute or workspace-relative Agent System source checkout to build and pack. |
 | `profile` | Context tuple | exported context | Isolated non-default OpenClaw profile. |
 | `config-path` | Context tuple | exported context | Absolute path to the existing OpenClaw configuration file. |
 | `state-directory` | Context tuple | exported context | Absolute path to the existing OpenClaw state directory. |
+
+Set `debug: true` for verbose package preparation and OpenClaw diagnostics, or
+use GitHub's **Enable debug logging** rerun option with `auto`. Explicit `true`
+or `false` overrides runner debug, including for owned OpenClaw invocations.
 
 Exactly one of `version` or `source-directory` is required. Versions must be
 exact; ranges, tags such as `latest`, URLs, and missing releases fail instead

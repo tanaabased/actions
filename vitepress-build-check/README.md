@@ -30,8 +30,13 @@ job before invoking this action.
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `test-mode` | No | `false` | Must be `true` or `false`; both values run the same local commands. |
+| `debug` | No | `auto` | Action diagnostics: `auto`, `true`, or `false`. |
 | `prepare-command` | No | — | Shell command to run before the build. |
 | `build-command` | Yes | — | Shell command that builds the VitePress site. |
+
+Set `debug: true` for extra action phase detail, or use GitHub's **Enable debug
+logging** rerun option with `auto`. Explicit `true` or `false` overrides runner
+debug. Caller-supplied commands are never printed or modified.
 
 ## Examples
 
