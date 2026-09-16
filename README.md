@@ -8,18 +8,17 @@ strategy.
 
 | Surface | Purpose | Documentation |
 | --- | --- | --- |
+| `npm-pack` | Pack one npm package and expose the exact artifact and metadata. | [actions/npm-pack](actions/npm-pack/README.md) |
 | `prepare-release` | Prepare release files without pushing Git changes. | [actions/prepare-release](actions/prepare-release/README.md) |
-| `publish-npm` | Publish one npm package from a checked-out repository. | [actions/publish-npm](actions/publish-npm/README.md) |
+| `publish-npm` | Publish one tested tarball with explicit registry channels. | [actions/publish-npm](actions/publish-npm/README.md) |
 | `publish-repo` | Synchronize prepared release changes and Git tags. | [actions/publish-repo](actions/publish-repo/README.md) |
 
 ## Layout
 
 - `actions/<name>/` is the catalog entry for every public surface. Its README
-  documents the contract. Composite actions contain `action.yml`; reusable
-  workflows contain `workflow.yml`, a navigation symlink to their canonical
-  workflow file.
-- `.github/workflows/<workflow>.yml` contains a reusable workflow invoked with
-  `uses: tanaabased/actions/.github/workflows/<workflow>.yml@<ref>`.
+  documents the contract and `action.yml` contains the composite action.
+- `.github/workflows/` contains this repository's release and verification
+  workflows.
 - `examples/` contains complete consumer workflows. It is not executable
   production configuration; copy the portions that fit the caller.
 
@@ -39,5 +38,6 @@ jobs:
           sync-token: ${{ secrets.RELEASE_SYNC_TOKEN }}
 ```
 
-See [examples/publish.yml](examples/publish.yml) for independent npm and
-repository publishing jobs. Neither waits for a ceremonial finalizer.
+See [examples/publish.yml](examples/publish.yml) for a pack-once npm publication
+and an independent repository publication. Neither waits for a ceremonial
+finalizer.

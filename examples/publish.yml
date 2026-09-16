@@ -10,11 +10,32 @@ on:
 
 jobs:
   publish-npm:
-    uses: tanaabased/actions/.github/workflows/publish-npm.yml@v1
-    with:
-      package-directory: .
-    secrets:
-      npm-token: ${{ secrets.NPM_TOKEN }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Prepare release files
+        uses: tanaabased/actions/actions/prepare-release@v1
+        with:
+          commands: bun install --frozen-lockfile && bun run build && bun run format
+          version: ${{ inputs.tag }}
+      - name: Pack package
+        id: pack
+        uses: tanaabased/actions/actions/npm-pack@v1
+      - name: Test packed artifact
+        env:
+          TARBALL: ${{ steps.pack.outputs.tarball-path }}
+        run: |
+          consumer="$(mktemp -d)"
+          npm install --prefix "$consumer" --ignore-scripts --no-audit --no-fund "$TARBALL"
+      - name: Publish tested tarball
+        uses: tanaabased/actions/actions/publish-npm@v1
+        with:
+          tarball: ${{ steps.pack.outputs.tarball-path }}
+          update-prerelease-tag-on-stable: true
+          channel-token: ${{ secrets.NPM_CHANNEL_TOKEN }}
 
   publish-repo:
     runs-on: ubuntu-24.04
