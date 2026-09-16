@@ -63,7 +63,7 @@ jobs:
 
           edge=
           for attempt in {1..10}; do
-            edge="$(npm view "$PACKAGE_NAME" dist-tags.edge --json --registry "$REGISTRY_URL" 2>/dev/null || true)"
+            edge="$(npm view "$PACKAGE_NAME@edge" version --json --registry "$REGISTRY_URL" 2>/dev/null || true)"
             if [[ "$edge" = "\"$PRERELEASE_VERSION\"" ]]; then
               break
             fi
@@ -105,25 +105,26 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
         run: |
-          tags=
-          for attempt in {1..10}; do
-            tags="$(npm view "$PACKAGE_NAME" dist-tags --json --registry "$REGISTRY_URL" 2>/dev/null || true)"
-            if TAGS_JSON="$tags" node -e '
-              try {
-                const tags = JSON.parse(process.env.TAGS_JSON);
-                process.exit(tags.latest === process.env.STABLE_VERSION && tags.edge === process.env.STABLE_VERSION ? 0 : 1);
-              } catch {
-                process.exit(1);
-              }
-            '; then
-              break
-            fi
-            if [[ $attempt -eq 10 ]]; then
-              echo "::error::Expected latest and edge to resolve to $STABLE_VERSION; received ${tags:-<empty>}."
-              exit 1
-            fi
-            sleep "$attempt"
-          done
+          wait_for_version() {
+            local tag="$1"
+            local expected="$2"
+            local actual=
+
+            for attempt in {1..10}; do
+              actual="$(npm view "$PACKAGE_NAME@$tag" version --json --registry "$REGISTRY_URL" 2>/dev/null || true)"
+              if [[ "$actual" = "\"$expected\"" ]]; then
+                return
+              fi
+              if [[ $attempt -eq 10 ]]; then
+                echo "::error::Expected $tag=$expected after publication; received ${actual:-<empty>}."
+                return 1
+              fi
+              sleep "$attempt"
+            done
+          }
+
+          wait_for_version latest "$STABLE_VERSION"
+          wait_for_version edge "$STABLE_VERSION"
 
           for version in "$PRERELEASE_VERSION" "$STABLE_VERSION"; do
             consumer="$(mktemp -d)"
