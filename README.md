@@ -6,10 +6,11 @@ strategy.
 
 ## Catalog
 
-| Reusable workflow | Purpose | Documentation |
+| Surface | Purpose | Documentation |
 | --- | --- | --- |
+| `prepare-release` | Prepare release files without pushing Git changes. | [actions/prepare-release](actions/prepare-release/README.md) |
 | `publish-npm` | Publish one npm package from a checked-out repository. | [actions/publish-npm](actions/publish-npm/README.md) |
-| `publish-repo` | Create a GitHub release for an existing tag. | [actions/publish-repo](actions/publish-repo/README.md) |
+| `publish-repo` | Synchronize prepared release changes and Git tags. | [actions/publish-repo](actions/publish-repo/README.md) |
 
 ## Layout
 
@@ -22,15 +23,20 @@ strategy.
 - `examples/` contains complete consumer workflows. It is not executable
   production configuration; copy the portions that fit the caller.
 
-## Use a reusable workflow
+## Use the catalog
 
 ```yaml
 jobs:
   publish-repo:
-    uses: tanaabased/actions/.github/workflows/publish-repo.yml@v1
-    with:
-      tag: v1.2.3
-    secrets: inherit
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: tanaabased/actions/actions/publish-repo@v1
+        with:
+          sync-tags: v1
+          sync-token: ${{ secrets.RELEASE_SYNC_TOKEN }}
 ```
 
 See [examples/publish.yml](examples/publish.yml) for independent npm and

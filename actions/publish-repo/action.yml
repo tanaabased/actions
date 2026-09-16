@@ -1,0 +1,90 @@
+name: Publish repository
+description: Prepare and synchronize release changes and Git tags.
+
+inputs:
+  version:
+    description: Semver-valid release version.
+    required: false
+    default: ${{ github.event.release.tag_name }}
+  release-date:
+    description: Release date or timestamp used in CHANGELOG.md.
+    required: false
+    default: ${{ github.event.release.published_at }}
+  release-url:
+    description: Release URL used in CHANGELOG.md.
+    required: false
+    default: ${{ github.event.release.html_url }}
+  commands:
+    description: Commands that prepare project-specific release files.
+    required: false
+  root:
+    description: Root of the repository being published.
+    required: false
+    default: ${{ github.workspace }}
+  bun-version:
+    description: Bun version to install, or auto to resolve it from the project.
+    required: false
+    default: auto
+  sync-branch:
+    description: Branch that receives the prepared release commit.
+    required: false
+    default: ${{ github.event.release.target_commitish || github.event.pull_request.head.ref || github.ref_name }}
+  sync-tags:
+    description: Additional moving tags to force to the prepared release commit.
+    required: false
+  sync-token:
+    description: Token authorized to create the verified commit and push tags.
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  resolved-version:
+    description: Semver-valid version resolved for this release.
+    value: ${{ steps.publish.outputs.resolved-version }}
+
+runs:
+  using: composite
+  steps:
+    - id: release-date
+      name: Format release date
+      shell: bash
+      env:
+        RELEASE_DATE: ${{ inputs.release-date }}
+      run: |
+        node <<'NODE' >> "$GITHUB_OUTPUT"
+        const value = process.env.RELEASE_DATE;
+        const date = new Date(value);
+        if (!value || Number.isNaN(date.getTime())) {
+          throw new Error('release-date must be a valid date or timestamp');
+        }
+        const formatted = new Intl.DateTimeFormat('en-US', {
+          day: 'numeric',
+          month: 'long',
+          timeZone: 'UTC',
+          year: 'numeric',
+        }).format(date);
+        process.stdout.write(`value=${formatted}\n`);
+        NODE
+
+    - id: publish
+      name: Prepare and synchronize release
+      uses: tanaabased/prepare-release-action@v1
+      with:
+        bun-version: ${{ inputs.bun-version }}
+        commands: ${{ inputs.commands }}
+        root: ${{ inputs.root }}
+        sync: true
+        sync-branch: ${{ inputs.sync-branch }}
+        sync-email: tanaabot@tanaab.dev
+        sync-tags: ${{ inputs.sync-tags }}
+        sync-token: ${{ inputs.sync-token }}
+        sync-username: tanaabot
+        sync-verified: true
+        update-files: CHANGELOG.md
+        update-files-header: |
+          ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
+        update-files-meta: |
+          UNRELEASED_DATE=${{ steps.release-date.outputs.value }}
+          UNRELEASED_LINK=${{ inputs.release-url }}
+          UNRELEASED_VERSION=${{ inputs.version }}
+        version: ${{ inputs.version }}

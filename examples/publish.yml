@@ -17,8 +17,15 @@ jobs:
       npm-token: ${{ secrets.NPM_TOKEN }}
 
   publish-repo:
-    uses: tanaabased/actions/.github/workflows/publish-repo.yml@v1
-    with:
-      tag: ${{ inputs.tag }}
-    secrets:
-      token: ${{ secrets.GITHUB_TOKEN }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: tanaabased/actions/actions/publish-repo@v1
+        with:
+          sync-tags: v1
+          sync-token: ${{ secrets.RELEASE_SYNC_TOKEN }}
+          version: ${{ inputs.tag }}

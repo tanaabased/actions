@@ -1,51 +1,68 @@
 # `publish-repo`
 
-Creates a GitHub release for an existing tag in the caller repository. If the
-release already exists, it returns that release instead of manufacturing a
-second ceremony around the same tag.
-
-The canonical reusable workflow is [workflow.yml](workflow.yml).
+Prepares release files, creates a verified commit on the target branch, and
+forces the exact release tag plus any requested moving tags to that commit. It
+is the Git publication peer of package and archive publishers; it does not
+create a GitHub Release.
 
 ## Usage
 
 ```yaml
 jobs:
   publish-repo:
-    uses: tanaabased/actions/.github/workflows/publish-repo.yml@v1
-    with:
-      tag: v1.2.3
-      prerelease: false
-    secrets:
-      token: ${{ secrets.GITHUB_TOKEN }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: tanaabased/actions/actions/publish-repo@v1
+        with:
+          commands: bun run build
+          sync-tags: v1
+          sync-token: ${{ secrets.RELEASE_SYNC_TOKEN }}
 ```
+
+Run this in an independent job so a package publisher can fail or be retried
+without coupling its registry result to Git synchronization. Outside a
+`release` event, provide `version`, `release-date`, and `release-url`
+explicitly.
 
 ## Inputs
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
-| `tag` | Yes | — | Existing Git tag to publish. |
-| `prerelease` | No | `false` | Mark the created release as a prerelease. |
+| `version` | No | Release tag | Semver-valid exact tag and project version. |
+| `release-date` | No | Release publication timestamp | Date or timestamp formatted as `Month D, YYYY` for the changelog. |
+| `release-url` | No | Release URL | Link recorded in the changelog. |
+| `commands` | No | — | Project-specific preparation commands. |
+| `root` | No | `${{ github.workspace }}` | Repository root containing the release source and `package.json`. |
+| `bun-version` | No | `auto` | Bun version, or automatic project resolution. |
+| `sync-branch` | No | Release target or current branch | Branch that receives the release commit. |
+| `sync-tags` | No | — | Additional moving tags, such as `v1`, forced to the release commit. |
+| `sync-token` | No | `${{ github.token }}` | Token authorized to create the verified commit and push tags. |
 
-## Secrets
-
-| Secret | Required | Description |
-| --- | --- | --- |
-| `token` | Yes | Token that may create releases in the caller repository. |
+The local synchronization identity is fixed to
+`tanaabot <tanaabot@tanaab.dev>` and verified commit mode. GitHub attributes
+the verified commit to the `sync-token` account, so use the established bot
+token to publish as `tanaabot` and to satisfy repository rules.
 
 ## Outputs
 
 | Output | Description |
 | --- | --- |
-| `release-url` | URL of the created or already-existing GitHub release. |
+| `resolved-version` | Semver-valid version resolved by the upstream preparation action. |
 
-## Permissions
+## File and retry behavior
 
-The workflow declares `contents: write`. A caller using `GITHUB_TOKEN` must
-also allow that permission at the calling workflow or job; a more restricted
-token will fail, correctly and without sentiment.
+`package.json` is required at `root` and its version is updated. An existing
+`CHANGELOG.md` has its current unreleased tokens resolved and receives a fresh
+unreleased header; a missing changelog is left missing. `commands` run from
+`root` and may use `PREPARE_RELEASE_VERSION`.
 
-## Retry behavior
-
-The workflow first looks up a release for `tag`. A re-run after a successful
-creation returns the existing URL. Failures before a release exists are not
-retried internally; correct the cause and re-run the job.
+A retry runs preparation again, creates a commit when files change, and forces
+the exact and moving tags to the resulting commit. This makes repository
+publication independently retryable, not unconditionally idempotent. In
+particular, already-prepared changelog content can acquire a duplicate release
+header.
