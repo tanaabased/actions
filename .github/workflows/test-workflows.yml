@@ -1,4 +1,4 @@
-name: Action tests
+name: Workflow tests
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   prepare-release:
-    name: actions/prepare-release
+    name: prepare-release
     runs-on: ubuntu-24.04
     env:
       RELEASE_URL: https://example.invalid/releases/test
@@ -41,7 +41,7 @@ jobs:
           ! git ls-remote --exit-code origin "refs/tags/$RELEASE_VERSION"
 
   npm-pack:
-    name: actions/npm-pack
+    name: npm-pack
     runs-on: ubuntu-24.04
     env:
       PACKAGE_NAME: '@tanaabased/actions-npm-fixture'

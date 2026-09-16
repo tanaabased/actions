@@ -1,28 +1,35 @@
 # Repository guidance
 
-## Action validation
+## Workflow validation
 
-- Treat this repository's products as composite actions. Do not introduce
-  `workflow_call`, `workflow_dispatch`, or push-triggered workflows solely to
-  test them.
-- Run static workflow validation and non-mutating action tests on pull requests.
-- Exercise pull-request-safe actions through `uses: ./actions/<name>` with
-  explicit inputs, then assert outputs and observable postconditions.
+- Treat composite actions and reusable workflows as workflow products with
+  different invocation contracts. Do not introduce products, triggers, or
+  events solely to manufacture test coverage.
+- Run static workflow validation and non-mutating workflow tests on pull
+  requests.
+- Exercise pull-request-safe composite actions through
+  `uses: ./actions/<name>` with explicit inputs. Exercise pull-request-safe
+  reusable workflows from caller jobs using their local workflow paths. Assert
+  outputs and observable postconditions in either case.
 - Do not repeat tests across GitHub event types unless an event payload is part
-  of the action's public contract. Events are triggers, not test dimensions.
-- Verify actions whose defining behavior mutates a registry or repository only
-  when a real release lifecycle performs that mutation. Do not maintain
-  synthetic publication environments, test packages, branches, or tags.
-- Name action-test jobs after their action paths, such as `actions/npm-pack`.
-  Keep lint checks named after their tool.
+  of the product's public contract. Events are triggers, not test dimensions.
+- Verify workflow products whose defining behavior mutates a registry or
+  repository only when a real release lifecycle performs that mutation. Do not
+  maintain synthetic publication environments, test packages, branches, or
+  tags.
+- Name workflow-test jobs after the action directory basename or workflow
+  filename without its extension, such as `npm-pack` or `prepare-release`.
+  Qualify a name only when products collide. Keep lint checks named after their
+  tool.
 - Avoid conditionally skipped test jobs. Separate genuinely different gates,
   and remove workflows that exist only to manufacture event coverage.
-- When adding an action, classify it as pull-request-safe or externally
-  mutating and update the testing vectors below.
+- When adding a composite action or reusable workflow, classify it as
+  pull-request-safe or externally mutating and update the testing vectors
+  below.
 
 ### Testing vectors
 
-| Action | Pull request | Release lifecycle |
+| Product | Pull request | Release lifecycle |
 | --- | --- | --- |
 | `actions/prepare-release` | Prepare and inspect a local fixture without synchronizing Git | None |
 | `actions/npm-pack` | Pack, inspect, install, and exercise the exact tarball | None |
