@@ -11,10 +11,10 @@ Use [`npm-pack`](../npm-pack/README.md) to produce the artifact.
 ```yaml
 - name: Pack plugin
   id: pack
-  uses: tanaabased/actions/actions/npm-pack@v1
+  uses: tanaabased/actions/npm-pack@v1
 
 - name: Publish plugin to ClawHub
-  uses: tanaabased/actions/actions/publish-clawhub@v1
+  uses: tanaabased/actions/publish-clawhub@v1
   with:
     tarball: ${{ steps.pack.outputs.tarball-path }}
     owner: tanaab
@@ -29,35 +29,36 @@ uses the token only for `clawhub login`, stores the resulting CLI state in an
 isolated temporary configuration, and removes that configuration afterward.
 The token's ClawHub actor must have publisher access to `owner`.
 
-## Dry-run validation
+## Test behavior
 
 ```yaml
 - name: Validate ClawHub package
-  uses: tanaabased/actions/actions/publish-clawhub@v1
+  uses: tanaabased/actions/publish-clawhub@v1
   with:
+    test-mode: true
     tarball: ${{ steps.pack.outputs.tarball-path }}
     owner: tanaab
     tags: edge
     source-repo: ${{ github.repository }}
     source-commit: ${{ github.event.pull_request.head.sha }}
-    dry-run: true
 ```
 
-A dry run validates the supplied tarball and publication metadata without
-logging in or changing ClawHub. It does not prove token access, asynchronous
-security checks, final channel visibility, or timeout behavior.
+Test mode uses ClawHub's native dry-run path to validate the supplied tarball
+and publication metadata without logging in or changing ClawHub. It does not
+prove token access, asynchronous security checks, final channel visibility, or
+timeout behavior.
 
 ## Inputs
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
+| `test-mode` | No | `false` | Exercise the action without authenticating or publishing. |
 | `tarball` | Yes | — | Code-plugin tarball, relative to the workspace or absolute. |
 | `owner` | Yes | — | ClawHub user or organization publisher handle. |
-| `clawhub-token` | Live publication | — | ClawHub API token; omit for dry runs. |
+| `clawhub-token` | Live publication | — | ClawHub API token; omit in test mode. |
 | `tags` | No | `latest` | Comma-separated release channels. |
 | `source-repo` | No | `${{ github.repository }}` | Source repository recorded by ClawHub. |
 | `source-commit` | No | `${{ github.sha }}` | Source commit recorded by ClawHub. |
-| `dry-run` | No | `false` | Validate without authenticating or publishing. |
 | `wait-timeout` | No | `1800` | Maximum seconds to wait for definitive live publication. |
 | `node-version` | No | `24` | Node.js version used to install and run the CLI. |
 | `clawhub-version` | No | `0.23.3` | ClawHub CLI version installed for publication. |

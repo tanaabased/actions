@@ -17,13 +17,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Prepare release files
-        uses: tanaabased/actions/actions/prepare-release@v1
+        uses: tanaabased/actions/prepare-release@v1
         with:
           commands: bun install --frozen-lockfile && bun run build && bun run format
           version: ${{ inputs.tag }}
       - name: Pack package
         id: pack
-        uses: tanaabased/actions/actions/npm-pack@v1
+        uses: tanaabased/actions/npm-pack@v1
       - name: Test packed artifact
         env:
           TARBALL: ${{ steps.pack.outputs.tarball-path }}
@@ -31,7 +31,7 @@ jobs:
           consumer="$(mktemp -d)"
           npm install --prefix "$consumer" --ignore-scripts --no-audit --no-fund "$TARBALL"
       - name: Publish tested tarball
-        uses: tanaabased/actions/actions/publish-npm@v1
+        uses: tanaabased/actions/publish-npm@v1
         with:
           tarball: ${{ steps.pack.outputs.tarball-path }}
           update-prerelease-tag-on-stable: true
@@ -45,7 +45,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: tanaabased/actions/actions/publish-repo@v1
+      - uses: tanaabased/actions/publish-repo@v1
         with:
           sync-tags: v1
           sync-token: ${{ secrets.RELEASE_SYNC_TOKEN }}

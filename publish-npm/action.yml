@@ -2,6 +2,10 @@ name: Publish npm package
 description: Publish one tested npm tarball to an npm-compatible registry.
 
 inputs:
+  test-mode:
+    description: Exercise the action without mutating external state or requiring publication credentials.
+    required: false
+    default: 'false'
   tarball:
     description: Tested npm tarball to publish, relative to the workspace or absolute.
     required: true
@@ -42,13 +46,13 @@ inputs:
 
 outputs:
   tarball-path:
-    description: Absolute path to the published tarball.
+    description: Absolute path to the supplied tarball.
     value: ${{ steps.package.outputs.tarball-path }}
   package-name:
-    description: Published package name read from the tarball.
+    description: Package name read from the supplied tarball.
     value: ${{ steps.package.outputs.package-name }}
   package-version:
-    description: Published package version read from the tarball.
+    description: Package version read from the supplied tarball.
     value: ${{ steps.package.outputs.package-version }}
   channel:
     description: Distribution tag selected for the package version.
@@ -60,6 +64,16 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Validate test mode
+      shell: bash
+      env:
+        TEST_MODE: ${{ inputs.test-mode }}
+      run: |
+        if [[ "$TEST_MODE" != "true" && "$TEST_MODE" != "false" ]]; then
+          echo "::error::test-mode must be true or false"
+          exit 1
+        fi
+
     - name: Set up Node.js
       uses: actions/setup-node@v5
       with:
@@ -154,7 +168,7 @@ runs:
         echo "channel-config=$channel_config" >> "$GITHUB_OUTPUT"
 
     - name: Validate channel update authentication
-      if: ${{ inputs.update-prerelease-tag-on-stable == 'true' && steps.package.outputs.release-type == 'stable' }}
+      if: ${{ inputs.test-mode != 'true' && inputs.update-prerelease-tag-on-stable == 'true' && steps.package.outputs.release-type == 'stable' }}
       shell: bash
       env:
         CHANNEL_TOKEN: ${{ inputs.channel-token || inputs.registry-token }}
@@ -165,6 +179,7 @@ runs:
         fi
 
     - name: Check immutable package version
+      if: ${{ inputs.test-mode != 'true' }}
       shell: bash
       env:
         NODE_AUTH_TOKEN: ${{ inputs.registry-token }}
@@ -206,13 +221,14 @@ runs:
       run: |
         set -euo pipefail
 
-        publish_args=(publish "$TARBALL_PATH" --dry-run --ignore-scripts --tag "$CHANNEL" --registry "$REGISTRY_URL")
+        publish_args=(publish "$TARBALL_PATH" --dry-run --offline --ignore-scripts --tag "$CHANNEL" --registry "$REGISTRY_URL")
         if [[ -n "$ACCESS" ]]; then
           publish_args+=(--access "$ACCESS")
         fi
         npm "${publish_args[@]}"
 
     - name: Publish tarball
+      if: ${{ inputs.test-mode != 'true' }}
       shell: bash
       env:
         ACCESS: ${{ inputs.access }}
@@ -244,7 +260,7 @@ runs:
         fi
 
     - name: Update prerelease channel
-      if: ${{ inputs.update-prerelease-tag-on-stable == 'true' && steps.package.outputs.release-type == 'stable' }}
+      if: ${{ inputs.test-mode != 'true' && inputs.update-prerelease-tag-on-stable == 'true' && steps.package.outputs.release-type == 'stable' }}
       shell: bash
       env:
         NODE_AUTH_TOKEN: ${{ inputs.channel-token || inputs.registry-token }}

@@ -10,7 +10,7 @@ publishers.
 ```yaml
 - name: Prepare release
   id: prepare
-  uses: tanaabased/actions/actions/prepare-release@v1
+  uses: tanaabased/actions/prepare-release@v1
   with:
     commands: |
       bun run build
@@ -28,6 +28,7 @@ explicitly.
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
+| `test-mode` | No | `false` | Exercise the action without external mutation or publication credentials. |
 | `version` | No | Release tag | Semver-valid release version. |
 | `release-date` | No | Release publication timestamp | Date or timestamp formatted as `Month D, YYYY` for the changelog. |
 | `release-url` | No | Release URL | Link recorded in the changelog. |
@@ -52,3 +53,10 @@ Each invocation performs preparation again. In particular, a retry can add
 another changelog header if it starts from already-prepared files. Consumers
 should publish from the original release source and should not mistake
 `sync: false` for an unconditional no-op.
+
+## Test behavior
+
+Release preparation already fixes synchronization to `false`, so
+`test-mode: true` runs the normal action against a local fixture. Pull requests
+verify the resolved version, package metadata, changelog, project commands, and
+unchanged Git history.

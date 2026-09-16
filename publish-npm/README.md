@@ -17,8 +17,8 @@ permissions:
 steps:
   - uses: actions/checkout@v7
   - id: pack
-    uses: tanaabased/actions/actions/npm-pack@v1
-  - uses: tanaabased/actions/actions/publish-npm@v1
+    uses: tanaabased/actions/npm-pack@v1
+  - uses: tanaabased/actions/publish-npm@v1
     with:
       tarball: ${{ steps.pack.outputs.tarball-path }}
       update-prerelease-tag-on-stable: true
@@ -35,7 +35,7 @@ stable-to-`edge` update needs a separate granular token through
 ## Token-authenticated registry
 
 ```yaml
-- uses: tanaabased/actions/actions/publish-npm@v1
+- uses: tanaabased/actions/publish-npm@v1
   with:
     tarball: ${{ steps.pack.outputs.tarball-path }}
     registry-url: https://npm.pkg.github.com
@@ -50,6 +50,7 @@ an owner-scoped package name such as `@tanaabased/example`.
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
+| `test-mode` | No | `false` | Exercise the action without registry mutation or publication credentials. |
 | `tarball` | Yes | — | Tested npm tarball, relative to the workspace or absolute. |
 | `registry-url` | No | `https://registry.npmjs.org` | npm-compatible registry URL. |
 | `registry-token` | No | — | Token for registry reads and publication; omit for npm trusted publishing. |
@@ -65,7 +66,7 @@ an owner-scoped package name such as `@tanaabased/example`.
 
 | Output | Description |
 | --- | --- |
-| `tarball-path` | Absolute path to the published tarball. |
+| `tarball-path` | Absolute path to the supplied tarball. |
 | `package-name` | Package name read from the tarball. |
 | `package-version` | Package version read from the tarball. |
 | `channel` | Selected distribution tag. |
@@ -86,3 +87,12 @@ exists, but registry state remains the authority. A stable publication updates
 the prerelease tag only when `update-prerelease-tag-on-stable` is `true`; the
 action validates the required token before publishing so a missing tag
 credential cannot create a half-finished release.
+
+## Test behavior
+
+With `test-mode: true`, the action inspects the supplied tarball, selects its
+stable or prerelease channel, and runs npm's native publication dry run. It
+skips registry existence checks, live publication, and distribution-tag
+updates, and requires no registry or channel token. Pull requests exercise both
+stable and prerelease packages; only a real downstream release proves registry
+authentication, immutability checks, publication, and channel mutation.

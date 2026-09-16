@@ -2,6 +2,10 @@ name: Publish ClawHub package
 description: Publish one code-plugin tarball to ClawHub and wait for a definitive result.
 
 inputs:
+  test-mode:
+    description: Exercise the action without mutating external state or requiring publication credentials.
+    required: false
+    default: 'false'
   tarball:
     description: Code-plugin tarball to publish, relative to the workspace or absolute.
     required: true
@@ -9,7 +13,7 @@ inputs:
     description: ClawHub user or organization publisher handle.
     required: true
   clawhub-token:
-    description: ClawHub API token used for live publication; omit for dry runs.
+    description: ClawHub API token used for live publication; omit in test mode.
     required: false
   tags:
     description: Comma-separated release channels applied to the publication.
@@ -23,10 +27,6 @@ inputs:
     description: Source commit recorded by ClawHub.
     required: false
     default: ${{ github.sha }}
-  dry-run:
-    description: Validate the package without authenticating or publishing.
-    required: false
-    default: 'false'
   wait-timeout:
     description: Maximum seconds to wait for a definitive live publication result.
     required: false
@@ -63,12 +63,12 @@ runs:
       name: Validate publication inputs
       shell: bash
       env:
-        DRY_RUN: ${{ inputs.dry-run }}
         OWNER: ${{ inputs.owner }}
         SOURCE_COMMIT: ${{ inputs.source-commit }}
         SOURCE_REPO: ${{ inputs.source-repo }}
         TAGS: ${{ inputs.tags }}
         TARBALL: ${{ inputs.tarball }}
+        TEST_MODE: ${{ inputs.test-mode }}
         WAIT_TIMEOUT: ${{ inputs.wait-timeout }}
       run: |
         set -euo pipefail
@@ -86,8 +86,8 @@ runs:
           fi
         done
 
-        if [[ "$DRY_RUN" != "true" && "$DRY_RUN" != "false" ]]; then
-          echo "::error::dry-run must be true or false"
+        if [[ "$TEST_MODE" != "true" && "$TEST_MODE" != "false" ]]; then
+          echo "::error::test-mode must be true or false"
           exit 1
         fi
         if [[ ! "$WAIT_TIMEOUT" =~ ^[1-9][0-9]*$ ]]; then
@@ -108,7 +108,7 @@ runs:
         echo "config-root=$config_root" >> "$GITHUB_OUTPUT"
 
     - name: Authenticate with ClawHub
-      if: ${{ inputs.dry-run != 'true' }}
+      if: ${{ inputs.test-mode != 'true' }}
       shell: bash
       env:
         CLAWHUB_CONFIG_PATH: ${{ steps.config.outputs.config-path }}
@@ -127,12 +127,12 @@ runs:
       shell: bash
       env:
         CLAWHUB_CONFIG_PATH: ${{ steps.config.outputs.config-path }}
-        DRY_RUN: ${{ inputs.dry-run }}
         OWNER: ${{ inputs.owner }}
         SOURCE_COMMIT: ${{ inputs.source-commit }}
         SOURCE_REPO: ${{ inputs.source-repo }}
         TAGS: ${{ inputs.tags }}
         TARBALL_PATH: ${{ steps.inputs.outputs.tarball-path }}
+        TEST_MODE: ${{ inputs.test-mode }}
         WAIT_TIMEOUT: ${{ inputs.wait-timeout }}
       run: |
         set -euo pipefail
@@ -146,7 +146,7 @@ runs:
           --source-repo "$SOURCE_REPO"
           --source-commit "$SOURCE_COMMIT"
         )
-        if [[ "$DRY_RUN" == "true" ]]; then
+        if [[ "$TEST_MODE" == "true" ]]; then
           publish_args+=(--dry-run)
         else
           publish_args+=(--wait --wait-timeout "$WAIT_TIMEOUT")

@@ -2,6 +2,10 @@ name: Pack npm package
 description: Pack one npm package and expose the resulting tarball and package metadata.
 
 inputs:
+  test-mode:
+    description: Exercise the action without mutating external state or requiring publication credentials.
+    required: false
+    default: 'false'
   package-directory:
     description: Directory containing the package manifest, relative to the workspace or absolute.
     required: false
@@ -25,6 +29,16 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Validate test mode
+      shell: bash
+      env:
+        TEST_MODE: ${{ inputs.test-mode }}
+      run: |
+        if [[ "$TEST_MODE" != "true" && "$TEST_MODE" != "false" ]]; then
+          echo "::error::test-mode must be true or false"
+          exit 1
+        fi
+
     - name: Set up Node.js
       uses: actions/setup-node@v5
       with:

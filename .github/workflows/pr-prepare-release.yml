@@ -1,0 +1,42 @@
+name: PR / prepare-release
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare-release:
+    name: prepare-release
+    runs-on: ubuntu-24.04
+    env:
+      RELEASE_URL: https://example.invalid/releases/test
+      RELEASE_VERSION: v0.0.0-test.${{ github.run_id }}.${{ github.run_attempt }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Prepare release
+        id: prepare
+        uses: ./prepare-release
+        with:
+          test-mode: true
+          commands: bun -e "await Bun.write('command-output.txt', process.env.PREPARE_RELEASE_VERSION)"
+          release-date: 2026-09-16T12:00:00Z
+          release-url: ${{ env.RELEASE_URL }}
+          root: ${{ github.workspace }}/prepare-release/test/fixture
+          version: ${{ env.RELEASE_VERSION }}
+      - name: Verify prepared files without a push
+        env:
+          RESOLVED_VERSION: ${{ steps.prepare.outputs.resolved-version }}
+        working-directory: prepare-release/test/fixture
+        run: |
+          test "$RESOLVED_VERSION" = "$RELEASE_VERSION"
+          test "$(node --print "require('./package.json').version")" = "${RELEASE_VERSION#v}"
+          test "$(cat command-output.txt)" = "$RELEASE_VERSION"
+          grep --fixed-strings "## $RELEASE_VERSION - [September 16, 2026]($RELEASE_URL)" CHANGELOG.md
+          test "$(grep --count --fixed-strings '## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})' CHANGELOG.md)" = 1
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          ! git show-ref --verify --quiet "refs/tags/$RELEASE_VERSION"

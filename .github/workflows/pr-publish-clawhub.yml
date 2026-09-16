@@ -1,0 +1,36 @@
+name: PR / publish-clawhub
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  publish-clawhub:
+    name: publish-clawhub
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Pack code-plugin fixture
+        id: pack
+        uses: ./npm-pack
+        with:
+          test-mode: true
+          package-directory: publish-clawhub/test/fixture
+      - name: Validate ClawHub publication
+        id: publish
+        uses: ./publish-clawhub
+        with:
+          test-mode: true
+          tarball: ${{ steps.pack.outputs.tarball-path }}
+          owner: tanaab
+          tags: edge
+          source-repo: ${{ github.repository }}
+          source-commit: ${{ github.event.pull_request.head.sha }}
+      - name: Verify artifact handoff
+        env:
+          PACKED_TARBALL: ${{ steps.pack.outputs.tarball-path }}
+          PUBLISH_TARBALL: ${{ steps.publish.outputs.tarball-path }}
+        run: test "$PUBLISH_TARBALL" = "$PACKED_TARBALL"
