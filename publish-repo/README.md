@@ -5,6 +5,8 @@ forces the exact release tag plus any requested moving tags to that commit. It
 is the Git publication peer of package and archive publishers; it does not
 create a GitHub Release.
 
+Supported runner: Linux (`ubuntu-24.04`).
+
 ## Usage
 
 ```yaml
@@ -28,9 +30,6 @@ Run this in an independent job so a package publisher can fail or be retried
 without coupling its registry result to Git synchronization. Outside a
 `release` event, provide `version`, `release-date`, and `release-url`
 explicitly.
-
-See [the combined release example](../publish-npm/examples/release.yml) for npm
-and repository publication in independent jobs.
 
 ## Inputs
 
@@ -58,7 +57,22 @@ token to publish as `tanaabot` and to satisfy repository rules.
 | --- | --- |
 | `resolved-version` | Semver-valid version resolved by the upstream preparation action. |
 
-## File and retry behavior
+## Examples
+
+See [the combined release example](../publish-npm/examples/release.yml) for npm
+and repository publication in independent jobs.
+
+## Test behavior
+
+With `test-mode: true`, the action performs the normal release preparation but
+disables synchronization and withholds the synchronization token. Pull requests
+verify the resolved version, package metadata, changelog, project commands, and
+unchanged Git history. Only this repository's real release proves verified
+commit creation, branch synchronization, and exact or moving tag updates.
+
+## Notes
+
+### File and retry behavior
 
 `package.json` is required at `root` and its version is updated. An existing
 `CHANGELOG.md` has its current unreleased tokens resolved and receives a fresh
@@ -70,11 +84,3 @@ the exact and moving tags to the resulting commit. This makes repository
 publication independently retryable, not unconditionally idempotent. In
 particular, already-prepared changelog content can acquire a duplicate release
 header.
-
-## Test behavior
-
-With `test-mode: true`, the action performs the normal release preparation but
-disables synchronization and withholds the synchronization token. Pull requests
-verify the resolved version, package metadata, changelog, project commands, and
-unchanged Git history. Only this repository's real release proves verified
-commit creation, branch synchronization, and exact or moving tag updates.

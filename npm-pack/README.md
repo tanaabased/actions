@@ -4,6 +4,8 @@ Packs one npm package once and exposes the exact tarball for consumer tests and
 publication. Package scripts are disabled: release preparation belongs before
 packing, not halfway through an artifact handoff.
 
+Supported runner: Linux (`ubuntu-24.04`).
+
 ## Usage
 
 ```yaml

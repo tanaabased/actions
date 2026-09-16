@@ -20,4 +20,7 @@ jobs:
       - name: Install actionlint
         run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
       - name: Run actionlint
-        run: actionlint -color
+        run: |
+          shopt -s nullglob globstar
+          workflows=(.github/workflows/*.yml */examples/**/*.yml */examples/**/*.yaml)
+          actionlint -color "${workflows[@]}"
