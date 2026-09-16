@@ -1,0 +1,163 @@
+name: Set up OpenClaw
+description: Install an exact OpenClaw CLI version and expose isolated CI helpers.
+
+inputs:
+  test-mode:
+    description: Perform the same real local installation without remote configuration or delivery.
+    required: false
+    default: 'false'
+  debug:
+    description: Action and helper verbosity; auto follows RUNNER_DEBUG=1.
+    required: false
+    default: auto
+  version:
+    description: OpenClaw version or range; auto discovers the package-tested declaration.
+    required: false
+    default: auto
+  package-json:
+    description: package.json used when version is auto, relative to the workspace or absolute.
+    required: false
+    default: package.json
+  package-field:
+    description: Optional dot-delimited package.json field overriding auto discovery.
+    required: false
+    default: ''
+
+outputs:
+  version:
+    description: Exact installed OpenClaw version after npm range resolution.
+    value: ${{ steps.resolve.outputs.version }}
+  executable-path:
+    description: Absolute path to the installed OpenClaw executable.
+    value: ${{ steps.install.outputs.executable-path }}
+  helper-path:
+    description: Absolute directory containing the supported public helper commands.
+    value: ${{ steps.install.outputs.helper-path }}
+
+runs:
+  using: composite
+  steps:
+    - id: resolve
+      name: Resolve OpenClaw version and runtime
+      shell: bash
+      env:
+        DEBUG_INPUT: ${{ inputs.debug }}
+        PACKAGE_FIELD: ${{ inputs.package-field }}
+        PACKAGE_JSON: ${{ inputs.package-json }}
+        TEST_MODE: ${{ inputs.test-mode }}
+        VERSION_SPEC: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+
+        if [[ "$TEST_MODE" != 'true' && "$TEST_MODE" != 'false' ]]; then
+          echo '::error::test-mode must be true or false'
+          exit 2
+        fi
+
+        case "$DEBUG_INPUT" in
+          auto)
+            if [[ "${RUNNER_DEBUG:-}" == '1' ]]; then
+              effective_debug=true
+            else
+              effective_debug=false
+            fi
+            ;;
+          true | false)
+            effective_debug="$DEBUG_INPUT"
+            ;;
+          *)
+            echo '::error::debug must be auto, true, or false'
+            exit 2
+            ;;
+        esac
+
+        if [[ "$PACKAGE_JSON" == /* ]]; then
+          package_json_path="$PACKAGE_JSON"
+        else
+          package_json_path="$GITHUB_WORKSPACE/$PACKAGE_JSON"
+        fi
+
+        resolution_file="$(mktemp "$RUNNER_TEMP/setup-openclaw-resolution.XXXXXX")"
+        trap 'rm -f "$resolution_file"' EXIT
+        if ! node "$GITHUB_ACTION_PATH/scripts/lib/resolve-openclaw.mjs" \
+          "$VERSION_SPEC" "$package_json_path" "$PACKAGE_FIELD" > "$resolution_file"; then
+          echo '::error::OpenClaw version resolution failed'
+          exit 1
+        fi
+
+        resolved_version="$(sed -n '1p' "$resolution_file")"
+        node_range="$(sed -n '2p' "$resolution_file")"
+        if [[ -z "$resolved_version" || -z "$node_range" ]]; then
+          echo '::error::OpenClaw version resolution returned an incomplete result'
+          exit 1
+        fi
+
+        echo "version=$resolved_version" >> "$GITHUB_OUTPUT"
+        echo "node-range=$node_range" >> "$GITHUB_OUTPUT"
+        echo "SETUP_OPENCLAW_DEBUG=$effective_debug" >> "$GITHUB_ENV"
+
+        if [[ "$effective_debug" == 'true' ]]; then
+          echo "Resolved OpenClaw $resolved_version with Node.js requirement $node_range"
+        else
+          echo "Resolved OpenClaw $resolved_version"
+        fi
+
+    - name: Set up compatible Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: ${{ steps.resolve.outputs.node-range }}
+        package-manager-cache: false
+
+    - id: install
+      name: Install OpenClaw CLI and expose helpers
+      shell: bash
+      env:
+        OPENCLAW_VERSION: ${{ steps.resolve.outputs.version }}
+      run: |
+        set -euo pipefail
+
+        install_root="$(mktemp -d "$RUNNER_TEMP/setup-openclaw.XXXXXX")"
+        npm_args=(
+          install
+          --no-audit
+          --no-fund
+          --no-save
+          --prefix "$install_root"
+          "openclaw@$OPENCLAW_VERSION"
+        )
+        if [[ "$SETUP_OPENCLAW_DEBUG" != 'true' ]]; then
+          npm_args+=(--loglevel error)
+        fi
+
+        set +e
+        npm "${npm_args[@]}"
+        install_status=$?
+        set -e
+        if ((install_status != 0)); then
+          echo "::error::OpenClaw $OPENCLAW_VERSION installation failed"
+          rm -rf "$install_root"
+          exit "$install_status"
+        fi
+
+        executable_path="$install_root/node_modules/.bin/openclaw"
+        helper_path="$GITHUB_ACTION_PATH/scripts"
+        if [[ ! -x "$executable_path" ]]; then
+          echo "::error::Installed OpenClaw executable is unavailable: $executable_path"
+          rm -rf "$install_root"
+          exit 1
+        fi
+
+        installed_version="$(node -e \
+          "const fs=require('node:fs');const p=require('node:path');process.stdout.write(JSON.parse(fs.readFileSync(p.join(process.argv[1],'node_modules/openclaw/package.json'),'utf8')).version)" \
+          "$install_root")"
+        if [[ "$installed_version" != "$OPENCLAW_VERSION" ]]; then
+          echo "::error::Installed OpenClaw version $installed_version does not match resolved version $OPENCLAW_VERSION"
+          rm -rf "$install_root"
+          exit 1
+        fi
+
+        echo "$install_root/node_modules/.bin" >> "$GITHUB_PATH"
+        echo "$helper_path" >> "$GITHUB_PATH"
+        echo "executable-path=$executable_path" >> "$GITHUB_OUTPUT"
+        echo "helper-path=$helper_path" >> "$GITHUB_OUTPUT"
+        echo "Installed OpenClaw $installed_version"

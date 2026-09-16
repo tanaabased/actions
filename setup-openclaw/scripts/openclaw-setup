@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+command_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=setup-openclaw/scripts/lib/openclaw-common.sh
+source "$command_dir/lib/openclaw-common.sh"
+
+profile=''
+workspace=''
+state_dir=''
+debug_setting="${SETUP_OPENCLAW_DEBUG:-auto}"
+
+usage() {
+  cat <<'EOF'
+Usage: openclaw-setup --profile <name> --workspace <path> --state-dir <path> [--debug <auto|true|false>]
+
+Options:
+  --profile <name>                 names the isolated non-default OpenClaw profile
+  --workspace <path>               sets the absolute isolated agent workspace
+  --state-dir <path>               stores isolated OpenClaw configuration and helper state
+  --debug <auto|true|false>        controls helper and OpenClaw verbosity [default: action setting or auto]
+  -h, --help                       displays this help message
+EOF
+}
+
+while (($# > 0)); do
+  case "$1" in
+    --profile | --workspace | --state-dir | --debug)
+      (($# >= 2)) || error "$1 requires a value" 2
+      case "$1" in
+        --profile) profile="$2" ;;
+        --workspace) workspace="$2" ;;
+        --state-dir) state_dir="$2" ;;
+        --debug) debug_setting="$2" ;;
+      esac
+      shift 2
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage >&2
+      error "unrecognized option: $1" 2
+      ;;
+  esac
+done
+
+require_github_actions
+configure_debug "$debug_setting"
+configure_context "$profile" "$workspace" "$state_dir" true
+debug "onboarding profile=$profile workspace=$workspace state-dir=$state_dir"
+
+run_openclaw onboard \
+  --non-interactive \
+  --accept-risk \
+  --mode local \
+  --workspace "$workspace" \
+  --gateway-bind loopback \
+  --auth-choice skip \
+  --skip-daemon \
+  --skip-health \
+  --skip-bootstrap \
+  --skip-channels \
+  --skip-hooks \
+  --skip-search \
+  --skip-skills \
+  --skip-ui \
+  --suppress-gateway-token-output
+
+set +e
+validation_report="$(run_openclaw config validate --json 2>&1)"
+validation_status=$?
+set -e
+if ((validation_status != 0)); then
+  error_message 'OpenClaw configuration validation failed'
+  if [[ "$debug_enabled" == 'true' ]]; then
+    printf '%s\n' "$validation_report" | tail -n 20 | redact_stream >&2
+  fi
+  exit "$validation_status"
+fi
+if ! printf '%s' "$validation_report" | node -e \
+  "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{const r=JSON.parse(d);process.exit(r.valid===true?0:1)})"; then
+  error 'OpenClaw setup produced an invalid configuration'
+fi
+
+write_context
+printf 'OpenClaw profile %s is ready in %s\n' "$profile" "$workspace"
