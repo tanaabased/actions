@@ -6,6 +6,10 @@ inputs:
     description: Exercise the action without mutating external state or requiring publication credentials.
     required: false
     default: 'false'
+  debug:
+    description: Action and npm verbosity; auto follows RUNNER_DEBUG=1.
+    required: false
+    default: auto
   package-directory:
     description: Directory containing the package manifest, relative to the workspace or absolute.
     required: false
@@ -29,6 +33,16 @@ outputs:
 runs:
   using: composite
   steps:
+    - id: debug
+      name: Resolve debug mode
+      shell: bash
+      env:
+        DEBUG_INPUT: ${{ inputs.debug }}
+      run: |
+        effective_debug="$(bash "$GITHUB_ACTION_PATH/../scripts/resolve-debug.sh" "$DEBUG_INPUT")"
+        echo "enabled=$effective_debug" >> "$GITHUB_OUTPUT"
+        [[ "$effective_debug" != 'true' ]] || echo 'Diagnostics enabled for npm package packing.'
+
     - name: Validate test mode
       shell: bash
       env:
@@ -48,6 +62,7 @@ runs:
       name: Pack package
       shell: bash
       env:
+        NPM_CONFIG_LOGLEVEL: ${{ steps.debug.outputs.enabled == 'true' && 'verbose' || 'error' }}
         PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
       run: |
         set -euo pipefail

@@ -22,6 +22,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+      - name: Verify debug contract
+        run: bash scripts/check-debug-contract.sh setup-agent-system
       - name: Checkout pinned Agent System source
         if: matrix.selection == 'source'
         uses: actions/checkout@v7
@@ -63,6 +65,7 @@ jobs:
         uses: ./setup-agent-system
         with:
           test-mode: true
+          debug: true
           version: ${{ matrix.selection == 'published' && '0.6.0' || '' }}
           source-directory: ${{ matrix.selection == 'source' && 'agent-system-source' || '' }}
           profile: ${{ matrix.selection == 'source' && env.OPENCLAW_PROFILE || '' }}

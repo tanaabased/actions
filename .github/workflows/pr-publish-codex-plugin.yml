@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+      - name: Verify debug contract
+        run: bash scripts/check-debug-contract.sh publish-codex-plugin
       - name: Set up Bun for fixture lockfile
         uses: oven-sh/setup-bun@v2
         with:
@@ -31,6 +33,7 @@ jobs:
         uses: ./publish-codex-plugin
         with:
           test-mode: true
+          debug: true
           plugin-directory: publish-codex-plugin/test/fixture
           archive-name: fixture-${{ matrix.dependency-policy }}.tar.gz
           dependency-policy: ${{ matrix.dependency-policy }}

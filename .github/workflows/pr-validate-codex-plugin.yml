@@ -19,11 +19,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+      - name: Verify debug contract
+        run: bash scripts/check-debug-contract.sh validate-codex-plugin
       - name: Validate valid plugin fixture
         id: valid
         uses: ./validate-codex-plugin
         with:
           test-mode: true
+          debug: true
           plugin-directory: validate-codex-plugin/test/fixture/valid
       - name: Verify valid fixture output
         env:

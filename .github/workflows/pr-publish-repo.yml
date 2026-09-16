@@ -18,11 +18,14 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      - name: Verify debug contract
+        run: bash scripts/check-debug-contract.sh publish-repo
       - name: Validate repository publication
         id: publish
         uses: ./publish-repo
         with:
           test-mode: true
+          debug: true
           commands: bun -e "await Bun.write('command-output.txt', process.env.PREPARE_RELEASE_VERSION)"
           release-date: 2026-09-16T12:00:00Z
           release-url: ${{ env.RELEASE_URL }}

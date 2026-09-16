@@ -68,7 +68,8 @@ package.
 `debug` changes action and helper verbosity, not GitHub's runner logging. Useful
 failure summaries remain visible when it is `false`. The action persists its
 effective value for helpers invoked in later steps; a helper's explicit
-`--debug` value takes precedence.
+`--debug` value takes precedence. Set `debug: true` directly, or leave it at
+`auto` and use GitHub's **Enable debug logging** option when rerunning the job.
 
 ## Outputs
 

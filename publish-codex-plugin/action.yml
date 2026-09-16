@@ -6,6 +6,10 @@ inputs:
     description: Prepare the real archive without uploading it or requiring publication credentials.
     required: false
     default: 'false'
+  debug:
+    description: Action and Bun verbosity; auto follows RUNNER_DEBUG=1.
+    required: false
+    default: auto
   plugin-directory:
     description: Codex plugin root to archive, relative to the workspace or absolute.
     required: false
@@ -43,6 +47,16 @@ outputs:
 runs:
   using: composite
   steps:
+    - id: debug
+      name: Resolve debug mode
+      shell: bash
+      env:
+        DEBUG_INPUT: ${{ inputs.debug }}
+      run: |
+        effective_debug="$(bash "$GITHUB_ACTION_PATH/../scripts/resolve-debug.sh" "$DEBUG_INPUT")"
+        echo "enabled=$effective_debug" >> "$GITHUB_OUTPUT"
+        [[ "$effective_debug" != 'true' ]] || echo 'Diagnostics enabled for Codex plugin publication.'
+
     - id: inputs
       name: Validate archive inputs
       shell: bash
@@ -103,7 +117,11 @@ runs:
           exit 1
         fi
         rm -rf node_modules
-        bun install --production --frozen-lockfile --ignore-scripts
+        bun_args=(install --production --frozen-lockfile --ignore-scripts)
+        if [[ "${{ steps.debug.outputs.enabled }}" == 'true' ]]; then
+          bun_args+=(--verbose)
+        fi
+        bun "${bun_args[@]}"
 
     - id: archive
       name: Prepare release archive

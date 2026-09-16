@@ -6,6 +6,10 @@ inputs:
     description: Exercise the action without mutating external state or requiring publication credentials.
     required: false
     default: 'false'
+  debug:
+    description: Action and npm verbosity; auto follows RUNNER_DEBUG=1.
+    required: false
+    default: auto
   tarball:
     description: Tested npm tarball to publish, relative to the workspace or absolute.
     required: true
@@ -64,6 +68,16 @@ outputs:
 runs:
   using: composite
   steps:
+    - id: debug
+      name: Resolve debug mode
+      shell: bash
+      env:
+        DEBUG_INPUT: ${{ inputs.debug }}
+      run: |
+        effective_debug="$(bash "$GITHUB_ACTION_PATH/../scripts/resolve-debug.sh" "$DEBUG_INPUT")"
+        echo "enabled=$effective_debug" >> "$GITHUB_OUTPUT"
+        [[ "$effective_debug" != 'true' ]] || echo 'Diagnostics enabled for npm publication.'
+
     - name: Validate test mode
       shell: bash
       env:
@@ -83,12 +97,14 @@ runs:
       shell: bash
       env:
         NPM_VERSION: ${{ inputs.npm-version }}
+        NPM_CONFIG_LOGLEVEL: ${{ steps.debug.outputs.enabled == 'true' && 'verbose' || 'error' }}
       run: npm install --global "npm@$NPM_VERSION"
 
     - id: package
       name: Inspect tarball
       shell: bash
       env:
+        NPM_CONFIG_LOGLEVEL: ${{ steps.debug.outputs.enabled == 'true' && 'verbose' || 'error' }}
         PRERELEASE_TAG: ${{ inputs.prerelease-tag }}
         STABLE_TAG: ${{ inputs.stable-tag }}
         TARBALL: ${{ inputs.tarball }}
@@ -184,6 +200,7 @@ runs:
       env:
         NODE_AUTH_TOKEN: ${{ inputs.registry-token }}
         NPM_CONFIG_USERCONFIG: ${{ steps.npm-config.outputs.publish-config }}
+        NPM_CONFIG_LOGLEVEL: ${{ steps.debug.outputs.enabled == 'true' && 'verbose' || 'error' }}
         PACKAGE_NAME: ${{ steps.package.outputs.package-name }}
         PACKAGE_VERSION: ${{ steps.package.outputs.package-version }}
         REGISTRY_URL: ${{ inputs.registry-url }}
@@ -218,6 +235,7 @@ runs:
         NPM_CONFIG_USERCONFIG: ${{ steps.npm-config.outputs.publish-config }}
         REGISTRY_URL: ${{ inputs.registry-url }}
         TARBALL_PATH: ${{ steps.package.outputs.tarball-path }}
+        NPM_CONFIG_LOGLEVEL: ${{ steps.debug.outputs.enabled == 'true' && 'verbose' || 'error' }}
       run: |
         set -euo pipefail
 
@@ -239,6 +257,7 @@ runs:
         PACKAGE_VERSION: ${{ steps.package.outputs.package-version }}
         REGISTRY_URL: ${{ inputs.registry-url }}
         TARBALL_PATH: ${{ steps.package.outputs.tarball-path }}
+        NPM_CONFIG_LOGLEVEL: ${{ steps.debug.outputs.enabled == 'true' && 'verbose' || 'error' }}
       run: |
         set -euo pipefail
 
@@ -265,6 +284,7 @@ runs:
       env:
         NODE_AUTH_TOKEN: ${{ inputs.channel-token || inputs.registry-token }}
         NPM_CONFIG_USERCONFIG: ${{ steps.npm-config.outputs.channel-config }}
+        NPM_CONFIG_LOGLEVEL: ${{ steps.debug.outputs.enabled == 'true' && 'verbose' || 'error' }}
         PACKAGE_NAME: ${{ steps.package.outputs.package-name }}
         PACKAGE_VERSION: ${{ steps.package.outputs.package-version }}
         PRERELEASE_TAG: ${{ inputs.prerelease-tag }}

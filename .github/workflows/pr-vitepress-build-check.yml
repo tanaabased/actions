@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+      - name: Verify debug contract
+        run: bash scripts/check-debug-contract.sh vitepress-build-check
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -24,6 +26,7 @@ jobs:
         uses: ./vitepress-build-check
         with:
           test-mode: true
+          debug: true
           prepare-command: cd vitepress-build-check/test/fixture && bun run prepare-docs
           build-command: cd vitepress-build-check/test/fixture && bun run build
       - name: Verify generated fixture output

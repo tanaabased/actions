@@ -6,6 +6,10 @@ inputs:
     description: Perform the same real isolated local installation without remote mutation or publication.
     required: false
     default: 'false'
+  debug:
+    description: Action and owned tool verbosity; auto follows RUNNER_DEBUG=1.
+    required: false
+    default: auto
   version:
     description: Exact published @tanaab/openclaw-agent-system version; mutually exclusive with source-directory.
     required: false
@@ -44,6 +48,16 @@ outputs:
 runs:
   using: composite
   steps:
+    - id: debug
+      name: Resolve debug mode
+      shell: bash
+      env:
+        DEBUG_INPUT: ${{ inputs.debug }}
+      run: |
+        effective_debug="$(bash "$GITHUB_ACTION_PATH/../scripts/resolve-debug.sh" "$DEBUG_INPUT")"
+        echo "enabled=$effective_debug" >> "$GITHUB_OUTPUT"
+        [[ "$effective_debug" != 'true' ]] || echo 'Diagnostics enabled for Agent System setup.'
+
     - id: resolve
       name: Validate Agent System selection
       shell: bash
@@ -119,7 +133,9 @@ runs:
       name: Prepare Agent System package
       shell: bash
       env:
+        ACTION_DEBUG: ${{ steps.debug.outputs.enabled }}
         MODE: ${{ steps.resolve.outputs.mode }}
+        NPM_CONFIG_LOGLEVEL: ${{ steps.debug.outputs.enabled == 'true' && 'verbose' || 'error' }}
         RESOLVED_VERSION: ${{ steps.resolve.outputs.version }}
         SOURCE_PATH: ${{ steps.resolve.outputs.source-path }}
       run: |
@@ -157,7 +173,7 @@ runs:
 
         if [[ "$MODE" == 'published' ]]; then
           package_spec="@tanaab/openclaw-agent-system@$RESOLVED_VERSION"
-          archive_name="$(npm pack --silent --pack-destination "$artifact_dir" "$package_spec")"
+          archive_name="$(npm pack --loglevel "$NPM_CONFIG_LOGLEVEL" --pack-destination "$artifact_dir" "$package_spec")"
           selected_source="npm:$package_spec"
         else
           staging_dir="$(mktemp -d "$RUNNER_TEMP/setup-agent-system-source.XXXXXX")"
@@ -171,11 +187,15 @@ runs:
 
           (
             cd "$staging_dir"
-            bun install --frozen-lockfile --ignore-scripts
+            bun_args=(install --frozen-lockfile --ignore-scripts)
+            if [[ "$ACTION_DEBUG" == 'true' ]]; then
+              bun_args+=(--verbose)
+            fi
+            bun "${bun_args[@]}"
             bun run build
             bun run plugin:check
           )
-          archive_name="$(cd "$staging_dir" && npm pack --silent --pack-destination "$artifact_dir")"
+          archive_name="$(cd "$staging_dir" && npm pack --loglevel "$NPM_CONFIG_LOGLEVEL" --pack-destination "$artifact_dir")"
           selected_source="$SOURCE_PATH"
         fi
 
@@ -205,6 +225,7 @@ runs:
       name: Install and inspect Agent System
       shell: bash
       env:
+        ACTION_DEBUG: ${{ steps.debug.outputs.enabled }}
         ARTIFACT_PATH: ${{ steps.artifact.outputs.artifact-path }}
         CONFIG_PATH_INPUT: ${{ inputs.config-path }}
         EXPECTED_VERSION: ${{ steps.artifact.outputs.version }}
@@ -254,8 +275,14 @@ runs:
 
         config_path="$(cd "$(dirname "$config_path")" && pwd -P)/$(basename "$config_path")"
         state_directory="$(cd "$state_directory" && pwd -P)"
+        if [[ "$ACTION_DEBUG" == 'true' ]]; then
+          openclaw_log_level=debug
+        else
+          openclaw_log_level=warn
+        fi
         run_openclaw() {
           OPENCLAW_CONFIG_PATH="$config_path" \
+            OPENCLAW_LOG_LEVEL="$openclaw_log_level" \
             OPENCLAW_STATE_DIR="$state_directory" \
             command openclaw --profile "$profile" "$@"
         }

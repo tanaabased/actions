@@ -6,6 +6,10 @@ inputs:
     description: Run the normal local build behavior without external mutation.
     required: false
     default: 'false'
+  debug:
+    description: Action diagnostics; auto follows RUNNER_DEBUG=1.
+    required: false
+    default: auto
   prepare-command:
     description: Optional shell command to run before the build command.
     required: false
@@ -17,6 +21,16 @@ inputs:
 runs:
   using: composite
   steps:
+    - id: debug
+      name: Resolve debug mode
+      shell: bash
+      env:
+        DEBUG_INPUT: ${{ inputs.debug }}
+      run: |
+        effective_debug="$(bash "$GITHUB_ACTION_PATH/../scripts/resolve-debug.sh" "$DEBUG_INPUT")"
+        echo "enabled=$effective_debug" >> "$GITHUB_OUTPUT"
+        [[ "$effective_debug" != 'true' ]] || echo 'Diagnostics enabled for VitePress build phases; caller commands are unchanged.'
+
     - name: Validate inputs
       shell: bash
       env:

@@ -54,6 +54,26 @@
   commands without external side effects; local installation and artifact
   preparation are expected behavior.
 
+## Debug contract
+
+- Every public composite action exposes `debug`, defaults it to `auto`, and
+  accepts exactly `auto`, `true`, or `false`.
+- `auto` enables action diagnostics only when `RUNNER_DEBUG=1`; explicit `true`
+  or `false` overrides that signal. Do not infer debug from failure, retry
+  attempts, or repository settings that are not exported to child processes.
+- Apply the resolved value only to supported verbosity controls for tools the
+  action owns, and propagate it to composed public actions or helpers when they
+  accept the same contract. Leave caller-supplied commands unchanged. Document
+  upstream tools without suitable controls instead of inventing flags.
+- Keep bounded failure diagnostics enabled in every mode and preserve the
+  original exit status, cleanup, outputs, retries, test-mode behavior, and
+  destination state. Debug must never print credentials, private keys,
+  authentication configuration, or full environments; do not use blanket
+  shell tracing.
+- Extend the action-owned PR workflow with auto on/off, explicit precedence,
+  invalid-input, failure-path, and harmless sentinel-secret checks appropriate
+  to every supported runner.
+
 ## Pull-request validation
 
 - Give every composite action one `.github/workflows/pr-<name>.yml` workflow.

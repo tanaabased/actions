@@ -24,8 +24,13 @@ Supported runners: Linux (`ubuntu-24.04`) and macOS (`macos-26`).
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `test-mode` | No | `false` | Exercise the action without external mutation. |
+| `debug` | No | `auto` | Action and pip verbosity: `auto`, `true`, or `false`. |
 | `plugin-directory` | No | `.` | Plugin root, relative to the workspace or absolute. |
 | `python-version` | No | `3.13` | Python version used to run the validator. |
+
+Set `debug: true` for verbose pip and action diagnostics, or use GitHub's
+**Enable debug logging** rerun option with `auto`. Explicit `true` or `false`
+overrides runner debug.
 
 The action installs the validator's sole non-standard dependency,
 [`PyYAML==6.0.2`](https://pypi.org/project/PyYAML/6.0.2/), before invoking the
