@@ -1,0 +1,22 @@
+{
+  "name": "@tanaab/actions-clawhub-fixture",
+  "version": "0.0.0",
+  "description": "Code-plugin fixture for the publish-clawhub action.",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "index.js",
+    "openclaw.plugin.json"
+  ],
+  "openclaw": {
+    "extensions": [
+      "./index.js"
+    ],
+    "compat": {
+      "pluginApi": ">=2026.9.2"
+    },
+    "build": {
+      "openclawVersion": "2026.9.3"
+    }
+  }
+}

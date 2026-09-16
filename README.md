@@ -10,6 +10,7 @@ strategy.
 | --- | --- | --- |
 | `npm-pack` | Pack one npm package and expose the exact artifact and metadata. | [actions/npm-pack](actions/npm-pack/README.md) |
 | `prepare-release` | Prepare release files without pushing Git changes. | [actions/prepare-release](actions/prepare-release/README.md) |
+| `publish-clawhub` | Publish one code-plugin tarball and wait for ClawHub's verdict. | [actions/publish-clawhub](actions/publish-clawhub/README.md) |
 | `publish-npm` | Publish one tested tarball with explicit registry channels. | [actions/publish-npm](actions/publish-npm/README.md) |
 | `publish-repo` | Synchronize prepared release changes and Git tags. | [actions/publish-repo](actions/publish-repo/README.md) |
 

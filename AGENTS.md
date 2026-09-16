@@ -33,5 +33,6 @@
 | --- | --- | --- |
 | `actions/prepare-release` | Prepare and inspect a local fixture without synchronizing Git | None |
 | `actions/npm-pack` | Pack, inspect, install, and exercise the exact tarball | None |
+| `actions/publish-clawhub` | Pack a code-plugin fixture and exercise ClawHub's dry-run path | First real Agent System ClawHub publication |
 | `actions/publish-npm` | Static validation only | Real downstream npm publication |
 | `actions/publish-repo` | Static validation only | This repository's real release |

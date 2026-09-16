@@ -76,3 +76,24 @@ jobs:
             npm list "$PACKAGE_NAME@$PACKAGE_VERSION" --depth=0
             node --input-type=module -e "import('$PACKAGE_NAME').then(({ fixture }) => { if (fixture !== 'actions-npm-fixture') process.exit(1) })"
           )
+
+  publish-clawhub:
+    name: publish-clawhub
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Pack code-plugin fixture
+        id: pack
+        uses: ./actions/npm-pack
+        with:
+          package-directory: tests/fixtures/clawhub
+      - name: Validate ClawHub publication
+        uses: ./actions/publish-clawhub
+        with:
+          tarball: ${{ steps.pack.outputs.tarball-path }}
+          owner: tanaab
+          tags: edge
+          source-repo: ${{ github.repository }}
+          source-commit: ${{ github.event.pull_request.head.sha }}
+          dry-run: true

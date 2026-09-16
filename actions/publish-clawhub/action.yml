@@ -1,0 +1,165 @@
+name: Publish ClawHub package
+description: Publish one code-plugin tarball to ClawHub and wait for a definitive result.
+
+inputs:
+  tarball:
+    description: Code-plugin tarball to publish, relative to the workspace or absolute.
+    required: true
+  owner:
+    description: ClawHub user or organization publisher handle.
+    required: true
+  clawhub-token:
+    description: ClawHub API token used for live publication; omit for dry runs.
+    required: false
+  tags:
+    description: Comma-separated release channels applied to the publication.
+    required: false
+    default: latest
+  source-repo:
+    description: Source repository recorded by ClawHub.
+    required: false
+    default: ${{ github.repository }}
+  source-commit:
+    description: Source commit recorded by ClawHub.
+    required: false
+    default: ${{ github.sha }}
+  dry-run:
+    description: Validate the package without authenticating or publishing.
+    required: false
+    default: 'false'
+  wait-timeout:
+    description: Maximum seconds to wait for a definitive live publication result.
+    required: false
+    default: '1800'
+  node-version:
+    description: Node.js version used to install and run the ClawHub CLI.
+    required: false
+    default: '24'
+  clawhub-version:
+    description: ClawHub CLI version installed for publication.
+    required: false
+    default: 0.23.3
+
+outputs:
+  tarball-path:
+    description: Absolute path to the supplied tarball.
+    value: ${{ steps.inputs.outputs.tarball-path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Install ClawHub CLI
+      shell: bash
+      env:
+        CLAWHUB_VERSION: ${{ inputs.clawhub-version }}
+      run: npm install --global "clawhub@$CLAWHUB_VERSION"
+
+    - id: inputs
+      name: Validate publication inputs
+      shell: bash
+      env:
+        DRY_RUN: ${{ inputs.dry-run }}
+        OWNER: ${{ inputs.owner }}
+        SOURCE_COMMIT: ${{ inputs.source-commit }}
+        SOURCE_REPO: ${{ inputs.source-repo }}
+        TAGS: ${{ inputs.tags }}
+        TARBALL: ${{ inputs.tarball }}
+        WAIT_TIMEOUT: ${{ inputs.wait-timeout }}
+      run: |
+        set -euo pipefail
+
+        tarball_path="$(node -e "process.stdout.write(require('node:path').resolve(process.argv[1]))" "$TARBALL")"
+        if [[ ! -f "$tarball_path" ]]; then
+          echo "::error::ClawHub tarball does not exist: $tarball_path"
+          exit 1
+        fi
+
+        for input_name in OWNER TAGS SOURCE_REPO SOURCE_COMMIT; do
+          if [[ -z "${!input_name}" ]]; then
+            echo "::error::${input_name,,} must not be empty"
+            exit 1
+          fi
+        done
+
+        if [[ "$DRY_RUN" != "true" && "$DRY_RUN" != "false" ]]; then
+          echo "::error::dry-run must be true or false"
+          exit 1
+        fi
+        if [[ ! "$WAIT_TIMEOUT" =~ ^[1-9][0-9]*$ ]]; then
+          echo "::error::wait-timeout must be a positive integer number of seconds"
+          exit 1
+        fi
+
+        echo "tarball-path=$tarball_path" >> "$GITHUB_OUTPUT"
+
+    - id: config
+      name: Prepare isolated ClawHub configuration
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        config_root="$(mktemp -d "$RUNNER_TEMP/publish-clawhub.XXXXXX")"
+        echo "config-path=$config_root/config.json" >> "$GITHUB_OUTPUT"
+        echo "config-root=$config_root" >> "$GITHUB_OUTPUT"
+
+    - name: Authenticate with ClawHub
+      if: ${{ inputs.dry-run != 'true' }}
+      shell: bash
+      env:
+        CLAWHUB_CONFIG_PATH: ${{ steps.config.outputs.config-path }}
+        CLAWHUB_TOKEN: ${{ inputs.clawhub-token }}
+      run: |
+        set -euo pipefail
+
+        if [[ -z "$CLAWHUB_TOKEN" ]]; then
+          echo "::error::clawhub-token is required for live publication"
+          exit 1
+        fi
+        echo "::add-mask::$CLAWHUB_TOKEN"
+        clawhub --no-input login --token "$CLAWHUB_TOKEN"
+
+    - name: Publish package
+      shell: bash
+      env:
+        CLAWHUB_CONFIG_PATH: ${{ steps.config.outputs.config-path }}
+        DRY_RUN: ${{ inputs.dry-run }}
+        OWNER: ${{ inputs.owner }}
+        SOURCE_COMMIT: ${{ inputs.source-commit }}
+        SOURCE_REPO: ${{ inputs.source-repo }}
+        TAGS: ${{ inputs.tags }}
+        TARBALL_PATH: ${{ steps.inputs.outputs.tarball-path }}
+        WAIT_TIMEOUT: ${{ inputs.wait-timeout }}
+      run: |
+        set -euo pipefail
+
+        publish_args=(
+          --no-input
+          package publish "$TARBALL_PATH"
+          --family code-plugin
+          --owner "$OWNER"
+          --tags "$TAGS"
+          --source-repo "$SOURCE_REPO"
+          --source-commit "$SOURCE_COMMIT"
+        )
+        if [[ "$DRY_RUN" == "true" ]]; then
+          publish_args+=(--dry-run)
+        else
+          publish_args+=(--wait --wait-timeout "$WAIT_TIMEOUT")
+        fi
+
+        clawhub "${publish_args[@]}"
+
+    - name: Remove temporary ClawHub configuration
+      if: always()
+      shell: bash
+      env:
+        CONFIG_ROOT: ${{ steps.config.outputs.config-root }}
+      run: |
+        if [[ -n "$CONFIG_ROOT" && "$CONFIG_ROOT" == "$RUNNER_TEMP"/publish-clawhub.* ]]; then
+          rm -rf "$CONFIG_ROOT"
+        fi
