@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  Reusable composite actions for validating plugins, preparing releases, packing artifacts, and publishing them to GitHub, npm, and ClawHub.
+  Reusable composite actions for setting up OpenClaw, validating plugins, preparing releases, packing artifacts, and publishing them to GitHub, npm, and ClawHub.
 </p>
 
 <p align="center">
@@ -23,6 +23,7 @@
 | [publish-npm](publish-npm/README.md) | Publish a tested tarball with explicit registry channels. | [![publish-npm](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-publish-npm.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-publish-npm.yml) |
 | [publish-repo](publish-repo/README.md) | Synchronize prepared release changes and Git tags. | [![publish-repo](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-publish-repo.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-publish-repo.yml) |
 | [run-leia](run-leia/README.md) | Run Leia scenarios with isolated cross-platform temporary state. | [![run-leia](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-run-leia.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-run-leia.yml) |
+| [setup-agent-system](setup-agent-system/README.md) | Install Agent System from an exact release or source checkout into isolated OpenClaw. | [![setup-agent-system](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-setup-agent-system.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-setup-agent-system.yml) |
 | [setup-openclaw](setup-openclaw/README.md) | Install an exact OpenClaw CLI and expose isolated CI helpers. | [![setup-openclaw](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-setup-openclaw.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-setup-openclaw.yml) |
 | [ssh-test-key](ssh-test-key/README.md) | Generate a local Ed25519 SSH key pair for test fixtures. | [![ssh-test-key](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-ssh-test-key.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-ssh-test-key.yml) |
 | [validate-codex-plugin](validate-codex-plugin/README.md) | Validate a Codex plugin against a pinned OpenAI validator snapshot. | [![validate-codex-plugin](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-validate-codex-plugin.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-validate-codex-plugin.yml) |
