@@ -1,5 +1,28 @@
 {
   "name": "@tanaab/actions",
   "version": "0.0.0",
-  "private": true
+  "description": "Versioned Tanaab GitHub Actions catalog and runtime helpers",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tanaabased/actions.git"
+  },
+  "homepage": "https://github.com/tanaabased/actions#readme",
+  "bugs": "https://github.com/tanaabased/actions/issues",
+  "files": [
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "scripts/resolve-debug.sh",
+    "*/action.yml",
+    "*/README.md",
+    "*/scripts/**",
+    "*/examples/**",
+    "*/LICENSE*",
+    "*/NOTICE*"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  }
 }

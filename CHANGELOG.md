@@ -2,11 +2,15 @@
 
 - Added a ClawHub publisher for tested code-plugin tarballs with source metadata, channels, and bounded waits. [#4](https://github.com/tanaabased/actions/issues/4)
 - Added a cross-platform Leia runner with explicit retries, shell, standard-input, and temporary-directory handling. [#9](https://github.com/tanaabased/actions/issues/9)
+- Added a dependency-free `@tanaab/actions` catalog package with exact-artifact release verification. [#6](https://github.com/tanaabased/actions/issues/6)
+- Added a reusable VitePress build check with optional preparation. [#12](https://github.com/tanaabased/actions/issues/12)
 - Added Agent System setup from exact releases or source checkouts in isolated OpenClaw profiles. [#20](https://github.com/tanaabased/actions/issues/20)
 - Added an npm packing action that exposes the exact tarball and package metadata.
+- Added consistent `debug` controls across every public action. [#27](https://github.com/tanaabased/actions/issues/27)
+- Added isolated OpenClaw CLI setup for Linux and macOS. [#19](https://github.com/tanaabased/actions/issues/19)
 - Added pinned Codex plugin validation and explicit GitHub Release archive publication actions. [#5](https://github.com/tanaabased/actions/issues/5)
 - Added shared release preparation and repository publication actions.
+- Added SSH test-key generation for Linux and macOS fixtures. [#11](https://github.com/tanaabased/actions/issues/11)
 - Added the initial action catalog and repository structure.
-- Replaced directory-based npm publication with tested-tarball publication,
-  trusted-publishing support, explicit channels, and immutable-version checks.
+- Replaced directory-based npm publication with tested-tarball publication, trusted publishing, explicit channels, and immutable-version checks.
 - Standardized the catalog on root-level composite actions with explicit non-mutating test modes and one pull-request workflow per action.

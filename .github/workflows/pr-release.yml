@@ -1,0 +1,79 @@
+name: PR / release
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: release (${{ matrix.case }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - case: stable
+            version: 1.2.3
+            expected-channel: latest
+            expected-release-type: stable
+          - case: prerelease
+            version: 1.2.3-next.1
+            expected-channel: edge
+            expected-release-type: prerelease
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Prepare catalog release
+        id: prepare
+        uses: ./prepare-release
+        with:
+          test-mode: true
+          version: ${{ matrix.version }}
+          release-date: '2026-01-01T00:00:00Z'
+          release-url: https://github.com/tanaabased/actions/releases/tag/v${{ matrix.version }}
+      - name: Pack catalog
+        id: pack
+        uses: ./npm-pack
+        with:
+          test-mode: true
+      - name: Verify packed catalog
+        env:
+          EXPECTED_VERSION: ${{ matrix.version }}
+          PACKED_NAME: ${{ steps.pack.outputs.package-name }}
+          PACKED_VERSION: ${{ steps.pack.outputs.package-version }}
+          PREPARED_VERSION: ${{ steps.prepare.outputs.resolved-version }}
+          TARBALL_PATH: ${{ steps.pack.outputs.tarball-path }}
+        run: |
+          set -euo pipefail
+
+          test "$PACKED_NAME" = '@tanaab/actions'
+          test "$PACKED_VERSION" = "$EXPECTED_VERSION"
+          test "${PREPARED_VERSION#v}" = "$EXPECTED_VERSION"
+          node scripts/check-package-task.mjs "$TARBALL_PATH"
+      - name: Validate npm publication
+        id: publish
+        uses: ./publish-npm
+        with:
+          test-mode: true
+          tarball: ${{ steps.pack.outputs.tarball-path }}
+      - name: Verify release metadata
+        env:
+          EXPECTED_CHANNEL: ${{ matrix.expected-channel }}
+          EXPECTED_RELEASE_TYPE: ${{ matrix.expected-release-type }}
+          EXPECTED_VERSION: ${{ matrix.version }}
+          PACKED_TARBALL: ${{ steps.pack.outputs.tarball-path }}
+          PUBLISHED_CHANNEL: ${{ steps.publish.outputs.channel }}
+          PUBLISHED_NAME: ${{ steps.publish.outputs.package-name }}
+          PUBLISHED_RELEASE_TYPE: ${{ steps.publish.outputs.release-type }}
+          PUBLISHED_TARBALL: ${{ steps.publish.outputs.tarball-path }}
+          PUBLISHED_VERSION: ${{ steps.publish.outputs.package-version }}
+        run: |
+          test "$PUBLISHED_TARBALL" = "$PACKED_TARBALL"
+          test "$PUBLISHED_NAME" = '@tanaab/actions'
+          test "$PUBLISHED_VERSION" = "$EXPECTED_VERSION"
+          test "$PUBLISHED_CHANNEL" = "$EXPECTED_CHANNEL"
+          test "$PUBLISHED_RELEASE_TYPE" = "$EXPECTED_RELEASE_TYPE"

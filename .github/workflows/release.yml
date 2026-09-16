@@ -9,6 +9,90 @@ permissions:
   contents: read
 
 jobs:
+  publish-npm:
+    name: Publish npm catalog
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Prepare catalog release
+        id: prepare
+        uses: ./prepare-release
+      - name: Pack catalog
+        id: pack
+        uses: ./npm-pack
+      - name: Verify packed catalog
+        env:
+          PACKED_NAME: ${{ steps.pack.outputs.package-name }}
+          PACKED_VERSION: ${{ steps.pack.outputs.package-version }}
+          PREPARED_VERSION: ${{ steps.prepare.outputs.resolved-version }}
+          TARBALL_PATH: ${{ steps.pack.outputs.tarball-path }}
+        run: |
+          set -euo pipefail
+
+          test "$PACKED_NAME" = '@tanaab/actions'
+          test "$PACKED_VERSION" = "${PREPARED_VERSION#v}"
+          node scripts/check-package-task.mjs "$TARBALL_PATH"
+      - name: Publish tested catalog
+        id: publish
+        uses: ./publish-npm
+        with:
+          tarball: ${{ steps.pack.outputs.tarball-path }}
+      - name: Verify registry publication
+        env:
+          CHANNEL: ${{ steps.publish.outputs.channel }}
+          PACKAGE_NAME: ${{ steps.publish.outputs.package-name }}
+          PACKAGE_VERSION: ${{ steps.publish.outputs.package-version }}
+          REGISTRY_URL: https://registry.npmjs.org
+          TARBALL_PATH: ${{ steps.publish.outputs.tarball-path }}
+        run: |
+          set -euo pipefail
+
+          metadata_root="$(mktemp -d)"
+          trap 'rm -rf "$metadata_root"' EXIT
+          local_json="$metadata_root/local.json"
+          registry_json="$metadata_root/registry.json"
+          tags_json="$metadata_root/tags.json"
+
+          npm pack "$TARBALL_PATH" --dry-run --ignore-scripts --offline --json > "$local_json"
+          for attempt in {1..12}; do
+            if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" name version dist.integrity dist.tarball \
+                --json --registry "$REGISTRY_URL" > "$registry_json" 2>/dev/null && \
+              npm view "$PACKAGE_NAME" dist-tags --json --registry "$REGISTRY_URL" \
+                > "$tags_json" 2>/dev/null; then
+              break
+            fi
+            if [[ "$attempt" = 12 ]]; then
+              echo "::error::Published package was not readable from $REGISTRY_URL"
+              exit 1
+            fi
+            sleep 5
+          done
+
+          LOCAL_JSON="$local_json" REGISTRY_JSON="$registry_json" TAGS_JSON="$tags_json" \
+            CHANNEL="$CHANNEL" node <<'NODE'
+          const fs = require('node:fs');
+
+          const [local] = JSON.parse(fs.readFileSync(process.env.LOCAL_JSON, 'utf8'));
+          const registry = JSON.parse(fs.readFileSync(process.env.REGISTRY_JSON, 'utf8'));
+          const tags = JSON.parse(fs.readFileSync(process.env.TAGS_JSON, 'utf8'));
+          if (registry.name !== local.name || registry.version !== local.version) {
+            throw new Error(`Registry package mismatch: ${registry.name}@${registry.version}`);
+          }
+          if (registry['dist.integrity'] !== local.integrity || !registry['dist.tarball']) {
+            throw new Error('Registry artifact does not match the tested tarball');
+          }
+          if (tags[process.env.CHANNEL] !== local.version) {
+            throw new Error(`Registry channel ${process.env.CHANNEL} does not select ${local.version}`);
+          }
+          console.log(`Verified ${local.name}@${local.version} on ${process.env.CHANNEL}`);
+          NODE
+
   publish-repo:
     name: Publish repository
     runs-on: ubuntu-24.04
@@ -18,7 +102,34 @@ jobs:
         with:
           fetch-depth: 0
       - name: Publish repository
+        id: publish
         uses: ./publish-repo
         with:
           sync-tags: v1
           sync-token: ${{ secrets.TANAAB_COAXIUM_INJECTOR }}
+      - name: Verify synchronized repository
+        env:
+          RESOLVED_VERSION: ${{ steps.publish.outputs.resolved-version }}
+          TARGET_BRANCH: ${{ github.event.release.target_commitish }}
+        run: |
+          set -euo pipefail
+
+          git fetch --force origin \
+            "refs/heads/$TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH" \
+            '+refs/tags/v1:refs/tags/v1'
+          branch_commit="$(git rev-parse "refs/remotes/origin/$TARGET_BRANCH^{commit}")"
+          tag_commit="$(git rev-parse 'refs/tags/v1^{commit}')"
+          test "$branch_commit" = "$tag_commit"
+
+          package_json="$(mktemp)"
+          trap 'rm -f "$package_json"' EXIT
+          git show "refs/remotes/origin/$TARGET_BRANCH:package.json" > "$package_json"
+          PACKAGE_JSON="$package_json" EXPECTED_VERSION="${RESOLVED_VERSION#v}" node <<'NODE'
+          const fs = require('node:fs');
+
+          const manifest = JSON.parse(fs.readFileSync(process.env.PACKAGE_JSON, 'utf8'));
+          if (manifest.version !== process.env.EXPECTED_VERSION) {
+            throw new Error(`Synchronized package version is ${manifest.version}, expected ${process.env.EXPECTED_VERSION}`);
+          }
+          console.log(`Verified ${process.env.TARGET_BRANCH} and v1 at ${manifest.version}`);
+          NODE

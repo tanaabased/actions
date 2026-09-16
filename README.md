@@ -46,6 +46,10 @@ PR tests use explicit `test-mode: true` and real local artifacts. Registry and
 repository publication are verified through real release lifecycles; the
 badges above report PR checks, not live publication.
 
+The first release will also publish the exact tested catalog archive as
+`@tanaab/actions`. GitHub Actions consumers continue to use Git references
+such as `@v1`.
+
 ## Issues
 
 [Report a problem or request an action](https://github.com/tanaabased/actions/issues).
@@ -54,6 +58,12 @@ badges above report PR checks, not live publication.
 
 See [CHANGELOG.md](CHANGELOG.md) for changes and
 [GitHub Releases](https://github.com/tanaabased/actions/releases) for published versions.
+
+## License
+
+[MIT](LICENSE). The vendored OpenAI Codex plugin validator retains its own
+[Apache-2.0 license](validate-codex-plugin/LICENSE.openai-codex) and
+[notice](validate-codex-plugin/NOTICE.openai-codex).
 
 ## Contributors
 

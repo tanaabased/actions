@@ -114,3 +114,14 @@ exists, but registry state remains the authority. A stable publication updates
 the prerelease tag only when `update-prerelease-tag-on-stable` is `true`; the
 action validates the required token before publishing so a missing tag
 credential cannot create a half-finished release.
+
+If publication succeeds but the later distribution-tag update fails, inspect
+the immutable version and current tags, then repair only the tag:
+
+```sh
+npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version
+npm dist-tag ls "$PACKAGE_NAME"
+npm dist-tag add "$PACKAGE_NAME@$PACKAGE_VERSION" "$CHANNEL"
+```
+
+Do not rerun publication after the version exists.
