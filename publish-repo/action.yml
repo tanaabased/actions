@@ -2,6 +2,10 @@ name: Publish repository
 description: Prepare and synchronize release changes and Git tags.
 
 inputs:
+  test-mode:
+    description: Exercise the action without mutating external state or requiring publication credentials.
+    required: false
+    default: 'false'
   version:
     description: Semver-valid release version.
     required: false
@@ -45,6 +49,16 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Validate test mode
+      shell: bash
+      env:
+        TEST_MODE: ${{ inputs.test-mode }}
+      run: |
+        if [[ "$TEST_MODE" != "true" && "$TEST_MODE" != "false" ]]; then
+          echo "::error::test-mode must be true or false"
+          exit 1
+        fi
+
     - id: release-date
       name: Format release date
       shell: bash
@@ -73,11 +87,11 @@ runs:
         bun-version: ${{ inputs.bun-version }}
         commands: ${{ inputs.commands }}
         root: ${{ inputs.root }}
-        sync: true
+        sync: ${{ inputs.test-mode != 'true' }}
         sync-branch: ${{ inputs.sync-branch }}
         sync-email: tanaabot@tanaab.dev
         sync-tags: ${{ inputs.sync-tags }}
-        sync-token: ${{ inputs.sync-token }}
+        sync-token: ${{ inputs.test-mode == 'true' && 'unused' || inputs.sync-token }}
         sync-username: tanaabot
         sync-verified: true
         update-files: CHANGELOG.md

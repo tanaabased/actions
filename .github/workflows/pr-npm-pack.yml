@@ -1,0 +1,46 @@
+name: PR / npm-pack
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  npm-pack:
+    name: npm-pack
+    runs-on: ubuntu-24.04
+    env:
+      PACKAGE_NAME: '@tanaabased/actions-npm-fixture'
+      PACKAGE_VERSION: 0.${{ github.run_id }}.${{ github.run_attempt }}-pack
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Set fixture version
+        working-directory: npm-pack/test/fixture
+        run: npm pkg set "version=$PACKAGE_VERSION"
+      - name: Pack fixture
+        id: pack
+        uses: ./npm-pack
+        with:
+          test-mode: true
+          package-directory: npm-pack/test/fixture
+      - name: Verify and install packed artifact
+        env:
+          PACKED_NAME: ${{ steps.pack.outputs.package-name }}
+          PACKED_VERSION: ${{ steps.pack.outputs.package-version }}
+          TARBALL_PATH: ${{ steps.pack.outputs.tarball-path }}
+        run: |
+          test "$PACKED_NAME" = "$PACKAGE_NAME"
+          test "$PACKED_VERSION" = "$PACKAGE_VERSION"
+          test -f "$TARBALL_PATH"
+          test "$(tar -tzf "$TARBALL_PATH" | sort)" = $'package/index.js\npackage/package.json'
+
+          consumer="$(mktemp -d)"
+          (
+            cd "$consumer"
+            npm init --yes >/dev/null
+            npm install --ignore-scripts --no-audit --no-fund "$TARBALL_PATH"
+            npm list "$PACKAGE_NAME@$PACKAGE_VERSION" --depth=0
+            node --input-type=module -e "import('$PACKAGE_NAME').then(({ fixture }) => { if (fixture !== 'actions-npm-fixture') process.exit(1) })"
+          )

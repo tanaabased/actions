@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: tanaabased/actions/actions/publish-repo@v1
+      - uses: tanaabased/actions/publish-repo@v1
         with:
           commands: bun run build
           sync-tags: v1
@@ -33,6 +33,7 @@ explicitly.
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
+| `test-mode` | No | `false` | Prepare locally without committing, pushing, or requiring publication credentials. |
 | `version` | No | Release tag | Semver-valid exact tag and project version. |
 | `release-date` | No | Release publication timestamp | Date or timestamp formatted as `Month D, YYYY` for the changelog. |
 | `release-url` | No | Release URL | Link recorded in the changelog. |
@@ -66,3 +67,11 @@ the exact and moving tags to the resulting commit. This makes repository
 publication independently retryable, not unconditionally idempotent. In
 particular, already-prepared changelog content can acquire a duplicate release
 header.
+
+## Test behavior
+
+With `test-mode: true`, the action performs the normal release preparation but
+disables synchronization and withholds the synchronization token. Pull requests
+verify the resolved version, package metadata, changelog, project commands, and
+unchanged Git history. Only this repository's real release proves verified
+commit creation, branch synchronization, and exact or moving tag updates.

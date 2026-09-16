@@ -18,7 +18,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Publish repository
-        uses: ./actions/publish-repo
+        uses: ./publish-repo
         with:
           sync-tags: v1
           sync-token: ${{ secrets.TANAAB_COAXIUM_INJECTOR }}

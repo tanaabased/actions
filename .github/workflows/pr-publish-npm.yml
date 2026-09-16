@@ -1,0 +1,62 @@
+name: PR / publish-npm
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  publish-npm:
+    name: publish-npm (${{ matrix.case }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - case: stable
+            version: 1.2.3
+            expected-channel: latest
+            expected-release-type: stable
+          - case: prerelease
+            version: 1.2.3-next.1
+            expected-channel: edge
+            expected-release-type: prerelease
+    env:
+      PACKAGE_NAME: '@tanaabased/actions-publish-npm-fixture'
+      PACKAGE_VERSION: ${{ matrix.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Set fixture version
+        working-directory: publish-npm/test/fixture
+        run: npm pkg set "version=$PACKAGE_VERSION"
+      - name: Pack fixture
+        id: pack
+        uses: ./npm-pack
+        with:
+          test-mode: true
+          package-directory: publish-npm/test/fixture
+      - name: Validate npm publication
+        id: publish
+        uses: ./publish-npm
+        with:
+          test-mode: true
+          tarball: ${{ steps.pack.outputs.tarball-path }}
+          update-prerelease-tag-on-stable: true
+      - name: Verify publication metadata
+        env:
+          EXPECTED_CHANNEL: ${{ matrix.expected-channel }}
+          EXPECTED_RELEASE_TYPE: ${{ matrix.expected-release-type }}
+          PACKED_TARBALL: ${{ steps.pack.outputs.tarball-path }}
+          PUBLISHED_CHANNEL: ${{ steps.publish.outputs.channel }}
+          PUBLISHED_NAME: ${{ steps.publish.outputs.package-name }}
+          PUBLISHED_RELEASE_TYPE: ${{ steps.publish.outputs.release-type }}
+          PUBLISHED_TARBALL: ${{ steps.publish.outputs.tarball-path }}
+          PUBLISHED_VERSION: ${{ steps.publish.outputs.package-version }}
+        run: |
+          test "$PUBLISHED_TARBALL" = "$PACKED_TARBALL"
+          test "$PUBLISHED_NAME" = "$PACKAGE_NAME"
+          test "$PUBLISHED_VERSION" = "$PACKAGE_VERSION"
+          test "$PUBLISHED_CHANNEL" = "$EXPECTED_CHANNEL"
+          test "$PUBLISHED_RELEASE_TYPE" = "$EXPECTED_RELEASE_TYPE"
