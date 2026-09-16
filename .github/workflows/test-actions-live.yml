@@ -1,7 +1,6 @@
-name: Release action tests
+name: Live action tests
 
 on:
-  pull_request:
   push:
     branches-ignore:
       - release-action-test/**
@@ -11,79 +10,8 @@ permissions:
   contents: read
 
 jobs:
-  prepare-release:
-    name: Prepare release
-    runs-on: ubuntu-24.04
-    env:
-      RELEASE_URL: https://example.invalid/releases/test
-      RELEASE_VERSION: v0.0.0-test.${{ github.run_id }}.${{ github.run_attempt }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      - name: Prepare release
-        id: prepare
-        uses: ./actions/prepare-release
-        with:
-          commands: bun -e "await Bun.write('command-output.txt', process.env.PREPARE_RELEASE_VERSION)"
-          release-date: 2026-09-16T12:00:00Z
-          release-url: ${{ env.RELEASE_URL }}
-          root: ${{ github.workspace }}/tests/fixtures/release
-          version: ${{ env.RELEASE_VERSION }}
-      - name: Verify prepared files without a push
-        env:
-          RESOLVED_VERSION: ${{ steps.prepare.outputs.resolved-version }}
-        working-directory: tests/fixtures/release
-        run: |
-          test "$RESOLVED_VERSION" = "$RELEASE_VERSION"
-          test "$(node --print "require('./package.json').version")" = "${RELEASE_VERSION#v}"
-          test "$(cat command-output.txt)" = "$RELEASE_VERSION"
-          grep --fixed-strings "## $RELEASE_VERSION - [September 16, 2026]($RELEASE_URL)" CHANGELOG.md
-          test "$(grep --count --fixed-strings '## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})' CHANGELOG.md)" = 1
-          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          ! git ls-remote --exit-code origin "refs/tags/$RELEASE_VERSION"
-
-  npm-pack:
-    name: Pack npm fixture
-    runs-on: ubuntu-24.04
-    env:
-      PACKAGE_NAME: '@tanaabased/actions-npm-fixture'
-      PACKAGE_VERSION: 0.${{ github.run_id }}.${{ github.run_attempt }}-pack
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-      - name: Set fixture version
-        working-directory: tests/fixtures/npm
-        run: npm pkg set "version=$PACKAGE_VERSION"
-      - name: Pack fixture
-        id: pack
-        uses: ./actions/npm-pack
-        with:
-          package-directory: tests/fixtures/npm
-      - name: Verify and install packed artifact
-        env:
-          PACKED_NAME: ${{ steps.pack.outputs.package-name }}
-          PACKED_VERSION: ${{ steps.pack.outputs.package-version }}
-          TARBALL_PATH: ${{ steps.pack.outputs.tarball-path }}
-        run: |
-          test "$PACKED_NAME" = "$PACKAGE_NAME"
-          test "$PACKED_VERSION" = "$PACKAGE_VERSION"
-          test -f "$TARBALL_PATH"
-          test "$(tar -tzf "$TARBALL_PATH" | sort)" = $'package/index.js\npackage/package.json'
-
-          consumer="$(mktemp -d)"
-          (
-            cd "$consumer"
-            npm init --yes >/dev/null
-            npm install --ignore-scripts --no-audit --no-fund "$TARBALL_PATH"
-            npm list "$PACKAGE_NAME@$PACKAGE_VERSION" --depth=0
-            node --input-type=module -e "import('$PACKAGE_NAME').then(({ fixture }) => { if (fixture !== 'actions-npm-fixture') process.exit(1) })"
-          )
-
   publish-npm:
-    name: Publish and install npm fixture
-    if: github.event_name != 'pull_request' && github.repository == 'tanaabased/actions'
+    name: actions/publish-npm
     runs-on: ubuntu-24.04
     concurrency:
       group: npm-package-test-${{ github.repository }}
@@ -132,12 +60,19 @@ jobs:
           test "$PUBLISHED_VERSION" = "$PRERELEASE_VERSION"
           test "$PUBLISHED_CHANNEL" = edge
           test "$PUBLISHED_TYPE" = prerelease
-          edge="$(npm view "$PACKAGE_NAME" dist-tags.edge --json --registry "$REGISTRY_URL")"
-          EDGE_JSON="$edge" node -e '
-            if (JSON.parse(process.env.EDGE_JSON) !== process.env.PRERELEASE_VERSION) {
-              throw new Error(`unexpected edge tag: ${process.env.EDGE_JSON}`);
-            }
-          '
+
+          edge=
+          for attempt in {1..10}; do
+            edge="$(npm view "$PACKAGE_NAME" dist-tags.edge --json --registry "$REGISTRY_URL" 2>/dev/null || true)"
+            if [[ "$edge" = "\"$PRERELEASE_VERSION\"" ]]; then
+              break
+            fi
+            if [[ $attempt -eq 10 ]]; then
+              echo "::error::Expected edge=$PRERELEASE_VERSION after publication; received ${edge:-<empty>}."
+              exit 1
+            fi
+            sleep "$attempt"
+          done
       - name: Set stable fixture version
         working-directory: tests/fixtures/npm
         run: npm pkg set "version=$STABLE_VERSION"
@@ -170,12 +105,25 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
         run: |
-          tags="$(npm view "$PACKAGE_NAME" dist-tags --json --registry "$REGISTRY_URL")"
-          TAGS_JSON="$tags" node -e '
-            const tags = JSON.parse(process.env.TAGS_JSON);
-            if (tags.latest !== process.env.STABLE_VERSION) throw new Error(`unexpected latest tag: ${tags.latest}`);
-            if (tags.edge !== process.env.STABLE_VERSION) throw new Error(`unexpected edge tag: ${tags.edge}`);
-          '
+          tags=
+          for attempt in {1..10}; do
+            tags="$(npm view "$PACKAGE_NAME" dist-tags --json --registry "$REGISTRY_URL" 2>/dev/null || true)"
+            if TAGS_JSON="$tags" node -e '
+              try {
+                const tags = JSON.parse(process.env.TAGS_JSON);
+                process.exit(tags.latest === process.env.STABLE_VERSION && tags.edge === process.env.STABLE_VERSION ? 0 : 1);
+              } catch {
+                process.exit(1);
+              }
+            '; then
+              break
+            fi
+            if [[ $attempt -eq 10 ]]; then
+              echo "::error::Expected latest and edge to resolve to $STABLE_VERSION; received ${tags:-<empty>}."
+              exit 1
+            fi
+            sleep "$attempt"
+          done
 
           for version in "$PRERELEASE_VERSION" "$STABLE_VERSION"; do
             consumer="$(mktemp -d)"
@@ -201,8 +149,7 @@ jobs:
         run: test "$CONFLICT_OUTCOME" = failure
 
   publish-repo:
-    name: Publish repository and retry
-    if: github.event_name != 'pull_request' && github.repository == 'tanaabased/actions'
+    name: actions/publish-repo
     runs-on: ubuntu-24.04
     permissions:
       contents: write
