@@ -1,0 +1,9 @@
+{
+  "name": "@tanaab/setup-bun-node-fixture-dependency",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": "./index.js",
+  "scripts": {
+    "postinstall": "echo lifecycle-script-ran > lifecycle-script-ran"
+  }
+}

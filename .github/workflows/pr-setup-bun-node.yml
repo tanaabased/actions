@@ -1,0 +1,77 @@
+name: PR / setup-bun-node
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  setup-bun-node:
+    name: setup-bun-node (${{ matrix.runner }}, ${{ matrix.fixture }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            fixture: bun-only
+            setup-node: 'false'
+            expect-node: 'false'
+          - runner: macos-26
+            fixture: bun-only
+            setup-node: 'false'
+            expect-node: 'false'
+          - runner: windows-2025
+            fixture: bun-only
+            setup-node: 'false'
+            expect-node: 'false'
+          - runner: ubuntu-24.04
+            fixture: bun-node
+            setup-node: 'true'
+            expect-node: 'true'
+          - runner: macos-26
+            fixture: bun-node
+            setup-node: 'true'
+            expect-node: 'true'
+          - runner: windows-2025
+            fixture: bun-node
+            setup-node: 'true'
+            expect-node: 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Set up runtimes and dependencies
+        id: setup
+        uses: ./setup-bun-node
+        with:
+          test-mode: true
+          working-directory: setup-bun-node/test/fixture/${{ matrix.fixture }}
+          setup-node: ${{ matrix.setup-node }}
+      - name: Verify outputs and later-step runtime availability
+        shell: bash
+        env:
+          BUN_VERSION: ${{ steps.setup.outputs.bun-version }}
+          DEPENDENCY_DIRECTORY: ${{ steps.setup.outputs.dependency-directory }}
+          EXPECT_NODE: ${{ matrix.expect-node }}
+          NODE_VERSION: ${{ steps.setup.outputs.node-version }}
+        run: |
+          set -euo pipefail
+
+          test "$BUN_VERSION" = "1.3.14"
+          test -d "$DEPENDENCY_DIRECTORY/node_modules/@tanaab/setup-bun-node-fixture-dependency"
+          test ! -e "$DEPENDENCY_DIRECTORY/node_modules/@tanaab/setup-bun-node-fixture-dependency/lifecycle-script-ran"
+          command -v bun
+          test "$(bun --version)" = "$BUN_VERSION"
+          (
+            cd "$DEPENDENCY_DIRECTORY"
+            bun -e "import { fixtureDependency } from '@tanaab/setup-bun-node-fixture-dependency'; if (fixtureDependency !== 'installed-without-lifecycle-scripts') process.exit(1)"
+          )
+
+          if [[ "$EXPECT_NODE" == "true" ]]; then
+            test "$NODE_VERSION" = "v24.15.0"
+            command -v node
+            test "$(node --version)" = "$NODE_VERSION"
+          else
+            test -z "$NODE_VERSION"
+          fi

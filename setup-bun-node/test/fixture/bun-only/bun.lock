@@ -1,0 +1,15 @@
+{
+  "lockfileVersion": 1,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "@tanaab/setup-bun-node-bun-only-fixture",
+      "dependencies": {
+        "@tanaab/setup-bun-node-fixture-dependency": "file:../dependency",
+      },
+    },
+  },
+  "packages": {
+    "@tanaab/setup-bun-node-fixture-dependency": ["@tanaab/setup-bun-node-fixture-dependency@file:../dependency", {}],
+  }
+}

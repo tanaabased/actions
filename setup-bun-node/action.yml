@@ -1,0 +1,147 @@
+name: Set up Bun and Node
+description: Set up a project's Bun runtime, optional Node.js runtime, and dependencies.
+
+inputs:
+  test-mode:
+    description: Exercise the same local runtime and dependency setup without external credentials.
+    required: false
+    default: 'false'
+  working-directory:
+    description: Workspace-relative directory containing package.json and the runtime version files.
+    required: false
+    default: .
+  bun-version-file:
+    description: Bun version file relative to working-directory.
+    required: false
+    default: .bun-version
+  setup-node:
+    description: Set up Node.js from node-version-file before installing dependencies.
+    required: false
+    default: 'false'
+  node-version-file:
+    description: Node.js version file relative to working-directory when setup-node is true.
+    required: false
+    default: .node-version
+  frozen-lockfile:
+    description: Require bun.lock to match package.json during installation.
+    required: false
+    default: 'true'
+  ignore-scripts:
+    description: Disable package lifecycle scripts during installation.
+    required: false
+    default: 'true'
+
+outputs:
+  bun-version:
+    description: Installed Bun version reported by bun --version.
+    value: ${{ steps.results.outputs.bun-version }}
+  node-version:
+    description: Installed Node.js version reported by node --version, or empty when Node.js setup is disabled.
+    value: ${{ steps.results.outputs.node-version }}
+  dependency-directory:
+    description: Absolute project directory where dependencies were installed.
+    value: ${{ steps.results.outputs.dependency-directory }}
+
+runs:
+  using: composite
+  steps:
+    - id: inputs
+      name: Validate setup inputs
+      shell: bash
+      env:
+        BUN_VERSION_FILE: ${{ inputs.bun-version-file }}
+        FROZEN_LOCKFILE: ${{ inputs.frozen-lockfile }}
+        IGNORE_SCRIPTS: ${{ inputs.ignore-scripts }}
+        NODE_VERSION_FILE: ${{ inputs.node-version-file }}
+        SETUP_NODE: ${{ inputs.setup-node }}
+        TEST_MODE: ${{ inputs.test-mode }}
+        WORKING_DIRECTORY: ${{ github.workspace }}/${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+
+        for input_name in FROZEN_LOCKFILE IGNORE_SCRIPTS SETUP_NODE TEST_MODE; do
+          if [[ "${!input_name}" != "true" && "${!input_name}" != "false" ]]; then
+            echo "::error::${input_name,,} must be true or false"
+            exit 1
+          fi
+        done
+
+        if [[ ! -d "$WORKING_DIRECTORY" ]]; then
+          echo "::error::working-directory does not exist: $WORKING_DIRECTORY"
+          exit 1
+        fi
+        if [[ ! -f "$WORKING_DIRECTORY/package.json" ]]; then
+          echo "::error::package.json does not exist in working-directory: $WORKING_DIRECTORY"
+          exit 1
+        fi
+        if [[ ! -f "$WORKING_DIRECTORY/$BUN_VERSION_FILE" ]]; then
+          echo "::error::bun-version-file does not exist: $WORKING_DIRECTORY/$BUN_VERSION_FILE"
+          exit 1
+        fi
+        if [[ "$FROZEN_LOCKFILE" == "true" && ! -f "$WORKING_DIRECTORY/bun.lock" ]]; then
+          echo "::error::bun.lock is required when frozen-lockfile is true"
+          exit 1
+        fi
+        if [[ "$SETUP_NODE" == "true" && ! -f "$WORKING_DIRECTORY/$NODE_VERSION_FILE" ]]; then
+          echo "::error::node-version-file does not exist: $WORKING_DIRECTORY/$NODE_VERSION_FILE"
+          exit 1
+        fi
+
+    - name: Set up Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version-file: ${{ github.workspace }}/${{ inputs.working-directory }}/${{ inputs.bun-version-file }}
+
+    - name: Set up Node.js
+      if: ${{ inputs.setup-node == 'true' }}
+      uses: actions/setup-node@v5
+      with:
+        node-version-file: ${{ github.workspace }}/${{ inputs.working-directory }}/${{ inputs.node-version-file }}
+        package-manager-cache: false
+
+    - name: Install dependencies
+      shell: bash
+      env:
+        FROZEN_LOCKFILE: ${{ inputs.frozen-lockfile }}
+        IGNORE_SCRIPTS: ${{ inputs.ignore-scripts }}
+        WORKING_DIRECTORY: ${{ github.workspace }}/${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+
+        install_args=()
+        if [[ "$FROZEN_LOCKFILE" == "true" ]]; then
+          install_args+=(--frozen-lockfile)
+        fi
+        if [[ "$IGNORE_SCRIPTS" == "true" ]]; then
+          install_args+=(--ignore-scripts)
+        fi
+
+        (
+          cd "$WORKING_DIRECTORY"
+          bun install "${install_args[@]}"
+        )
+
+    - id: results
+      name: Verify runtimes and dependencies
+      shell: bash
+      env:
+        SETUP_NODE: ${{ inputs.setup-node }}
+        WORKING_DIRECTORY: ${{ github.workspace }}/${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+
+        dependency_directory="$(cd "$WORKING_DIRECTORY" && pwd -P)"
+        bun_version="$(bun --version)"
+        if [[ ! -d "$dependency_directory/node_modules" ]]; then
+          echo "::error::Dependencies were not installed in $dependency_directory/node_modules"
+          exit 1
+        fi
+
+        node_version=""
+        if [[ "$SETUP_NODE" == "true" ]]; then
+          node_version="$(node --version)"
+        fi
+
+        echo "bun-version=$bun_version" >> "$GITHUB_OUTPUT"
+        echo "node-version=$node_version" >> "$GITHUB_OUTPUT"
+        echo "dependency-directory=$dependency_directory" >> "$GITHUB_OUTPUT"

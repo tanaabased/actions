@@ -1,0 +1,9 @@
+{
+  "name": "@tanaab/setup-bun-node-bun-only-fixture",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@tanaab/setup-bun-node-fixture-dependency": "file:../dependency"
+  }
+}

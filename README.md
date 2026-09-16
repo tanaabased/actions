@@ -21,6 +21,7 @@
 | [publish-clawhub](publish-clawhub/README.md) | Publish a code-plugin tarball and wait for the result. | [![publish-clawhub](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-publish-clawhub.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-publish-clawhub.yml) |
 | [publish-npm](publish-npm/README.md) | Publish a tested tarball with explicit registry channels. | [![publish-npm](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-publish-npm.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-publish-npm.yml) |
 | [publish-repo](publish-repo/README.md) | Synchronize prepared release changes and Git tags. | [![publish-repo](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-publish-repo.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-publish-repo.yml) |
+| [setup-bun-node](setup-bun-node/README.md) | Set up Bun, optional Node.js, and project dependencies. | [![setup-bun-node](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-setup-bun-node.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-setup-bun-node.yml) |
 
 ## Usage
 
