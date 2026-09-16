@@ -21,12 +21,13 @@
 | [publish-clawhub](publish-clawhub/README.md) | Publish a code-plugin tarball and wait for the result. | [![publish-clawhub](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-publish-clawhub.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-publish-clawhub.yml) |
 | [publish-npm](publish-npm/README.md) | Publish a tested tarball with explicit registry channels. | [![publish-npm](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-publish-npm.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-publish-npm.yml) |
 | [publish-repo](publish-repo/README.md) | Synchronize prepared release changes and Git tags. | [![publish-repo](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-publish-repo.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-publish-repo.yml) |
+| [ssh-test-key](ssh-test-key/README.md) | Generate a local Ed25519 SSH key pair for test fixtures. | [![ssh-test-key](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-ssh-test-key.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-ssh-test-key.yml) |
 
 ## Usage
 
 Choose an action above for its inputs, outputs, permissions, and examples.
 Each action runs inside a caller-owned job; callers choose runners and job
-dependencies. Current actions are tested on Linux (`ubuntu-24.04`).
+dependencies. See each action README for its supported runners.
 
 The first release is in preparation. Examples use the planned `@v1` reference;
 pin a reviewed commit until that tag is published.

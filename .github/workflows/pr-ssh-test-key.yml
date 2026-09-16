@@ -1,0 +1,65 @@
+name: PR / ssh-test-key
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ssh-test-key:
+    name: ssh-test-key (${{ matrix.runner }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - ubuntu-24.04
+          - macos-26
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Generate SSH test key
+        id: key
+        uses: ./ssh-test-key
+        with:
+          test-mode: true
+          destination: ${{ runner.temp }}/ssh-test-key/id_ed25519
+          comment: tanaab-ssh-test-key@example.test
+      - name: Verify generated key pair
+        shell: bash
+        env:
+          EXPECTED_COMMENT: tanaab-ssh-test-key@example.test
+          PRIVATE_KEY_PATH: ${{ steps.key.outputs.private-key-path }}
+          PUBLIC_KEY_PATH: ${{ steps.key.outputs.public-key-path }}
+        run: |
+          set -euo pipefail
+
+          test -f "$PRIVATE_KEY_PATH"
+          test -f "$PUBLIC_KEY_PATH"
+          test "$PUBLIC_KEY_PATH" = "$PRIVATE_KEY_PATH.pub"
+          test "$(awk '{print $3}' "$PUBLIC_KEY_PATH")" = "$EXPECTED_COMMENT"
+          ssh-keygen -y -f "$PRIVATE_KEY_PATH" > derived-public-key
+          cmp -s derived-public-key "$PUBLIC_KEY_PATH"
+
+          if [[ "$RUNNER_OS" == Linux ]]; then
+            private_mode="$(stat -c '%a' "$PRIVATE_KEY_PATH")"
+            public_mode="$(stat -c '%a' "$PUBLIC_KEY_PATH")"
+          else
+            private_mode="$(stat -f '%Lp' "$PRIVATE_KEY_PATH")"
+            public_mode="$(stat -f '%Lp' "$PUBLIC_KEY_PATH")"
+          fi
+          test "$private_mode" = 600
+          test "$public_mode" = 644
+      - name: Reject an existing destination
+        id: collision
+        continue-on-error: true
+        uses: ./ssh-test-key
+        with:
+          test-mode: true
+          destination: ${{ steps.key.outputs.private-key-path }}
+          comment: tanaab-ssh-test-key@example.test
+      - name: Verify collision failure
+        env:
+          COLLISION_OUTCOME: ${{ steps.collision.outcome }}
+        run: test "$COLLISION_OUTCOME" = failure
