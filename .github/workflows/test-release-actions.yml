@@ -26,7 +26,7 @@ jobs:
         id: prepare
         uses: ./actions/prepare-release
         with:
-          commands: printf '%s\n' "$PREPARE_RELEASE_VERSION" > command-output.txt
+          commands: bun -e "await Bun.write('command-output.txt', process.env.PREPARE_RELEASE_VERSION)"
           release-date: 2026-09-16T12:00:00Z
           release-url: ${{ env.RELEASE_URL }}
           root: ${{ github.workspace }}/tests/fixtures/release
@@ -74,7 +74,7 @@ jobs:
       - name: Publish repository
         uses: ./actions/publish-repo
         with:
-          commands: printf '%s\n' "$PREPARE_RELEASE_VERSION" > command-output.txt
+          commands: bun -e "await Bun.write('command-output.txt', process.env.PREPARE_RELEASE_VERSION)"
           release-date: 2026-09-16T12:00:00Z
           release-url: ${{ env.RELEASE_URL }}
           root: ${{ github.workspace }}/test
@@ -91,9 +91,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         working-directory: test
         run: |
-          branch_sha="$(git ls-remote origin "refs/heads/$SYNC_BRANCH" | cut -f1)"
-          version_sha="$(git ls-remote origin "refs/tags/$RELEASE_VERSION" | cut -f1)"
-          moving_sha="$(git ls-remote origin "refs/tags/$SYNC_TAG" | cut -f1)"
+          branch_sha="$(gh api "repos/${{ github.repository }}/git/ref/heads/$SYNC_BRANCH" --jq '.object.sha')"
+          version_sha="$(gh api "repos/${{ github.repository }}/git/ref/tags/$RELEASE_VERSION" --jq '.object.sha')"
+          moving_sha="$(gh api "repos/${{ github.repository }}/git/ref/tags/$SYNC_TAG" --jq '.object.sha')"
           test "$branch_sha" = "${{ steps.first.outputs.sha }}"
           test "$version_sha" = "$branch_sha"
           test "$moving_sha" = "$branch_sha"
@@ -102,7 +102,7 @@ jobs:
       - name: Retry repository publication
         uses: ./actions/publish-repo
         with:
-          commands: printf '%s\n' "$PREPARE_RELEASE_VERSION" > command-output.txt
+          commands: bun -e "await Bun.write('command-output.txt', process.env.PREPARE_RELEASE_VERSION)"
           release-date: 2026-09-16T12:00:00Z
           release-url: ${{ env.RELEASE_URL }}
           root: ${{ github.workspace }}/test
@@ -111,12 +111,14 @@ jobs:
           sync-token: ${{ secrets.TANAAB_COAXIUM_INJECTOR }}
           version: ${{ env.RELEASE_VERSION }}
       - name: Verify retry result
+        env:
+          GH_TOKEN: ${{ github.token }}
         working-directory: test
         run: |
           retry_sha="$(git rev-parse HEAD)"
-          branch_sha="$(git ls-remote origin "refs/heads/$SYNC_BRANCH" | cut -f1)"
-          version_sha="$(git ls-remote origin "refs/tags/$RELEASE_VERSION" | cut -f1)"
-          moving_sha="$(git ls-remote origin "refs/tags/$SYNC_TAG" | cut -f1)"
+          branch_sha="$(gh api "repos/${{ github.repository }}/git/ref/heads/$SYNC_BRANCH" --jq '.object.sha')"
+          version_sha="$(gh api "repos/${{ github.repository }}/git/ref/tags/$RELEASE_VERSION" --jq '.object.sha')"
+          moving_sha="$(gh api "repos/${{ github.repository }}/git/ref/tags/$SYNC_TAG" --jq '.object.sha')"
           test "$retry_sha" != "${{ steps.first.outputs.sha }}"
           test "$branch_sha" = "$retry_sha"
           test "$version_sha" = "$retry_sha"
