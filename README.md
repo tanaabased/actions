@@ -41,21 +41,3 @@ jobs:
 
 See [examples/publish.yml](examples/publish.yml) for independent npm and
 repository publishing jobs. Neither waits for a ceremonial finalizer.
-
-## Local validation
-
-Run the repository-owned structural check before committing:
-
-```sh
-ruby scripts/validate
-git diff --check
-```
-
-`scripts/validate` parses every workflow and composite-action manifest, then
-checks that catalog documentation links resolve. Use
-[`actionlint`](https://github.com/rhysd/actionlint) as an additional local
-check when it is installed:
-
-```sh
-actionlint .github/workflows/*.yml
-```
