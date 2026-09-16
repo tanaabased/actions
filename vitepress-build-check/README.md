@@ -9,12 +9,14 @@ Supported runner: Linux (`ubuntu-24.04`).
 
 ## Usage
 
-Set up Bun and Node, install dependencies, and configure caches in the caller
-job before invoking this action.
+Set up Bun, install dependencies, and configure caches in the caller job before
+invoking this action.
 
 ```yaml
-- name: Set up Bun and Node
-  uses: tanaabased/actions/setup-bun-node@v1
+- name: Set up Bun
+  uses: oven-sh/setup-bun@v2
+  with:
+    bun-version-file: .bun-version
 
 - name: Install dependencies
   run: bun install --frozen-lockfile --ignore-scripts
@@ -45,8 +47,10 @@ debug. Caller-supplied commands are never printed or modified.
 Theme retains its cache and multiversion preparation in its own job.
 
 ```yaml
-- name: Set up Bun and Node
-  uses: tanaabased/actions/setup-bun-node@v1
+- name: Set up Bun
+  uses: oven-sh/setup-bun@v2
+  with:
+    bun-version-file: .bun-version
 
 - name: Restore documentation cache
   uses: actions/cache@v4
@@ -70,8 +74,10 @@ Website retains its distinct build behavior and does not supply multiversion
 preparation.
 
 ```yaml
-- name: Set up Bun and Node
-  uses: tanaabased/actions/setup-bun-node@v1
+- name: Set up Bun
+  uses: oven-sh/setup-bun@v2
+  with:
+    bun-version-file: .bun-version
 
 - name: Restore website cache
   uses: actions/cache@v4

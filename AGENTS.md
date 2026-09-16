@@ -95,12 +95,17 @@
 
 ### Testing vectors
 
-| Product | Pull request | Release lifecycle |
+| Product | Pull-request workflow and runners | Release lifecycle |
 | --- | --- | --- |
-| `prepare-release` | Prepare and inspect its local fixture | None |
-| `npm-pack` | Pack, inspect, install, and exercise its exact tarball | None |
-| `publish-clawhub` | Pack its code-plugin fixture and exercise ClawHub's dry-run path | First real Agent System ClawHub publication |
-| `publish-codex-plugin` | Prepare both dependency-policy archives and compare their exact unpacked contents | First real consumer GitHub Release upload and download |
-| `publish-npm` | Exercise stable and prerelease tarballs through npm's dry-run path | Real downstream npm publication |
-| `publish-repo` | Prepare and inspect its local fixture without synchronizing Git | This repository's real release |
-| `validate-codex-plugin` | Accept a valid fixture and reject an invalid fixture on Linux and macOS | None |
+| `prepare-release` | [`pr-prepare-release.yml`](.github/workflows/pr-prepare-release.yml), Linux: prepare and inspect its local fixture | None |
+| `npm-pack` | [`pr-npm-pack.yml`](.github/workflows/pr-npm-pack.yml), Linux: pack, inspect, install, and exercise its exact tarball | This repository's catalog package in [`pr-release.yml`](.github/workflows/pr-release.yml) and `release.yml` |
+| `publish-clawhub` | [`pr-publish-clawhub.yml`](.github/workflows/pr-publish-clawhub.yml), Linux: pack its code-plugin fixture and exercise ClawHub's dry-run path | First real downstream Agent System ClawHub publication in [#13](https://github.com/tanaabased/actions/issues/13) |
+| `publish-codex-plugin` | [`pr-publish-codex-plugin.yml`](.github/workflows/pr-publish-codex-plugin.yml), Linux: prepare both dependency-policy archives and compare their exact unpacked contents | First real downstream GitHub Release upload and download in [#13](https://github.com/tanaabased/actions/issues/13) |
+| `publish-npm` | [`pr-publish-npm.yml`](.github/workflows/pr-publish-npm.yml), Linux: exercise stable and prerelease tarballs through npm's dry-run path | This repository's catalog publication in [#7](https://github.com/tanaabased/actions/issues/7); downstream publication in [#13](https://github.com/tanaabased/actions/issues/13) |
+| `publish-repo` | [`pr-publish-repo.yml`](.github/workflows/pr-publish-repo.yml), Linux: prepare and inspect its local fixture without synchronizing Git | This repository's first release in [#7](https://github.com/tanaabased/actions/issues/7) |
+| `run-leia` | [`pr-run-leia.yml`](.github/workflows/pr-run-leia.yml), Linux and macOS with Bash plus Windows with PowerShell | None |
+| `setup-agent-system` | [`pr-setup-agent-system.yml`](.github/workflows/pr-setup-agent-system.yml), Linux and macOS: install exact published and source artifacts | None |
+| `setup-openclaw` | [`pr-setup-openclaw.yml`](.github/workflows/pr-setup-openclaw.yml), Linux and macOS: install an exact CLI and exercise isolated helpers | None |
+| `ssh-test-key` | [`pr-ssh-test-key.yml`](.github/workflows/pr-ssh-test-key.yml), Linux and macOS: generate, inspect, and reject collisions | None |
+| `validate-codex-plugin` | [`pr-validate-codex-plugin.yml`](.github/workflows/pr-validate-codex-plugin.yml), Linux and macOS: accept a valid fixture and reject an invalid fixture | None |
+| `vitepress-build-check` | [`pr-vitepress-build-check.yml`](.github/workflows/pr-vitepress-build-check.yml), Linux: build its fixture and preserve command failures | None |
