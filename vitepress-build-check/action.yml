@@ -1,0 +1,48 @@
+name: VitePress build check
+description: Run an optional VitePress preparation command and required build command.
+
+inputs:
+  test-mode:
+    description: Run the normal local build behavior without external mutation.
+    required: false
+    default: 'false'
+  prepare-command:
+    description: Optional shell command to run before the build command.
+    required: false
+    default: ''
+  build-command:
+    description: Required shell command that builds the VitePress site.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Validate inputs
+      shell: bash
+      env:
+        BUILD_COMMAND: ${{ inputs.build-command }}
+        TEST_MODE: ${{ inputs.test-mode }}
+      run: |
+        set -euo pipefail
+
+        if [[ "$TEST_MODE" != 'true' && "$TEST_MODE" != 'false' ]]; then
+          echo '::error::test-mode must be true or false'
+          exit 1
+        fi
+        if [[ -z "$BUILD_COMMAND" ]]; then
+          echo '::error::build-command must not be empty'
+          exit 1
+        fi
+
+    - name: Prepare VitePress build
+      if: ${{ inputs.prepare-command != '' }}
+      shell: bash
+      env:
+        PREPARE_COMMAND: ${{ inputs.prepare-command }}
+      run: bash -eo pipefail -c "$PREPARE_COMMAND"
+
+    - name: Build VitePress site
+      shell: bash
+      env:
+        BUILD_COMMAND: ${{ inputs.build-command }}
+      run: bash -eo pipefail -c "$BUILD_COMMAND"

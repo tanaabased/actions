@@ -1,0 +1,55 @@
+name: PR / vitepress-build-check
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  vitepress-build-check:
+    name: vitepress-build-check
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - name: Install fixture dependencies
+        working-directory: vitepress-build-check/test/fixture
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: Build prepared VitePress fixture
+        uses: ./vitepress-build-check
+        with:
+          test-mode: true
+          prepare-command: cd vitepress-build-check/test/fixture && bun run prepare-docs
+          build-command: cd vitepress-build-check/test/fixture && bun run build
+      - name: Verify generated fixture output
+        run: |
+          test -f vitepress-build-check/test/fixture/docs/.vitepress/prepared
+          test -f vitepress-build-check/test/fixture/docs/.vitepress/dist/index.html
+      - name: Reject failed preparation command
+        id: failed-prepare
+        continue-on-error: true
+        uses: ./vitepress-build-check
+        with:
+          test-mode: true
+          prepare-command: 'false'
+          build-command: 'true'
+      - name: Verify preparation failure propagation
+        env:
+          OUTCOME: ${{ steps.failed-prepare.outcome }}
+        run: test "$OUTCOME" = failure
+      - name: Reject failed build command
+        id: failed-build
+        continue-on-error: true
+        uses: ./vitepress-build-check
+        with:
+          test-mode: true
+          build-command: 'false'
+      - name: Verify build failure propagation
+        env:
+          OUTCOME: ${{ steps.failed-build.outcome }}
+        run: test "$OUTCOME" = failure

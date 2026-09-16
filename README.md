@@ -26,6 +26,7 @@
 | [setup-openclaw](setup-openclaw/README.md) | Install an exact OpenClaw CLI and expose isolated CI helpers. | [![setup-openclaw](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-setup-openclaw.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-setup-openclaw.yml) |
 | [ssh-test-key](ssh-test-key/README.md) | Generate a local Ed25519 SSH key pair for test fixtures. | [![ssh-test-key](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-ssh-test-key.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-ssh-test-key.yml) |
 | [validate-codex-plugin](validate-codex-plugin/README.md) | Validate a Codex plugin against a pinned OpenAI validator snapshot. | [![validate-codex-plugin](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-validate-codex-plugin.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-validate-codex-plugin.yml) |
+| [vitepress-build-check](vitepress-build-check/README.md) | Run optional VitePress preparation and a required build command. | [![vitepress-build-check](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-vitepress-build-check.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-vitepress-build-check.yml) |
 
 ## Usage
 
