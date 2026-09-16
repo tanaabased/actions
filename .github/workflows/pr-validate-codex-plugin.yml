@@ -1,0 +1,42 @@
+name: PR / validate-codex-plugin
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-codex-plugin:
+    name: validate-codex-plugin / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-24.04
+          - macos-26
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Validate valid plugin fixture
+        id: valid
+        uses: ./validate-codex-plugin
+        with:
+          test-mode: true
+          plugin-directory: validate-codex-plugin/test/fixture/valid
+      - name: Verify valid fixture output
+        env:
+          PLUGIN_PATH: ${{ steps.valid.outputs.plugin-path }}
+        run: test "$PLUGIN_PATH" = "$GITHUB_WORKSPACE/validate-codex-plugin/test/fixture/valid"
+      - name: Reject invalid plugin fixture
+        id: invalid
+        continue-on-error: true
+        uses: ./validate-codex-plugin
+        with:
+          test-mode: true
+          plugin-directory: validate-codex-plugin/test/fixture/invalid
+      - name: Verify invalid fixture failed
+        env:
+          INVALID_OUTCOME: ${{ steps.invalid.outcome }}
+        run: test "$INVALID_OUTCOME" = failure

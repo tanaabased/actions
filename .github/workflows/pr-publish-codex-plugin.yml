@@ -1,0 +1,66 @@
+name: PR / publish-codex-plugin
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  publish-codex-plugin:
+    name: publish-codex-plugin / ${{ matrix.dependency-policy }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        dependency-policy:
+          - include-production
+          - exclude-node-modules
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Set up Bun for fixture lockfile
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - name: Prepare fixture lockfile
+        working-directory: publish-codex-plugin/test/fixture
+        run: bun install --ignore-scripts
+      - name: Prepare Codex plugin archive
+        id: publish
+        uses: ./publish-codex-plugin
+        with:
+          test-mode: true
+          plugin-directory: publish-codex-plugin/test/fixture
+          archive-name: fixture-${{ matrix.dependency-policy }}.tar.gz
+          dependency-policy: ${{ matrix.dependency-policy }}
+          release-tag: test
+      - name: Verify archive contents
+        env:
+          ARCHIVE_NAME: ${{ steps.publish.outputs.archive-name }}
+          ARCHIVE_PATH: ${{ steps.publish.outputs.archive-path }}
+          DEPENDENCY_POLICY: ${{ matrix.dependency-policy }}
+          PLUGIN_SOURCE: ${{ github.workspace }}/publish-codex-plugin/test/fixture
+        run: |
+          set -euo pipefail
+
+          test "$ARCHIVE_NAME" = "fixture-$DEPENDENCY_POLICY.tar.gz"
+          test -f "$ARCHIVE_PATH"
+
+          unpacked="$(mktemp -d)"
+          tar -xzf "$ARCHIVE_PATH" -C "$unpacked"
+          expected="$RUNNER_TEMP/expected-$DEPENDENCY_POLICY.txt"
+          actual="$RUNNER_TEMP/actual-$DEPENDENCY_POLICY.txt"
+          if [[ "$DEPENDENCY_POLICY" == "include-production" ]]; then
+            (cd "$PLUGIN_SOURCE" && find . \( -type f -o -type l \) -print | sort) > "$expected"
+            test -e "$unpacked/node_modules/runtime-fixture"
+            test ! -e "$unpacked/node_modules/dev-fixture"
+          else
+            (
+              cd "$PLUGIN_SOURCE"
+              find . -path './node_modules' -prune -o \( -type f -o -type l \) -print | sort
+            ) > "$expected"
+            test ! -e "$unpacked/node_modules"
+          fi
+          (cd "$unpacked" && find . \( -type f -o -type l \) -print | sort) > "$actual"
+          diff -u "$expected" "$actual"

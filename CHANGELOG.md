@@ -1,5 +1,6 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+- Added pinned Codex plugin validation and explicit GitHub Release archive publication actions. [#5](https://github.com/tanaabased/actions/issues/5)
 - Added a cross-platform Leia runner with explicit retries, shell, standard-input, and temporary-directory handling. [#9](https://github.com/tanaabased/actions/issues/9)
 - Added a ClawHub publisher for tested code-plugin tarballs with source metadata, channels, and bounded waits. [#4](https://github.com/tanaabased/actions/issues/4)
 - Standardized the catalog on root-level composite actions with explicit non-mutating test modes and one pull-request workflow per action.

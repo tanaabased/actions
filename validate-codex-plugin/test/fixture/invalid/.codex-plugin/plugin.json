@@ -1,0 +1,17 @@
+{
+  "name": "invalid plugin name",
+  "version": "latest",
+  "description": "[TODO: replace this placeholder]",
+  "author": {
+    "name": "Tanaab"
+  },
+  "interface": {
+    "displayName": "Invalid fixture",
+    "shortDescription": "Must fail validation",
+    "longDescription": "Exercises the validator's failure path.",
+    "developerName": "Tanaab",
+    "category": "developer-tools",
+    "capabilities": ["validation"],
+    "defaultPrompt": "Reject this fixture."
+  }
+}
