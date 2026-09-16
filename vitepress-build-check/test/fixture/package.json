@@ -1,0 +1,12 @@
+{
+  "name": "@tanaab/vitepress-build-check-fixture",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vitepress build docs",
+    "prepare-docs": "mkdir -p docs/.vitepress && printf 'ready\\n' > docs/.vitepress/prepared"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4"
+  }
+}
