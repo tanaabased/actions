@@ -1,12 +1,9 @@
-name: Publish
+name: Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: Existing tag to publish as a GitHub release.
-        required: true
-        type: string
+  release:
+    types:
+      - published
 
 jobs:
   publish-npm:
@@ -16,11 +13,12 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - name: Prepare release files
         uses: tanaabased/actions/prepare-release@v1
         with:
-          commands: bun install --frozen-lockfile && bun run build && bun run format
-          version: ${{ inputs.tag }}
+          commands: bun install --frozen-lockfile --ignore-scripts && bun run build && bun run format
       - name: Pack package
         id: pack
         uses: tanaabased/actions/npm-pack@v1
@@ -47,6 +45,6 @@ jobs:
           fetch-depth: 0
       - uses: tanaabased/actions/publish-repo@v1
         with:
+          commands: bun install --frozen-lockfile --ignore-scripts && bun run build && bun run format
           sync-tags: v1
           sync-token: ${{ secrets.RELEASE_SYNC_TOKEN }}
-          version: ${{ inputs.tag }}

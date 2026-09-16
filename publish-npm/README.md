@@ -7,6 +7,10 @@ ample time to wish otherwise.
 
 Use [`npm-pack`](../npm-pack/README.md) to produce the artifact.
 
+For a complete workflow, see [the release example](examples/release.yml), which
+publishes npm and repository changes in independent jobs after a GitHub Release
+is published. Adapt its preparation commands and moving tag to the consumer.
+
 ## npm trusted publishing
 
 ```yaml

@@ -29,6 +29,9 @@ without coupling its registry result to Git synchronization. Outside a
 `release` event, provide `version`, `release-date`, and `release-url`
 explicitly.
 
+See [the combined release example](../publish-npm/examples/release.yml) for npm
+and repository publication in independent jobs.
+
 ## Inputs
 
 | Input | Required | Default | Description |

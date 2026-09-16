@@ -22,8 +22,8 @@ strategy.
 - `.github/workflows/` contains this repository's release and verification
   workflows. Each action has one `pr-<name>.yml` workflow that invokes its
   explicit, non-mutating `test-mode`.
-- `examples/` contains complete consumer workflows. It is not executable
-  production configuration; copy the portions that fit the caller.
+- `<name>/examples/` contains any standalone consumer examples owned by that
+  action. Short usage examples live in its README.
 
 ## Use the catalog
 
@@ -41,6 +41,6 @@ jobs:
           sync-token: ${{ secrets.RELEASE_SYNC_TOKEN }}
 ```
 
-See [examples/publish.yml](examples/publish.yml) for a pack-once npm publication
-and an independent repository publication. Neither waits for a ceremonial
-finalizer.
+See [the npm release example](publish-npm/examples/release.yml) for a pack-once
+npm publication and an independent repository publication. Neither waits for a
+ceremonial finalizer.

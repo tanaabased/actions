@@ -18,6 +18,11 @@
   own those choices.
 - Keep repository-owned verification and release workflows in
   `.github/workflows/`. They are lifecycle configuration, not catalog products.
+- Keep short usage examples in the owning action's README. Put standalone
+  examples under `<name>/examples/` only when they add something the README
+  does not cover. Examples combining actions have one primary owner; other
+  actions link to that copy. Keep executable test fixtures under
+  `<name>/test/fixture/`.
 
 ## Test-mode contract
 
