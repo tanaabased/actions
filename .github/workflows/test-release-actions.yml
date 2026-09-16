@@ -99,13 +99,19 @@ jobs:
           test "$moving_sha" = "$branch_sha"
           test "$(gh api "repos/${{ github.repository }}/commits/$branch_sha" --jq '.author.login')" = tanaabot
           test "$(gh api "repos/${{ github.repository }}/commits/$branch_sha" --jq '.commit.verification.verified')" = true
+      - name: Checkout isolated branch for retry
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          path: retry
+          ref: ${{ env.SYNC_BRANCH }}
       - name: Retry repository publication
         uses: ./actions/publish-repo
         with:
           commands: bun -e "await Bun.write('command-output.txt', process.env.PREPARE_RELEASE_VERSION)"
           release-date: 2026-09-16T12:00:00Z
           release-url: ${{ env.RELEASE_URL }}
-          root: ${{ github.workspace }}/test
+          root: ${{ github.workspace }}/retry
           sync-branch: ${{ env.SYNC_BRANCH }}
           sync-tags: ${{ env.SYNC_TAG }}
           sync-token: ${{ secrets.TANAAB_COAXIUM_INJECTOR }}
@@ -113,7 +119,7 @@ jobs:
       - name: Verify retry result
         env:
           GH_TOKEN: ${{ github.token }}
-        working-directory: test
+        working-directory: retry
         run: |
           retry_sha="$(git rev-parse HEAD)"
           branch_sha="$(gh api "repos/${{ github.repository }}/git/ref/heads/$SYNC_BRANCH" --jq '.object.sha')"
