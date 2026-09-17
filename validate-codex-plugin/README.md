@@ -23,7 +23,6 @@ Supported runners: Linux (`ubuntu-24.04`) and macOS (`macos-26`).
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
-| `test-mode` | No | `false` | Exercise the action without external mutation. |
 | `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `plugin-directory` | No | `.` | Plugin root, relative to the workspace or absolute. |
 | `python-version` | No | `3.13` | Python version used to run the validator. |
@@ -42,9 +41,9 @@ bundled snapshot.
 
 ## Test behavior
 
-Validation is already non-mutating, so `test-mode: true` runs the normal
-validator. Pull requests exercise valid and invalid plugin fixtures on every
-supported runner. Test mode does not replace or suppress consumer-owned checks.
+Validation is non-mutating. Pull requests exercise valid and invalid plugin
+fixtures on every supported runner; consumer workflows should preserve their
+own checks.
 
 ## Notes
 

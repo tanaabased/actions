@@ -24,7 +24,6 @@ jobs:
         id: prepare
         uses: ./prepare-release
         with:
-          test-mode: true
           debug: true
           commands: bun -e "await Bun.write('command-output.txt', process.env.PREPARE_RELEASE_VERSION)"
           release-date: 2026-09-16T12:00:00Z

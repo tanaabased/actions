@@ -18,14 +18,12 @@ jobs:
       - name: Set up Bun
         uses: ./setup-bun
         with:
-          test-mode: true
       - name: Install fixture dependencies
         working-directory: vitepress-build-check/test/fixture
         run: bun install --frozen-lockfile --ignore-scripts
       - name: Build prepared VitePress fixture
         uses: ./vitepress-build-check
         with:
-          test-mode: true
           debug: true
           prepare-command: cd vitepress-build-check/test/fixture && bun run prepare-docs
           build-command: cd vitepress-build-check/test/fixture && bun run build
@@ -38,7 +36,6 @@ jobs:
         continue-on-error: true
         uses: ./vitepress-build-check
         with:
-          test-mode: true
           prepare-command: 'false'
           build-command: 'true'
       - name: Verify preparation failure propagation
@@ -50,7 +47,6 @@ jobs:
         continue-on-error: true
         uses: ./vitepress-build-check
         with:
-          test-mode: true
           build-command: 'false'
       - name: Verify build failure propagation
         env:

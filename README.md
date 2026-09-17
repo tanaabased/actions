@@ -58,10 +58,11 @@ Node `26.x` or Bun `1.4.x`. See [setup-node](setup-node/README.md) and
 
 ## Common inputs
 
-- `test-mode`: `false` by default; accepts only `true` or `false`. Test mode
-  uses real local artifacts and native dry runs without publication credentials
-  or external mutations. Actions whose normal behavior is non-mutating run
-  normally. Caller-supplied commands are not sandboxed; use safe PR fixtures.
+- `dry-run`: mutation-capable publishers accept `true` or `false`, defaulting
+  to `false`. A dry run validates real inputs and local artifacts without
+  publication credentials or external mutation; each publisher documents its
+  exact coverage. Non-mutating actions have no dry-run input. Caller-supplied
+  commands are not sandboxed; use safe PR fixtures.
 - `debug`: `auto` by default; accepts `auto`, `true`, or `false`. Auto follows
   `RUNNER_DEBUG=1`, including GitHub's **Enable debug logging** rerun option.
   Explicit values override it. Diagnostics use supported tool verbosity without

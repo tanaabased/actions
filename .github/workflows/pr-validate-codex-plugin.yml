@@ -25,7 +25,6 @@ jobs:
         id: valid
         uses: ./validate-codex-plugin
         with:
-          test-mode: true
           debug: true
           plugin-directory: validate-codex-plugin/test/fixture/valid
       - name: Verify valid fixture output
@@ -37,7 +36,6 @@ jobs:
         continue-on-error: true
         uses: ./validate-codex-plugin
         with:
-          test-mode: true
           plugin-directory: validate-codex-plugin/test/fixture/invalid
       - name: Verify invalid fixture failed
         env:

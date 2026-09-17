@@ -2,8 +2,8 @@ name: Publish npm package
 description: Publish one tested npm tarball to an npm-compatible registry.
 
 inputs:
-  test-mode:
-    description: Exercise the action without mutating external state or requiring publication credentials.
+  dry-run:
+    description: Validate the tarball with npm's native dry run without registry mutation or credentials.
     required: false
     default: 'false'
   debug:
@@ -82,20 +82,19 @@ runs:
         echo "enabled=$effective_debug" >> "$GITHUB_OUTPUT"
         [[ "$effective_debug" != 'true' ]] || echo 'Diagnostics enabled for npm publication.'
 
-    - name: Validate test mode
+    - name: Validate dry run
       shell: bash
       env:
-        TEST_MODE: ${{ inputs.test-mode }}
+        DRY_RUN: ${{ inputs.dry-run }}
       run: |
-        if [[ "$TEST_MODE" != "true" && "$TEST_MODE" != "false" ]]; then
-          echo "::error::test-mode must be true or false"
+        if [[ "$DRY_RUN" != "true" && "$DRY_RUN" != "false" ]]; then
+          echo "::error::dry-run must be true or false"
           exit 1
         fi
 
     - name: Set up Node.js
       uses: $/setup-node
       with:
-        test-mode: ${{ inputs.test-mode }}
         debug: ${{ inputs.debug }}
         working-directory: ${{ inputs.working-directory }}
         node-version: ${{ inputs.node-version }}
@@ -191,7 +190,7 @@ runs:
         echo "channel-config=$channel_config" >> "$GITHUB_OUTPUT"
 
     - name: Validate channel update authentication
-      if: ${{ inputs.test-mode != 'true' && inputs.update-prerelease-tag-on-stable == 'true' && steps.package.outputs.release-type == 'stable' }}
+      if: ${{ inputs.dry-run != 'true' && inputs.update-prerelease-tag-on-stable == 'true' && steps.package.outputs.release-type == 'stable' }}
       shell: bash
       env:
         CHANNEL_TOKEN: ${{ inputs.channel-token || inputs.registry-token }}
@@ -202,7 +201,7 @@ runs:
         fi
 
     - name: Check immutable package version
-      if: ${{ inputs.test-mode != 'true' }}
+      if: ${{ inputs.dry-run != 'true' }}
       shell: bash
       env:
         NODE_AUTH_TOKEN: ${{ inputs.registry-token }}
@@ -253,7 +252,7 @@ runs:
         npm "${publish_args[@]}"
 
     - name: Publish tarball
-      if: ${{ inputs.test-mode != 'true' }}
+      if: ${{ inputs.dry-run != 'true' }}
       shell: bash
       env:
         ACCESS: ${{ inputs.access }}
@@ -286,7 +285,7 @@ runs:
         fi
 
     - name: Update prerelease channel
-      if: ${{ inputs.test-mode != 'true' && inputs.update-prerelease-tag-on-stable == 'true' && steps.package.outputs.release-type == 'stable' }}
+      if: ${{ inputs.dry-run != 'true' && inputs.update-prerelease-tag-on-stable == 'true' && steps.package.outputs.release-type == 'stable' }}
       shell: bash
       env:
         NODE_AUTH_TOKEN: ${{ inputs.channel-token || inputs.registry-token }}
@@ -299,7 +298,7 @@ runs:
       run: npm dist-tag add "$PACKAGE_NAME@$PACKAGE_VERSION" "$PRERELEASE_TAG" --registry "$REGISTRY_URL"
 
     - name: Verify registry publication
-      if: ${{ inputs.test-mode != 'true' }}
+      if: ${{ inputs.dry-run != 'true' }}
       shell: bash
       env:
         NODE_AUTH_TOKEN: ${{ inputs.registry-token }}

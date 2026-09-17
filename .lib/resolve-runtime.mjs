@@ -48,7 +48,6 @@ export function resolveRuntime(runtime, requested, directory) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
-    if (!['true', 'false'].includes(process.env.TEST_MODE)) throw new Error('test-mode must be true or false');
     const result = resolveRuntime(process.env.RUNTIME, process.env.RUNTIME_VERSION, process.env.PROJECT_DIRECTORY);
     process.stdout.write(`version=${result.version}\nsource=${result.source}\n`);
     if (process.env.ACTION_DEBUG === 'true') console.error(`Runtime selected from ${result.source}`);

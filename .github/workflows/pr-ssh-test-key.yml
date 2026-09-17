@@ -25,7 +25,6 @@ jobs:
         id: key
         uses: ./ssh-test-key
         with:
-          test-mode: true
           debug: true
           destination: ${{ runner.temp }}/ssh-test-key/id_ed25519
           comment: tanaab-ssh-test-key@example.test
@@ -59,7 +58,6 @@ jobs:
         continue-on-error: true
         uses: ./ssh-test-key
         with:
-          test-mode: true
           destination: ${{ steps.key.outputs.private-key-path }}
           comment: tanaab-ssh-test-key@example.test
       - name: Verify collision failure

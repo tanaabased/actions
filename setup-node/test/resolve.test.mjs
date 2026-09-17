@@ -47,23 +47,14 @@ test('rejects empty and multiline overrides; explicit version needs no project',
   assert.equal(resolveRuntime('node', '26', join(root, 'missing')).version, '26');
 });
 
-test('CLI resolves relative to the caller workspace and validates both test modes without leaking invalid values', (t) => {
+test('CLI resolves relative to the caller workspace', (t) => {
   const root = project(t, { '.node-version': '26.9.0\n' });
   const script = fileURLToPath(new URL('../../.lib/resolve-runtime.mjs', import.meta.url));
-  for (const mode of ['true', 'false', 'sentinel-secret']) {
-    const result = spawnSync(process.execPath, [script], {
-      encoding: 'utf8', cwd: tmpdir(),
-      env: { ...process.env, RUNTIME: 'node', RUNTIME_VERSION: 'auto', PROJECT_DIRECTORY: '.',
-        GITHUB_WORKSPACE: root, TEST_MODE: mode, ACTION_DEBUG: 'false' },
-    });
-    if (mode === 'sentinel-secret') {
-      assert.equal(result.status, 1);
-      assert.equal(result.stdout, '');
-      assert.match(result.stderr, /test-mode must be true or false/);
-      assert(!result.stderr.includes(mode));
-    } else {
-      assert.equal(result.status, 0, result.stderr);
-      assert.equal(result.stdout, 'version=26.9.0\nsource=.node-version\n');
-    }
-  }
+  const result = spawnSync(process.execPath, [script], {
+    encoding: 'utf8', cwd: tmpdir(),
+    env: { ...process.env, RUNTIME: 'node', RUNTIME_VERSION: 'auto', PROJECT_DIRECTORY: '.',
+      GITHUB_WORKSPACE: root, ACTION_DEBUG: 'false' },
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, 'version=26.9.0\nsource=.node-version\n');
 });

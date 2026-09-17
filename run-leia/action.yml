@@ -2,10 +2,6 @@ name: Run Leia scenarios
 description: Run Leia scenarios with isolated temporary state and explicit cross-platform options.
 
 inputs:
-  test-mode:
-    description: Exercise the normal non-mutating runner behavior against caller-provided scenarios.
-    required: false
-    default: 'false'
   debug:
     description: Action diagnostics; auto follows RUNNER_DEBUG=1.
     required: false
@@ -66,15 +62,10 @@ runs:
         RETRY: ${{ inputs.retry }}
         SCENARIOS: ${{ inputs.scenarios }}
         STDIN: ${{ inputs.stdin }}
-        TEST_MODE: ${{ inputs.test-mode }}
         ACTION_DEBUG: ${{ steps.debug.outputs.enabled }}
       run: |
         set -uo pipefail
 
-        if [[ "$TEST_MODE" != "true" && "$TEST_MODE" != "false" ]]; then
-          echo "::error::test-mode must be true or false"
-          exit 1
-        fi
         if [[ ! "$RETRY" =~ ^[0-9]+$ ]]; then
           echo "::error::retry must be a non-negative integer"
           exit 1
@@ -150,15 +141,10 @@ runs:
         RETRY: ${{ inputs.retry }}
         SCENARIOS: ${{ inputs.scenarios }}
         STDIN: ${{ inputs.stdin }}
-        TEST_MODE: ${{ inputs.test-mode }}
         ACTION_DEBUG: ${{ steps.debug.outputs.enabled }}
       run: |
         $ErrorActionPreference = 'Stop'
 
-        if ($env:TEST_MODE -notin @('true', 'false')) {
-          Write-Output '::error::test-mode must be true or false'
-          exit 1
-        }
         if ($env:RETRY -notmatch '^\d+$') {
           Write-Output '::error::retry must be a non-negative integer'
           exit 1

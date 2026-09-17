@@ -2,10 +2,6 @@ name: Create SSH test key
 description: Generate an isolated Ed25519 SSH key pair for local test fixtures.
 
 inputs:
-  test-mode:
-    description: Run the local fixture behavior without contacting an external system.
-    required: false
-    default: 'false'
   debug:
     description: Action diagnostics; auto follows RUNNER_DEBUG=1.
     required: false
@@ -46,15 +42,10 @@ runs:
       env:
         COMMENT: ${{ inputs.comment }}
         DESTINATION: ${{ inputs.destination }}
-        TEST_MODE: ${{ inputs.test-mode }}
         ACTION_DEBUG: ${{ steps.debug.outputs.enabled }}
       run: |
         set -euo pipefail
 
-        if [[ "$TEST_MODE" != 'true' && "$TEST_MODE" != 'false' ]]; then
-          echo '::error::test-mode must be true or false'
-          exit 1
-        fi
         if [[ -z "$COMMENT" ]]; then
           echo '::error::comment must not be empty'
           exit 1

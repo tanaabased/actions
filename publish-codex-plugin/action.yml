@@ -2,7 +2,7 @@ name: Publish Codex plugin
 description: Prepare one Codex plugin archive and optionally upload it to a GitHub Release.
 
 inputs:
-  test-mode:
+  dry-run:
     description: Prepare the real archive without uploading it or requiring publication credentials.
     required: false
     default: 'false'
@@ -33,7 +33,7 @@ inputs:
     required: false
     default: ${{ github.repository }}
   github-token:
-    description: GitHub token with contents write access for live upload; omit in test mode.
+    description: GitHub token with contents write access for live upload; omit in dry runs.
     required: false
 
 outputs:
@@ -66,12 +66,12 @@ runs:
         PLUGIN_DIRECTORY: ${{ inputs.plugin-directory }}
         RELEASE_TAG: ${{ inputs.release-tag }}
         REPOSITORY: ${{ inputs.repository }}
-        TEST_MODE: ${{ inputs.test-mode }}
+        DRY_RUN: ${{ inputs.dry-run }}
       run: |
         set -euo pipefail
 
-        if [[ "$TEST_MODE" != "true" && "$TEST_MODE" != "false" ]]; then
-          echo "::error::test-mode must be true or false"
+        if [[ "$DRY_RUN" != "true" && "$DRY_RUN" != "false" ]]; then
+          echo "::error::dry-run must be true or false"
           exit 1
         fi
         if [[ "$DEPENDENCY_POLICY" != "include-production" && "$DEPENDENCY_POLICY" != "exclude-node-modules" ]]; then
@@ -103,7 +103,6 @@ runs:
       if: ${{ inputs.dependency-policy == 'include-production' }}
       uses: $/setup-bun
       with:
-        test-mode: ${{ inputs.test-mode }}
         debug: ${{ inputs.debug }}
         working-directory: ${{ inputs.plugin-directory }}
         bun-version: ${{ inputs.bun-version }}
@@ -147,7 +146,7 @@ runs:
         echo "archive-path=$archive_path" >> "$GITHUB_OUTPUT"
 
     - name: Upload release archive
-      if: ${{ inputs.test-mode != 'true' }}
+      if: ${{ inputs.dry-run != 'true' }}
       shell: bash
       env:
         ARCHIVE_PATH: ${{ steps.archive.outputs.archive-path }}

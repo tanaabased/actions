@@ -78,7 +78,7 @@ export GITHUB_ACTION_PATH
 export GITHUB_WORKSPACE="$test_root" RUNNER_TEMP="$test_root"
 export GITHUB_OUTPUT="$test_root/outputs" GITHUB_ENV="$test_root/environment"
 export NODE_AUTH_TOKEN="$sentinel" GH_TOKEN="$sentinel" CLAWHUB_TOKEN="$sentinel"
-export TEST_MODE=true PACKAGE_DIRECTORY="$test_root/missing" TARBALL="$test_root/missing.tgz"
+export DRY_RUN=true PACKAGE_DIRECTORY="$test_root/missing" TARBALL="$test_root/missing.tgz"
 export RELEASE_DATE=invalid DEPENDENCY_POLICY=exclude-node-modules ARCHIVE_NAME=fixture.tar.gz
 export PLUGIN_DIRECTORY="$test_root/missing" RELEASE_TAG=fixture REPOSITORY=fixture/fixture
 export SELECTED_VERSION='' SOURCE_DIRECTORY='' PACKAGE_JSON=missing.json PACKAGE_FIELD='' VERSION_SPEC=auto

@@ -26,7 +26,6 @@ explicitly.
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
-| `test-mode` | No | `false` | Exercise the action without external mutation or publication credentials. |
 | `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `version` | No | Release tag | Semver-valid release version. |
 | `release-date` | No | Release publication timestamp | Date or timestamp formatted as `Month D, YYYY` for the changelog. |
@@ -46,7 +45,7 @@ The upstream preparation action has no debug input.
 
 ## Test behavior
 
-Test mode runs normal local preparation. PR tests verify package metadata,
+PR tests run normal local preparation and verify package metadata,
 changelog, commands, resolved version, and unchanged Git history.
 
 ## Notes

@@ -2,10 +2,6 @@ name: Validate Codex plugin
 description: Validate one local Codex plugin against a pinned OpenAI validator snapshot.
 
 inputs:
-  test-mode:
-    description: Exercise the action without mutating external state.
-    required: false
-    default: 'false'
   debug:
     description: Action and pip verbosity; auto follows RUNNER_DEBUG=1.
     required: false
@@ -53,15 +49,10 @@ runs:
       shell: bash
       env:
         PLUGIN_DIRECTORY: ${{ inputs.plugin-directory }}
-        TEST_MODE: ${{ inputs.test-mode }}
         ACTION_DEBUG: ${{ steps.debug.outputs.enabled }}
       run: |
         set -euo pipefail
 
-        if [[ "$TEST_MODE" != "true" && "$TEST_MODE" != "false" ]]; then
-          echo "::error::test-mode must be true or false"
-          exit 1
-        fi
 
         if [[ ! -d "$PLUGIN_DIRECTORY" ]]; then
           echo "::error::plugin-directory does not exist: $PLUGIN_DIRECTORY"
