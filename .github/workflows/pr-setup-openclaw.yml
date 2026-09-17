@@ -198,7 +198,7 @@ jobs:
           run: |
             command -v openclaw
             command -v openclaw-setup
-            openclaw-setup
+            openclaw-setup --workspace "$RUNNER_TEMP/scenario-workspace"
             openclaw-gateway start
             openclaw gateway call agents.list --json --timeout 3000
             openclaw-gateway stop

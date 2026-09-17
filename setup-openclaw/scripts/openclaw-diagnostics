@@ -6,8 +6,8 @@ command_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=setup-openclaw/scripts/lib/openclaw-common.sh
 source "$command_dir/lib/openclaw-common.sh"
 
-profile="${OPENCLAW_PROFILE:-}"
-workspace="${OPENCLAW_WORKSPACE:-}"
+profile=''
+workspace=''
 state_dir="${SETUP_OPENCLAW_STATE_DIR:-}"
 exit_code=0
 debug_setting="${SETUP_OPENCLAW_DEBUG:-auto}"
@@ -55,6 +55,7 @@ if [[ ! "$exit_code" =~ ^[0-9]+$ ]] || ((10#$exit_code > 255)); then
 fi
 require_github_actions
 configure_debug "$debug_setting"
+resolve_saved_context
 configure_context "$profile" "$workspace" "$state_dir"
 verify_context
 

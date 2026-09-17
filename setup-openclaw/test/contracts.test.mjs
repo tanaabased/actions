@@ -131,6 +131,11 @@ test('action setup and direct helper use the same model, plugin, cache, SSH and 
   assert.notEqual(again.status, 0);
   assert.match(again.stderr, /already exists/);
   assert.ok(existsSync(key));
+  const moved = spawnSync('bash', [join(root, 'scripts/openclaw-setup'), '--workspace', join(directory, 'scenario-workspace')], { env, encoding:'utf8' });
+  assert.equal(moved.status, 0, moved.stderr);
+  const diagnostics = spawnSync('bash', [join(root, 'scripts/openclaw-diagnostics')], { env, encoding:'utf8' });
+  assert.equal(diagnostics.status, 0, diagnostics.stderr);
+  assert.match(diagnostics.stderr, /configuration: valid/);
 }));
 
 test('invalid helper flags fail before onboarding; failure diagnostics redact raw credentials', () => fixture(directory => {

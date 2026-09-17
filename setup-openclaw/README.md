@@ -122,6 +122,8 @@ All modes establish default context and fixture addresses before caller commands
 run, so plain `openclaw` and helpers share that context within the same shell.
 Explicit helper profile/state overrides apply to that helper and later steps;
 commands in the current parent shell must also use the overridden context.
+Gateway and diagnostic helpers read the saved profile/workspace unless explicit
+flags override them, including immediately after a workspace change in Leia.
 
 ## Examples
 

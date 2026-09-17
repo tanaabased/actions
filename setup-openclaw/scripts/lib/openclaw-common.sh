@@ -128,6 +128,16 @@ verify_context() {
   [[ "$saved_workspace" == "$workspace" ]] || error "workspace does not match isolated setup context: $workspace"
 }
 
+resolve_saved_context() {
+  # A subprocess cannot update its parent shell after setup overrides the workspace.
+  if [[ -f "$state_dir/context" ]]; then
+    profile="${profile:-$(sed -n 's/^profile=//p' "$state_dir/context")}"
+    workspace="${workspace:-$(sed -n 's/^workspace=//p' "$state_dir/context")}"
+  fi
+  profile="${profile:-${OPENCLAW_PROFILE:-}}"
+  workspace="${workspace:-${OPENCLAW_WORKSPACE:-}}"
+}
+
 run_openclaw() {
   OPENCLAW_CONFIG_PATH="$openclaw_config_path" \
     OPENCLAW_STATE_DIR="$openclaw_state_dir" \
