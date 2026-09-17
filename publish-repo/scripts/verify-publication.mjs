@@ -2,8 +2,28 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
-export function verifyPublication({ root, version, branch, tags }, run = (args) =>
-  execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim()) {
+export function gitEnvironment(token, server, environment = process.env) {
+  assert(token, 'Repository readback requires sync-token');
+  const count = environment.GIT_CONFIG_COUNT ?? '0';
+  assert(/^(0|[1-9][0-9]*)$/.test(count), 'Invalid Git configuration count');
+  const offset = Number(count);
+  const key = `http.${new URL(server).origin}/.extraheader`;
+  // Reset inherited headers before adding one credential; never change caller config.
+  return {
+    ...environment,
+    GIT_CONFIG_COUNT: String(offset + 2),
+    [`GIT_CONFIG_KEY_${offset}`]: key,
+    [`GIT_CONFIG_VALUE_${offset}`]: '',
+    [`GIT_CONFIG_KEY_${offset + 1}`]: key,
+    [`GIT_CONFIG_VALUE_${offset + 1}`]: `AUTHORIZATION: basic ${Buffer.from(`x-access-token:${token}`).toString('base64')}`,
+  };
+}
+
+export function verifyPublication({ root, version, branch, tags, token, server = 'https://github.com' }, run = (args) =>
+  execFileSync('git', args, {
+    cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+    env: gitEnvironment(token, server),
+  }).trim()) {
   const refs = [`refs/heads/${branch.replace(/^refs\/heads\//, '')}`,
     ...new Set([version, ...tags.split(/\r?\n/).map((tag) => tag.trim()).filter(Boolean)]
       .map((tag) => `refs/tags/${tag}`))];
@@ -12,8 +32,9 @@ export function verifyPublication({ root, version, branch, tags }, run = (args) 
   let listing;
   try {
     listing = run(['ls-remote', 'origin', ...refs, ...refs.slice(1).map((ref) => `${ref}^{}`)]);
-  } catch {
-    throw new Error('Could not read published branch and tags from origin');
+  } catch (error) {
+    const status = Number.isInteger(error.status) ? ` (git exit ${error.status})` : '';
+    throw new Error(`Could not read published branch and tags from origin${status}`);
   }
   const remote = new Map(listing.split('\n').filter(Boolean).map((line) => {
     const [sha, ref] = line.split(/\s+/);
@@ -34,5 +55,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     version: process.env.RESOLVED_VERSION,
     branch: process.env.SYNC_BRANCH,
     tags: process.env.SYNC_TAGS,
+    token: process.env.SYNC_TOKEN,
+    server: process.env.GITHUB_SERVER_URL,
   });
 }

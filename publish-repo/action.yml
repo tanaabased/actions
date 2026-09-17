@@ -134,4 +134,5 @@ runs:
         RESOLVED_VERSION: ${{ steps.publish.outputs.resolved-version }}
         SYNC_BRANCH: ${{ inputs.sync-branch }}
         SYNC_TAGS: ${{ inputs.sync-tags }}
-      run: node "$GITHUB_ACTION_PATH/scripts/verify-publication.mjs"
+        SYNC_TOKEN: ${{ inputs.sync-token }}
+      run: bun "$GITHUB_ACTION_PATH/scripts/verify-publication.mjs"

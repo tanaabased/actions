@@ -83,6 +83,8 @@ unreleased header; a missing changelog is left missing. `commands` run from
 
 After synchronization, the action checks that the remote branch, exact release
 tag, and every requested moving tag select the prepared commit and package version.
+Readback uses the selected Bun runtime and `sync-token`, with authentication scoped
+to the Git subprocess so checkout and publisher credentials cannot accumulate.
 
 A retry runs preparation again, creates a commit when files change, and forces
 the exact and moving tags to the resulting commit. This makes repository
