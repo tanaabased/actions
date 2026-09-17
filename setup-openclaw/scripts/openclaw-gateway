@@ -191,7 +191,6 @@ start_gateway() {
       OPENCLAW_STATE_DIR="$openclaw_state_dir" \
       openclaw --profile "$profile" gateway run \
         --bind loopback \
-        --auth none \
         --port "$gateway_port" >> "$log_path" 2>&1 < /dev/null
   ) &
   gateway_pid="$!"

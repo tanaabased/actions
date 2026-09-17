@@ -189,8 +189,9 @@ Every helper accepts `--profile`, `--workspace`, `--state-dir`, and
 `--debug auto|true|false`; otherwise it uses the action context. Helpers require
 GitHub Actions. Files in `scripts/lib/` are private implementation details.
 Gateway helpers verify the recorded profile/workspace and PID start time before
-signaling a process. The gateway binds to loopback with authentication disabled;
-use this harness only on an isolated test runner.
+signaling a process. The gateway binds to loopback and retains onboarding's
+generated authentication configuration; its token is never exported as an
+action output. Use this harness only on an isolated test runner.
 
 Setup skips channels, daemon installation, hooks, skills, and provider
 authentication unless a model was requested. GPT-5.4 models retain the former
