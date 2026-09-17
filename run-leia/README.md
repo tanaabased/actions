@@ -14,7 +14,7 @@ Install Leia in the caller's project before invoking the action.
 
 ```yaml
 - name: Install Bun
-  uses: oven-sh/setup-bun@v2
+  uses: tanaabased/actions/setup-bun@v1
 
 - name: Install Leia
   run: bun install --frozen-lockfile --ignore-scripts

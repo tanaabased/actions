@@ -11,9 +11,9 @@ Supported runner: Linux (`ubuntu-24.04`).
 ## Usage
 
 Configure npm's trusted publisher for the calling repository and workflow. The
-action installs Node.js 24 and npm 11 at or above `11.5.1`, then leaves
-`registry-token` unset so npm can exchange GitHub's OIDC identity. Trusted
-publishing authorizes publication but not `npm dist-tag`; the optional
+action selects the project's Node version and installs npm 11 at or above
+`11.5.1`. Leave `registry-token` unset so npm can exchange GitHub's OIDC identity.
+Trusted publishing authorizes publication but not `npm dist-tag`; the optional
 stable-to-`edge` update needs a separate granular token through
 `channel-token`.
 
@@ -47,7 +47,8 @@ steps:
 | `prerelease-tag` | No | `edge` | Distribution tag for prerelease versions. |
 | `update-prerelease-tag-on-stable` | No | `false` | Move `prerelease-tag` to a published stable version. |
 | `access` | No | `public` | Access passed to `npm publish`; leave empty for registry defaults. |
-| `node-version` | No | `24` | Node.js version used for publication. |
+| `working-directory` | No | `${{ github.workspace }}` | Project directory for runtime discovery. |
+| `node-version` | No | `auto` | [Project discovery](../setup-node/README.md) or explicit Node version. |
 | `npm-version` | No | `^11.5.1` | npm version range installed for publication. |
 
 Debug enables verbose npm output.

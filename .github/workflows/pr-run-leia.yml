@@ -33,7 +33,9 @@ jobs:
         shell: bash
         run: bash .github/scripts/check-debug-contract.sh run-leia
       - name: Install Bun
-        uses: oven-sh/setup-bun@v2
+        uses: ./setup-bun
+        with:
+          test-mode: true
       - name: Install Leia
         run: bun add --no-save --ignore-scripts @lando/leia@1.0.0-beta.9
 

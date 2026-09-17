@@ -94,10 +94,11 @@ runs:
         fi
 
     - name: Set up compatible Node.js
-      uses: actions/setup-node@v6
+      uses: $/setup-node
       with:
+        test-mode: ${{ inputs.test-mode }}
+        debug: ${{ inputs.debug }}
         node-version: ${{ steps.resolve.outputs.node-range }}
-        package-manager-cache: false
 
     - id: install
       name: Install OpenClaw CLI and expose helpers

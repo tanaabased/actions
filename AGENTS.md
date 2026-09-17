@@ -19,6 +19,15 @@
 - Use `Tanaab Maneuvering Systems LLC` for project copyright and authorship.
   Preserve third-party notices and functional package, account, and bot identities.
 
+## Runtimes
+
+- Use `setup-node` and `setup-bun` for installation, with `auto` discovery from
+  the target project. Keep discovery policy in `.lib/resolve-runtime.mjs`; pass
+  explicit versions when a tool requires a particular runtime.
+- Compose sibling actions with `$/<name>` so they use the same action revision.
+- Pin this repository’s runtimes in `.node-version` and `.bun-version`. Check
+  upstream releases before changing action versions; do not copy stale examples.
+
 ## Documentation
 
 - Keep the root README to the catalog and common behavior. Action READMEs own

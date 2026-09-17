@@ -44,7 +44,8 @@ The token's ClawHub actor must have publisher access to `owner`.
 | `source-repo` | No | `${{ github.repository }}` | Source repository recorded by ClawHub. |
 | `source-commit` | No | `${{ github.sha }}` | Source commit recorded by ClawHub. |
 | `wait-timeout` | No | `1800` | Maximum seconds to wait for definitive live publication. |
-| `node-version` | No | `24` | Node.js version used to install and run the CLI. |
+| `working-directory` | No | `${{ github.workspace }}` | Project directory for runtime discovery. |
+| `node-version` | No | `auto` | [Project discovery](../setup-node/README.md) or explicit Node version. |
 | `clawhub-version` | No | `0.23.3` | ClawHub CLI version installed for publication. |
 
 Debug enables verbose npm output; ClawHub has no supported verbosity control.

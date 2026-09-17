@@ -1,5 +1,7 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+- Added shared Node and Bun setup with project version discovery, explicit overrides, and bounded fallbacks.
+- Updated runtime setup actions and pinned this repository to Node 26.9.0 and Bun 1.4.2.
 - Added a ClawHub publisher for tested code-plugin tarballs with source metadata, channels, and bounded waits. [#4](https://github.com/tanaabased/actions/issues/4)
 - Added a cross-platform Leia runner with explicit retries, shell, standard-input, and temporary-directory handling. [#9](https://github.com/tanaabased/actions/issues/9)
 - Added a dependency-free `@tanaab/actions` catalog package with exact-artifact release verification. [#6](https://github.com/tanaabased/actions/issues/6)

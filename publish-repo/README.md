@@ -42,11 +42,12 @@ explicitly.
 | `release-url` | No | Release URL | Link recorded in the changelog. |
 | `commands` | No | — | Project-specific preparation commands. |
 | `root` | No | `${{ github.workspace }}` | Repository root containing the release source and `package.json`. |
-| `bun-version` | No | `auto` | Bun version, or automatic project resolution. |
+| `bun-version` | No | `auto` | [Project discovery](../setup-bun/README.md) or explicit Bun version. |
 | `sync-branch` | No | Release target or current branch | Branch that receives the release commit. |
 | `sync-tags` | No | — | Newline-separated moving tags, such as `v1`, forced to the release commit. |
 | `sync-token` | No | `${{ github.token }}` | Token authorized to create the verified commit and push tags. |
 
+Runtime discovery uses `root`; the resolved version is passed upstream.
 The upstream preparation action has no debug input.
 
 The local synchronization identity is fixed to

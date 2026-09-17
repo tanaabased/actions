@@ -22,9 +22,9 @@ inputs:
     required: false
     default: include-production
   bun-version:
-    description: Bun version used when dependency-policy is include-production.
+    description: Bun version, or auto to discover it from plugin-directory when installing dependencies.
     required: false
-    default: 1.3.14
+    default: auto
   release-tag:
     description: Existing GitHub Release tag that receives the archive.
     required: true
@@ -101,8 +101,11 @@ runs:
 
     - name: Set up Bun
       if: ${{ inputs.dependency-policy == 'include-production' }}
-      uses: oven-sh/setup-bun@v2
+      uses: $/setup-bun
       with:
+        test-mode: ${{ inputs.test-mode }}
+        debug: ${{ inputs.debug }}
+        working-directory: ${{ inputs.plugin-directory }}
         bun-version: ${{ inputs.bun-version }}
 
     - name: Install production dependencies

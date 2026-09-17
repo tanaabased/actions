@@ -1,0 +1,137 @@
+name: PR / setup-node
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  setup-node:
+    name: setup-node (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-26, windows-2025]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - name: Verify selection rules
+        run: node --test setup-node/test/resolve.test.mjs
+      - name: Verify debug contract
+        run: bash .github/scripts/check-debug-contract.sh setup-node
+      - name: Set up from file
+        id: file
+        uses: ./setup-node
+        with:
+          test-mode: true
+          debug: true
+          working-directory: setup-node/test/fixture/file
+      - name: Verify file runtime and outputs
+        env:
+          INSTALLED: ${{ steps.file.outputs.node-version }}
+          SPEC: ${{ steps.file.outputs.version-spec }}
+          SOURCE: ${{ steps.file.outputs.version-source }}
+        run: |
+          test "$SPEC" = '26.9.0'
+          test "$SOURCE" = '.node-version'
+          actual="$(node --version)"
+          test "${actual#v}" = "${INSTALLED#v}"
+          test "${actual#v}" = '26.9.0'
+      - name: Set up from manifest
+        id: manifest
+        uses: ./setup-node
+        with:
+          test-mode: true
+          debug: true
+          working-directory: setup-node/test/fixture/manifest
+      - name: Verify manifest runtime and outputs
+        env:
+          INSTALLED: ${{ steps.manifest.outputs.node-version }}
+          SPEC: ${{ steps.manifest.outputs.version-spec }}
+          SOURCE: ${{ steps.manifest.outputs.version-source }}
+        run: |
+          test "$SPEC" = '24.21.0'
+          test "$SOURCE" = 'package.json#engines.node'
+          actual="$(node --version)"
+          test "${actual#v}" = "${INSTALLED#v}"
+          test "${actual#v}" = '24.21.0'
+      - name: Set up from engines
+        id: engines
+        uses: ./setup-node
+        with:
+          test-mode: true
+          debug: true
+          working-directory: setup-node/test/fixture/engines
+      - name: Verify engines runtime and outputs
+        env:
+          INSTALLED: ${{ steps.engines.outputs.node-version }}
+          SPEC: ${{ steps.engines.outputs.version-spec }}
+          SOURCE: ${{ steps.engines.outputs.version-source }}
+        run: |
+          test "$SPEC" = '26.x'
+          test "$SOURCE" = 'package.json#engines.node'
+          actual="$(node --version)"
+          test "${actual#v}" = "${INSTALLED#v}"
+          [[ "${actual#v}" == 26.* ]]
+      - name: Set up from fallback
+        id: fallback
+        uses: ./setup-node
+        with:
+          test-mode: true
+          debug: true
+          working-directory: setup-node/test/fixture/fallback
+      - name: Verify fallback runtime and outputs
+        env:
+          INSTALLED: ${{ steps.fallback.outputs.node-version }}
+          SPEC: ${{ steps.fallback.outputs.version-spec }}
+          SOURCE: ${{ steps.fallback.outputs.version-source }}
+        run: |
+          test "$SPEC" = '26.x'
+          test "$SOURCE" = 'fallback'
+          actual="$(node --version)"
+          test "${actual#v}" = "${INSTALLED#v}"
+          [[ "${actual#v}" == 26.* ]]
+      - name: Set up from explicit
+        id: explicit
+        uses: ./setup-node
+        with:
+          test-mode: true
+          debug: true
+          working-directory: setup-node/test/fixture/file
+          node-version: 24.21.0
+      - name: Verify explicit runtime and outputs
+        env:
+          INSTALLED: ${{ steps.explicit.outputs.node-version }}
+          SPEC: ${{ steps.explicit.outputs.version-spec }}
+          SOURCE: ${{ steps.explicit.outputs.version-source }}
+        run: |
+          test "$SPEC" = '24.21.0'
+          test "$SOURCE" = 'input'
+          actual="$(node --version)"
+          test "${actual#v}" = "${INSTALLED#v}"
+          test "${actual#v}" = '24.21.0'
+      - name: Reject invalid
+        id: invalid
+        continue-on-error: true
+        uses: ./setup-node
+        with:
+          test-mode: true
+          working-directory: setup-node/test/fixture/invalid
+      - name: Reject invalid-mode
+        id: invalid-mode
+        continue-on-error: true
+        uses: ./setup-node
+        with:
+          test-mode: invalid
+          node-version: 26.9.0
+      - name: Verify rejected inputs
+        env:
+          INVALID: ${{ steps.invalid.outcome }}
+          INVALID_MODE: ${{ steps.invalid-mode.outcome }}
+        run: |
+          test "$INVALID" = failure
+          test "$INVALID_MODE" = failure

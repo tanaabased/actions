@@ -15,9 +15,9 @@ inputs:
     required: false
     default: .
   node-version:
-    description: Node.js version used to run npm pack.
+    description: Node.js version, or auto to discover it from package-directory.
     required: false
-    default: '24'
+    default: auto
 
 outputs:
   tarball-path:
@@ -54,8 +54,11 @@ runs:
         fi
 
     - name: Set up Node.js
-      uses: actions/setup-node@v5
+      uses: $/setup-node
       with:
+        test-mode: ${{ inputs.test-mode }}
+        debug: ${{ inputs.debug }}
+        working-directory: ${{ inputs.package-directory }}
         node-version: ${{ inputs.node-version }}
 
     - id: pack

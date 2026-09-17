@@ -125,8 +125,10 @@ runs:
 
     - name: Set up source-selected Bun
       if: steps.resolve.outputs.mode == 'source'
-      uses: oven-sh/setup-bun@v2
+      uses: $/setup-bun
       with:
+        test-mode: ${{ inputs.test-mode }}
+        debug: ${{ inputs.debug }}
         bun-version: ${{ steps.resolve.outputs.bun-version }}
 
     - id: artifact

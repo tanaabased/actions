@@ -39,10 +39,14 @@ inputs:
     description: npm package access passed to npm publish; leave empty to use registry defaults.
     required: false
     default: public
-  node-version:
-    description: Node.js version used for publication.
+  working-directory:
+    description: Project directory for automatic runtime selection, relative to the workspace or absolute.
     required: false
-    default: '24'
+    default: ${{ github.workspace }}
+  node-version:
+    description: Node.js version, or auto to discover it from working-directory.
+    required: false
+    default: auto
   npm-version:
     description: npm version range installed for publication and trusted-publishing support.
     required: false
@@ -89,8 +93,11 @@ runs:
         fi
 
     - name: Set up Node.js
-      uses: actions/setup-node@v5
+      uses: $/setup-node
       with:
+        test-mode: ${{ inputs.test-mode }}
+        debug: ${{ inputs.debug }}
+        working-directory: ${{ inputs.working-directory }}
         node-version: ${{ inputs.node-version }}
 
     - name: Install supported npm

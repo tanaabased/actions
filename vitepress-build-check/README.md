@@ -13,9 +13,7 @@ invoking this action.
 
 ```yaml
 - name: Set up Bun
-  uses: oven-sh/setup-bun@v2
-  with:
-    bun-version-file: .bun-version
+  uses: tanaabased/actions/setup-bun@v1
 
 - name: Install dependencies
   run: bun install --frozen-lockfile --ignore-scripts

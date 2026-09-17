@@ -33,8 +33,9 @@ explicitly.
 | `release-url` | No | Release URL | Link recorded in the changelog. |
 | `commands` | No | — | Project-specific preparation commands. |
 | `root` | No | `${{ github.workspace }}` | Root containing the release source and `package.json`. |
-| `bun-version` | No | `auto` | Bun version, or automatic project resolution. |
+| `bun-version` | No | `auto` | [Project discovery](../setup-bun/README.md) or explicit Bun version. |
 
+Runtime discovery uses `root`; the resolved version is passed upstream.
 The upstream preparation action has no debug input.
 
 ## Outputs

@@ -94,11 +94,20 @@ runs:
         process.stdout.write(`value=${formatted}\n`);
         NODE
 
+    - id: runtime
+      name: Set up project Bun
+      uses: $/setup-bun
+      with:
+        bun-version: ${{ inputs.bun-version }}
+        working-directory: ${{ inputs.root }}
+        test-mode: ${{ inputs.test-mode }}
+        debug: ${{ inputs.debug }}
+
     - id: publish
       name: Prepare and synchronize release
       uses: tanaabased/prepare-release-action@v1
       with:
-        bun-version: ${{ inputs.bun-version }}
+        bun-version: ${{ steps.runtime.outputs.bun-version }}
         commands: ${{ inputs.commands }}
         root: ${{ inputs.root }}
         sync: ${{ inputs.test-mode != 'true' }}

@@ -26,6 +26,7 @@ const expected = [
   'CHANGELOG.md',
   'LICENSE',
   '.lib/resolve-debug.sh',
+  '.lib/resolve-runtime.mjs',
 ];
 for (const action of actions) {
   expected.push(`${action}/action.yml`, `${action}/README.md`);

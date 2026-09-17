@@ -25,7 +25,9 @@ Supported runner: Linux (`ubuntu-24.04`).
 | `test-mode` | No | `false` | Exercise the action without external mutation or publication credentials. |
 | `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `package-directory` | No | `.` | Directory containing `package.json`, relative to the workspace or absolute. |
-| `node-version` | No | `24` | Node.js version used to run `npm pack`. |
+| `node-version` | No | `auto` | [Project discovery](../setup-node/README.md) or explicit Node version. |
+
+Runtime discovery uses `package-directory`.
 
 ## Outputs
 

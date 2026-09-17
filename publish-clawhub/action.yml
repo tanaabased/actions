@@ -35,10 +35,14 @@ inputs:
     description: Maximum seconds to wait for a definitive live publication result.
     required: false
     default: '1800'
+  working-directory:
+    description: Project directory for automatic runtime selection, relative to the workspace or absolute.
+    required: false
+    default: ${{ github.workspace }}
   node-version:
     description: Node.js version used to install and run the ClawHub CLI.
     required: false
-    default: '24'
+    default: auto
   clawhub-version:
     description: ClawHub CLI version installed for publication.
     required: false
@@ -63,8 +67,11 @@ runs:
         [[ "$effective_debug" != 'true' ]] || echo 'Diagnostics enabled for ClawHub publication; ClawHub provides no supported verbosity control.'
 
     - name: Set up Node.js
-      uses: actions/setup-node@v5
+      uses: $/setup-node
       with:
+        test-mode: ${{ inputs.test-mode }}
+        debug: ${{ inputs.debug }}
+        working-directory: ${{ inputs.working-directory }}
         node-version: ${{ inputs.node-version }}
 
     - name: Install ClawHub CLI

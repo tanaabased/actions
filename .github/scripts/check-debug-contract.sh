@@ -51,6 +51,7 @@ trap 'rm -rf "$test_root"' EXIT
 extract_run 'id: debug' > "$test_root/debug.sh"
 test -s "$test_root/debug.sh"
 case "$action_name" in
+  setup-node | setup-bun) failure_step='id: resolve'; failure_message='Runtime version in input must be a nonempty single-line string' ;;
   npm-pack) failure_step='id: pack'; failure_message='No such file or directory' ;;
   prepare-release | publish-repo) failure_step='id: release-date'; failure_message='release-date must be a valid date' ;;
   publish-npm) failure_step='id: package'; failure_message='npm tarball does not exist' ;;
@@ -82,6 +83,7 @@ export RELEASE_DATE=invalid DEPENDENCY_POLICY=exclude-node-modules ARCHIVE_NAME=
 export PLUGIN_DIRECTORY="$test_root/missing" RELEASE_TAG=fixture REPOSITORY=fixture/fixture
 export SELECTED_VERSION='' SOURCE_DIRECTORY='' PACKAGE_JSON=missing.json PACKAGE_FIELD='' VERSION_SPEC=auto
 export COMMENT=fixture DESTINATION="$test_root/existing-key" BUILD_COMMAND=''
+export RUNTIME="${action_name#setup-}" RUNTIME_VERSION='' PROJECT_DIRECTORY="$test_root"
 export RETRY=invalid STDIN=false SCENARIOS=fixture CLEANUP_HEADER=''
 export OWNER=fixture SOURCE_COMMIT=fixture SOURCE_REPO=fixture/fixture TAGS=edge WAIT_TIMEOUT=1
 
