@@ -15,6 +15,9 @@ permissions:
   contents: write
 
 steps:
+  - uses: actions/checkout@v7
+    with:
+      ref: ${{ github.sha }}
   - name: Publish Codex plugin archive
     id: publish
     uses: tanaabased/actions/publish-codex-plugin@v1
@@ -28,7 +31,8 @@ steps:
 
 Run generic and repository-specific validation before publication; this action
 owns archive preparation and upload, not consumer policy checks or manifest
-stamping.
+stamping. For parallel release jobs, follow the
+[shared checkout guidance](../publish-repo/README.md#usage).
 
 ## Inputs
 
