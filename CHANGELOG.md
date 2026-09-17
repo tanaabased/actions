@@ -1,8 +1,8 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
-- Removed registry visibility polling and redundant registry lookups from `publish-npm`; publication command results determine success.
-- Removed remote branch and tag readback from `publish-repo`; the upstream synchronization result determines success.
-- Simplified `setup-openclaw` verification while retaining final configuration validation, plugin loading checks, and service readiness.
+- Removed registry visibility polling and redundant registry lookups from `publish-npm`; publication command results determine success. [#40](https://github.com/tanaabased/actions/pull/40)
+- Removed remote branch and tag readback from `publish-repo`; the upstream synchronization result determines success. [#40](https://github.com/tanaabased/actions/pull/40)
+- Simplified `setup-openclaw` verification while retaining final configuration validation, plugin loading checks, and service readiness. [#40](https://github.com/tanaabased/actions/pull/40)
 
 ## v1.0.0-beta.3 - [September 17, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.0-beta.3)
 
