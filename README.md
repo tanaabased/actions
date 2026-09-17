@@ -40,8 +40,9 @@ Each action runs inside a caller-owned job; callers choose runners and job depen
 See [the release example](publish-npm/examples/release.yml) for packing and testing
 one artifact before publication, with repository publication in an independent job.
 
-The first release is in preparation. Examples use the planned `@v1` reference;
-pin a reviewed commit until that tag is published. The npm catalog package is
+The catalog is available as [v1.0.0-beta.1](https://github.com/tanaabased/actions/releases/tag/v1.0.0-beta.1).
+Examples use the moving `@v1` reference; pin `@v1.0.0-beta.1` or a reviewed commit
+for a fixed revision. The npm catalog package is
 `@tanaab/actions`; GitHub workflows consume Git references such as `@v1`. Composed actions use
 GitHub.com’s same-repository `$/` references to keep wrappers at the caller-selected
 action revision; GitHub Enterprise Server does not support that syntax.
