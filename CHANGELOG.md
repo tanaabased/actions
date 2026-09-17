@@ -1,21 +1,16 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
-- Added shared Node and Bun setup with project version discovery, explicit overrides, and bounded fallbacks.
-- Updated runtime setup actions and pinned this repository to Node 26.9.0 and Bun 1.4.2.
-- Added a ClawHub publisher for tested code-plugin tarballs with source metadata, channels, and bounded waits. [#4](https://github.com/tanaabased/actions/issues/4)
-- Added a cross-platform Leia runner with explicit retries, shell, standard-input, and temporary-directory handling. [#9](https://github.com/tanaabased/actions/issues/9)
-- Added a dependency-free `@tanaab/actions` catalog package with exact-artifact release verification. [#6](https://github.com/tanaabased/actions/issues/6)
-- Added a reusable VitePress build check with optional preparation. [#12](https://github.com/tanaabased/actions/issues/12)
-- Added Agent System setup from exact releases or source checkouts in isolated OpenClaw profiles. [#20](https://github.com/tanaabased/actions/issues/20)
-- Added an npm packing action that exposes the exact tarball and package metadata.
-- Added canonical Task, Bug, and Feature intake forms.
-- Added consistent `debug` controls across every public action. [#27](https://github.com/tanaabased/actions/issues/27)
-- Added isolated OpenClaw CLI setup for Linux and macOS. [#19](https://github.com/tanaabased/actions/issues/19)
-- Added pinned Codex plugin validation and explicit GitHub Release archive publication actions. [#5](https://github.com/tanaabased/actions/issues/5)
-- Added shared release preparation and repository publication actions.
-- Added SSH test-key generation for Linux and macOS fixtures. [#11](https://github.com/tanaabased/actions/issues/11)
-- Added the initial action catalog and repository structure.
-- Moved npm artifact/channel and repository branch/tag verification into the publishing actions.
-- Fixed gateway cleanup accepting unrelated processes or unsafe PID values.
-- Replaced directory-based npm publication with tested-tarball publication, trusted publishing, explicit channels, and immutable-version checks.
-- Standardized the catalog on root-level composite actions with explicit non-mutating test modes and one pull-request workflow per action.
+- Added [`npm-pack`](https://github.com/tanaabased/actions/tree/main/npm-pack) to pack a package and expose its exact artifact and metadata.
+- Added [`prepare-release`](https://github.com/tanaabased/actions/tree/main/prepare-release) to prepare release files without pushing Git changes.
+- Added [`publish-clawhub`](https://github.com/tanaabased/actions/tree/main/publish-clawhub) to publish a tested code-plugin tarball to ClawHub.
+- Added [`publish-codex-plugin`](https://github.com/tanaabased/actions/tree/main/publish-codex-plugin) to prepare and upload a Codex plugin release archive.
+- Added [`publish-npm`](https://github.com/tanaabased/actions/tree/main/publish-npm) to publish a tested tarball and verify its registry artifact and channels.
+- Added [`publish-repo`](https://github.com/tanaabased/actions/tree/main/publish-repo) to synchronize prepared release changes and verify Git branches and tags.
+- Added [`run-leia`](https://github.com/tanaabased/actions/tree/main/run-leia) to run Leia scenarios with isolated cross-platform temporary state.
+- Added [`setup-agent-system`](https://github.com/tanaabased/actions/tree/main/setup-agent-system) to install Agent System from a release or source into isolated OpenClaw.
+- Added [`setup-bun`](https://github.com/tanaabased/actions/tree/main/setup-bun) to discover and install the caller's Bun version.
+- Added [`setup-node`](https://github.com/tanaabased/actions/tree/main/setup-node) to discover and install the caller's Node version.
+- Added [`setup-openclaw`](https://github.com/tanaabased/actions/tree/main/setup-openclaw) to install an exact OpenClaw CLI and expose isolated CI helpers.
+- Added [`ssh-test-key`](https://github.com/tanaabased/actions/tree/main/ssh-test-key) to generate local Ed25519 SSH keys for test fixtures.
+- Added [`validate-codex-plugin`](https://github.com/tanaabased/actions/tree/main/validate-codex-plugin) to validate Codex plugins against a pinned OpenAI validator.
+- Added [`vitepress-build-check`](https://github.com/tanaabased/actions/tree/main/vitepress-build-check) to run optional preparation and a required VitePress build.

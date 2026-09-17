@@ -1,14 +1,34 @@
 {
   "name": "@tanaab/actions",
-  "version": "0.0.0",
-  "description": "Versioned Tanaab GitHub Actions catalog and runtime helpers",
+  "version": "1.0.0-beta.0",
+  "description": "Tanaab-based GitHub Actions catalog.",
+  "author": "Mike Pirog and EMORI",
+  "contributors": [
+    {
+      "name": "Mike Pirog",
+      "url": "https://github.com/pirog"
+    },
+    {
+      "name": "EMORI",
+      "url": "https://github.com/emoriwan"
+    }
+  ],
   "license": "MIT",
+  "homepage": "https://github.com/tanaabased/actions#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tanaabased/actions.git"
   },
-  "homepage": "https://github.com/tanaabased/actions#readme",
-  "bugs": "https://github.com/tanaabased/actions/issues",
+  "bugs": {
+    "url": "https://github.com/tanaabased/actions/issues"
+  },
+  "keywords": [
+    "tanaab",
+    "github-actions",
+    "composite-actions",
+    "ci",
+    "release"
+  ],
   "files": [
     "README.md",
     "CHANGELOG.md",
@@ -25,6 +45,5 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"
-  },
-  "author": "Tanaab Maneuvering Systems LLC"
+  }
 }
