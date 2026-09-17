@@ -1,6 +1,9 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
-- Normalized `setup-openclaw` helper switches, preserved explicit OpenClaw log levels, and exposed the raw log through `openclaw-gateway log-path`. [#39](https://github.com/tanaabased/actions/pull/39)
+- Added `openclaw-gateway log-path` to print the absolute raw gateway log path. [#39](https://github.com/tanaabased/actions/pull/39)
+- Added bare `--debug` switches to all `setup-openclaw` CLI commands. [#39](https://github.com/tanaabased/actions/pull/39)
+- Fixed OpenClaw helpers overwriting an explicit `OPENCLAW_LOG_LEVEL`. [#39](https://github.com/tanaabased/actions/pull/39)
+- Updated `setup-openclaw` to emit bare setup switches while preserving its existing action inputs. [#39](https://github.com/tanaabased/actions/pull/39)
 
 ## v1.0.0-beta.2 - [September 17, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.0-beta.2)
 
