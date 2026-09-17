@@ -1,5 +1,7 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+## v1.0.0-beta.2 - [September 17, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.0-beta.2)
+
 - Added Agent System installation from exact versions, local tarballs or source directories, and explicit GitHub refs. [#37](https://github.com/tanaabased/actions/pull/37)
 - Added inferred install, setup, and run modes to `setup-openclaw`, sharing one helper contract with later Leia commands. [#37](https://github.com/tanaabased/actions/pull/37)
 - Added optional Secret Service, SSH, model, opCache, and YOLO setup with verified Agent System runtime and fixture path outputs. [#37](https://github.com/tanaabased/actions/pull/37)
