@@ -1,4 +1,4 @@
-name: PR / publish-codex-plugin
+name: Test action / publish-codex-plugin
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   publish-codex-plugin:
-    name: publish-codex-plugin / ${{ matrix.dependency-policy }}
+    name: ${{ matrix.dependency-policy }}
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false

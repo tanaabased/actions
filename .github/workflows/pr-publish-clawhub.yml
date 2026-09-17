@@ -1,4 +1,4 @@
-name: PR / publish-clawhub
+name: Test action / publish-clawhub
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   publish-clawhub:
-    name: publish-clawhub
+    name: ubuntu-24.04
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code

@@ -68,8 +68,10 @@
   safe fixtures and independently asserting inputs, outputs, and postconditions.
   Cover debug auto on/off, explicit precedence, invalid inputs, failure behavior,
   and sentinel-secret redaction on supported runners.
-- Use matrices for meaningful input classes. Preserve stable check identities;
-  align workflow and job names with action basenames.
+- Use matrices for meaningful input classes. Name action test workflows
+  `Test action / <action-name>`. Job names contain lowercase, hyphenated case
+  names or runner/matrix values, separated by ` / `; do not repeat the action name.
+  Preserve these check identities unless a naming change is explicitly requested.
 - Run non-mutating tests and separate static lint on PRs, including example
   workflows. Avoid skipped jobs and repeated event coverage unless the payload
   changes the public contract.

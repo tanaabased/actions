@@ -1,4 +1,4 @@
-name: PR / publish-npm
+name: Test action / publish-npm
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   publish-npm:
-    name: publish-npm (${{ matrix.case }})
+    name: ${{ matrix.case }}
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false

@@ -1,4 +1,4 @@
-name: PR / release
+name: Test action / release
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   release:
-    name: release (${{ matrix.case }})
+    name: ${{ matrix.case }}
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false

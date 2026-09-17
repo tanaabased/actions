@@ -1,4 +1,4 @@
-name: PR / run-leia
+name: Test action / run-leia
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   run-leia:
-    name: run-leia (${{ matrix.os }} / ${{ matrix.shell }})
+    name: ${{ matrix.os }} / ${{ matrix.shell }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

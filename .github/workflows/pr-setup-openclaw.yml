@@ -1,4 +1,4 @@
-name: PR / setup-openclaw
+name: Test action / setup-openclaw
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   setup-openclaw:
-    name: setup-openclaw (${{ matrix.os }} / ${{ matrix.selection }})
+    name: install / ${{ matrix.os }} / ${{ matrix.selection }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -122,7 +122,7 @@ jobs:
           fi
 
   version-resolution:
-    name: setup-openclaw version resolution
+    name: version-resolution
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
@@ -149,7 +149,7 @@ jobs:
           test "$(resolve_version 2026.9.3 conflict-package.json '')" = '2026.9.3'
 
   invalid-inputs:
-    name: setup-openclaw invalid inputs (${{ matrix.os }} / ${{ matrix.case }})
+    name: invalid-inputs / ${{ matrix.os }} / ${{ matrix.case }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -182,7 +182,7 @@ jobs:
         run: test "$INVALID_OUTCOME" = failure
 
   run-mode:
-    name: setup-openclaw run (${{ matrix.os }})
+    name: run / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -216,7 +216,7 @@ jobs:
           if test -f "$SETUP_OPENCLAW_STATE_DIR/context"; then openclaw-gateway stop; fi
 
   agent-system:
-    name: setup-openclaw Agent System (${{ matrix.os }} / ${{ matrix.selection }})
+    name: agent-system / ${{ matrix.os }} / ${{ matrix.selection }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

@@ -1,4 +1,4 @@
-name: PR / validate-codex-plugin
+name: Test action / validate-codex-plugin
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   validate-codex-plugin:
-    name: validate-codex-plugin / ${{ matrix.os }}
+    name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

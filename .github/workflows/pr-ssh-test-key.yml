@@ -1,4 +1,4 @@
-name: PR / ssh-test-key
+name: Test action / ssh-test-key
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   ssh-test-key:
-    name: ssh-test-key (${{ matrix.runner }})
+    name: ${{ matrix.runner }}
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
