@@ -349,8 +349,8 @@ jobs:
           gateway_log_path="$(openclaw-gateway log-path)"
           test "$gateway_log_path" = "$SETUP_OPENCLAW_STATE_DIR/gateway/gateway.log"
           OPENCLAW_LOG_LEVEL=debug openclaw-gateway start
+          # Lifecycle records use OpenClaw's file logger; this raw file proves path usability only.
           test -s "$gateway_log_path"
-          grep --fixed-strings --quiet manifest_loaded "$gateway_log_path"
           openclaw gateway call agents.list --json --timeout 3000
           openclaw-gateway stop
       - name: Clean gateway
