@@ -34,7 +34,6 @@ jobs:
         run: bash .github/scripts/check-debug-contract.sh run-leia
       - name: Install Bun
         uses: ./setup-bun
-        with:
       - name: Install Leia
         run: bun add --no-save --ignore-scripts @lando/leia@1.0.0-beta.9
 

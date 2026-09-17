@@ -37,7 +37,6 @@ jobs:
       - name: Pack catalog
         id: pack
         uses: ./npm-pack
-        with:
       - name: Verify packed catalog
         env:
           EXPECTED_VERSION: ${{ matrix.version }}

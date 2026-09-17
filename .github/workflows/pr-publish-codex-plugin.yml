@@ -23,7 +23,6 @@ jobs:
         run: bash .github/scripts/check-debug-contract.sh publish-codex-plugin
       - name: Set up Bun for fixture lockfile
         uses: ./setup-bun
-        with:
       - name: Prepare fixture lockfile
         working-directory: publish-codex-plugin/test/fixture
         run: bun install --ignore-scripts
