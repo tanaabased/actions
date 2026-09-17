@@ -1,4 +1,4 @@
-name: PR / setup-bun
+name: Test action / setup-bun
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   setup-bun:
-    name: setup-bun (${{ matrix.os }})
+    name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

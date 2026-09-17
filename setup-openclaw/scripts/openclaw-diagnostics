@@ -8,7 +8,7 @@ source "$command_dir/lib/openclaw-common.sh"
 
 profile=''
 workspace=''
-state_dir=''
+state_dir="${SETUP_OPENCLAW_STATE_DIR:-}"
 exit_code=0
 debug_setting="${SETUP_OPENCLAW_DEBUG:-auto}"
 
@@ -50,9 +50,12 @@ while (($# > 0)); do
   esac
 done
 
-[[ "$exit_code" =~ ^[0-9]+$ ]] && ((10#$exit_code <= 255)) || error "exit-code must be an integer from 0 through 255: $exit_code" 2
+if [[ ! "$exit_code" =~ ^[0-9]+$ ]] || ((10#$exit_code > 255)); then
+  error "exit-code must be an integer from 0 through 255: $exit_code" 2
+fi
 require_github_actions
 configure_debug "$debug_setting"
+resolve_saved_context
 configure_context "$profile" "$workspace" "$state_dir"
 verify_context
 

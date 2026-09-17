@@ -73,6 +73,24 @@ wait "$test_pid" 2>/dev/null || true
 test ! -f "$pid_path"
 test_pid=''
 
+# An HTTP 200 must not make an unusable CLI gateway appear ready.
+node -e 'const http=require("node:http");const s=http.createServer((q,r)=>r.end("ok"));s.listen(0,"127.0.0.1",()=>console.log(s.address().port))' > "$test_root/port" &
+test_pid=$!
+for ((attempt=0; attempt<10; attempt++)); do
+  [[ ! -s "$test_root/port" ]] || break
+  sleep 0.1
+done
+node -e 'fetch("http://127.0.0.1:"+process.argv[1]+"/health").then(r=>{if(r.status!==200)process.exit(1)})' "$(cat "$test_root/port")"
+printf '%s\n%s\n' "$test_pid" "$(gateway_process_start "$test_pid")" > "$pid_path"
+if bash "$command_dir/openclaw-gateway" wait "${context[@]}" --timeout 1 > "$test_root/output" 2>&1; then
+  echo 'HTTP health accepted without a successful CLI request' >&2
+  exit 1
+fi
+grep -Fq 'did not become ready' "$test_root/output"
+bash "$command_dir/openclaw-gateway" stop "${context[@]}" --timeout 5
+wait "$test_pid" 2>/dev/null || true
+test_pid=''
+
 # A valid record for an exited child is removed without signaling anything else.
 printf '%s\n%s\n' "$gateway_pid" "$started" > "$pid_path"
 bash "$command_dir/openclaw-gateway" stop "${context[@]}" --timeout 5

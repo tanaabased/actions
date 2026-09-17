@@ -58,7 +58,6 @@ case "$action_name" in
   publish-clawhub) failure_step='id: inputs'; failure_message='ClawHub tarball does not exist' ;;
   publish-codex-plugin | validate-codex-plugin) failure_step='id: inputs'; failure_message='plugin-directory does not exist' ;;
   setup-openclaw) failure_step='id: resolve'; failure_message='OpenClaw version resolution failed' ;;
-  setup-agent-system) failure_step='id: resolve'; failure_message='exactly one of version or source-directory is required' ;;
   ssh-test-key) failure_step='id: generate'; failure_message='SSH test-key destination already exists' ;;
   vitepress-build-check) failure_step='name: Validate inputs'; failure_message='build-command must not be empty' ;;
   run-leia) failure_step='id: run-bash'; failure_message='retry must be a non-negative integer' ;;

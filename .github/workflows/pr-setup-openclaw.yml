@@ -1,4 +1,4 @@
-name: PR / setup-openclaw
+name: Test action / setup-openclaw
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   setup-openclaw:
-    name: setup-openclaw (${{ matrix.os }} / ${{ matrix.selection }})
+    name: install / ${{ matrix.os }} / ${{ matrix.selection }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -24,6 +24,8 @@ jobs:
         uses: actions/checkout@v7
       - name: Verify debug contract
         run: bash .github/scripts/check-debug-contract.sh setup-openclaw
+      - name: Verify harness contracts
+        run: node --test setup-openclaw/test/contracts.test.mjs
       - name: Verify helper ownership and diagnostics
         run: bash setup-openclaw/test/helpers.sh
       - name: Install OpenClaw
@@ -120,7 +122,7 @@ jobs:
           fi
 
   version-resolution:
-    name: setup-openclaw version resolution
+    name: version-resolution
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
@@ -147,7 +149,7 @@ jobs:
           test "$(resolve_version 2026.9.3 conflict-package.json '')" = '2026.9.3'
 
   invalid-inputs:
-    name: setup-openclaw invalid inputs (${{ matrix.os }} / ${{ matrix.case }})
+    name: invalid-inputs / ${{ matrix.os }} / ${{ matrix.case }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -178,3 +180,170 @@ jobs:
         env:
           INVALID_OUTCOME: ${{ steps.invalid.outcome }}
         run: test "$INVALID_OUTCOME" = failure
+
+  run-mode:
+    name: run / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-26]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install and run caller commands
+        id: run
+        uses: ./setup-openclaw
+        with:
+          version: 2026.9.3
+          run: |
+            command -v openclaw
+            command -v openclaw-setup
+            openclaw-setup --workspace "$RUNNER_TEMP/scenario-workspace"
+            openclaw-gateway start
+            openclaw gateway call agents.list --json --timeout 3000
+            openclaw-gateway stop
+      - name: Verify mode and exported context
+        env:
+          MODE: ${{ steps.run.outputs.mode }}
+          CONFIG: ${{ steps.run.outputs.config-path }}
+        run: |
+          test "$MODE" = run
+          test -f "$CONFIG"
+          test "$OPENCLAW_CONFIG_PATH" = "$CONFIG"
+      - name: Clean gateway
+        if: always()
+        run: |
+          if test -f "$SETUP_OPENCLAW_STATE_DIR/context"; then openclaw-gateway stop; fi
+
+  agent-system:
+    name: agent-system / ${{ matrix.os }} / ${{ matrix.selection }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-26]
+        selection: [published, source, tarball]
+        include:
+          - os: ubuntu-24.04
+            selection: repository
+    steps:
+      - uses: actions/checkout@v7
+      - name: Checkout pinned Agent System source
+        if: matrix.selection == 'source' || matrix.selection == 'tarball'
+        uses: actions/checkout@v7
+        with:
+          repository: tanaabased/openclaw-agent-system
+          ref: 4fc7dd6abab9d511d4a6a899b65305b74e4eec7b
+          path: agent-system-source
+      - name: Preserve source changes
+        if: matrix.selection == 'source'
+        run: |
+          printf '\nlocal source marker\n' >> agent-system-source/README.md
+          printf 'local source marker\n' > agent-system-source/assets/harness-marker.txt
+          echo "SOURCE_README_HASH=$(shasum -a 256 agent-system-source/README.md | cut -d ' ' -f 1)" >> "$GITHUB_ENV"
+      - name: Set up package build runtime
+        if: matrix.selection == 'tarball'
+        uses: ./setup-bun
+        with:
+          working-directory: agent-system-source
+      - name: Prepare local package
+        if: matrix.selection == 'tarball'
+        working-directory: agent-system-source
+        run: |
+          bun install --frozen-lockfile --ignore-scripts
+          bun run build
+          bun run plugin:check
+          archive="$(npm pack --silent --pack-destination "$RUNNER_TEMP")"
+          echo "LOCAL_PACKAGE=$RUNNER_TEMP/$archive" >> "$GITHUB_ENV"
+      - name: Prepare unified harness
+        if: matrix.selection != 'tarball'
+        id: setup
+        uses: ./setup-openclaw
+        with:
+          version: 2026.9.3
+          debug: true
+          agent-system: ${{ matrix.selection == 'published' && '0.6.0' || matrix.selection == 'source' && './agent-system-source' || matrix.selection == 'tarball' && env.LOCAL_PACKAGE || 'github:tanaabased/openclaw-agent-system#4fc7dd6abab9d511d4a6a899b65305b74e4eec7b' }}
+          needs-secret-service: ${{ runner.os == 'Linux' }}
+          needs-ssh-key: true
+          yolo: true
+      - name: Install for later helper use
+        if: matrix.selection == 'tarball'
+        id: install
+        uses: ./setup-openclaw
+        with:
+          version: 2026.9.3
+      - name: Prepare the same harness through the public helper
+        if: matrix.selection == 'tarball'
+        id: helper
+        env:
+          MODE: ${{ steps.install.outputs.mode }}
+        run: |
+          test "$MODE" = install
+          secret_service=false
+          if [[ "$RUNNER_OS" == Linux ]]; then secret_service=true; fi
+          openclaw-setup --agent-system "$LOCAL_PACKAGE" \
+            --needs-secret-service "$secret_service" --needs-ssh-key --yolo
+          echo 'mode=setup' >> "$GITHUB_OUTPUT"
+      - name: Verify installed runtime and fixture outputs
+        env:
+          MODE: ${{ steps.setup.outputs.mode || steps.helper.outputs.mode }}
+          ARTIFACT: ${{ steps.setup.outputs.agent-system-artifact-path || steps.helper.outputs.agent-system-artifact-path }}
+          PLUGIN_PATH: ${{ steps.setup.outputs.agent-system-plugin-path || steps.helper.outputs.agent-system-plugin-path }}
+          VERSION: ${{ steps.setup.outputs.agent-system-version || steps.helper.outputs.agent-system-version }}
+          SOURCE: ${{ steps.setup.outputs.agent-system-source || steps.helper.outputs.agent-system-source }}
+          PRIVATE_KEY: ${{ steps.setup.outputs.private-key-path || steps.helper.outputs.private-key-path }}
+          PUBLIC_KEY: ${{ steps.setup.outputs.public-key-path || steps.helper.outputs.public-key-path }}
+          DBUS_ADDRESS: ${{ steps.setup.outputs.dbus-address || steps.helper.outputs.dbus-address }}
+          SELECTION: ${{ matrix.selection }}
+        run: |
+          set -euo pipefail
+          test "$MODE" = setup
+          test "$VERSION" = 0.6.0
+          test -f "$ARTIFACT"
+          test -d "$PLUGIN_PATH"
+          test "$PRIVATE_KEY" = "$HOME/.ssh/big-test-bucket-ssh"
+          test -s "$PRIVATE_KEY"
+          test -s "$PUBLIC_KEY"
+          ssh-keygen -y -f "$PRIVATE_KEY" | cut -d ' ' -f 1,2 > "$RUNNER_TEMP/derived-key"
+          cut -d ' ' -f 1,2 "$PUBLIC_KEY" > "$RUNNER_TEMP/public-key"
+          diff "$RUNNER_TEMP/derived-key" "$RUNNER_TEMP/public-key"
+          if [[ "$RUNNER_OS" == Linux ]]; then
+            test "$DBUS_ADDRESS" = "$DBUS_SESSION_BUS_ADDRESS"
+            printf fixture | timeout 3 secret-tool store --label=fixture harness readback
+            test "$(timeout 3 secret-tool lookup harness readback)" = fixture
+            timeout 3 secret-tool clear harness readback
+          else
+            test -z "$DBUS_ADDRESS"
+          fi
+          openclaw config validate --json > "$RUNNER_TEMP/config.json"
+          openclaw plugins inspect agent-system --runtime --json > "$RUNNER_TEMP/plugin.json"
+          node -e '
+            const fs = require("node:fs");
+            const assert = require("node:assert/strict");
+            const report = JSON.parse(fs.readFileSync(process.argv[1]));
+            assert.equal(report.plugin.id, "agent-system");
+            assert.equal(report.plugin.status, "loaded");
+            assert.equal(report.plugin.enabled, true);
+            assert.equal(report.plugin.version, "0.6.0");
+            assert.equal(report.install.sourcePath, process.env.ARTIFACT);
+            assert.equal(report.policy.allowConversationAccess, true);
+            assert.ok(report.typedHooks.some(hook => hook.name === "before_prompt_build"));
+          ' "$RUNNER_TEMP/plugin.json"
+          if [[ "$SELECTION" == source ]]; then
+            test "$(shasum -a 256 agent-system-source/README.md | cut -d ' ' -f 1)" = "$SOURCE_README_HASH"
+            test "$(tar -xOf "$ARTIFACT" package/assets/harness-marker.txt)" = 'local source marker'
+            test ! -d agent-system-source/node_modules
+          elif [[ "$SELECTION" == tarball ]]; then
+            test "$ARTIFACT" = "$LOCAL_PACKAGE"
+          elif [[ "$SELECTION" == published ]]; then
+            test "$SOURCE" = npm:@tanaab/openclaw-agent-system@0.6.0
+          else
+            test "$SOURCE" = github:tanaabased/openclaw-agent-system#4fc7dd6abab9d511d4a6a899b65305b74e4eec7b
+          fi
+          openclaw-gateway start
+          openclaw gateway call agents.list --json --timeout 3000
+          openclaw-gateway stop
+      - name: Clean gateway
+        if: always()
+        run: |
+          if test -f "$SETUP_OPENCLAW_STATE_DIR/context"; then openclaw-gateway stop; fi

@@ -1,4 +1,4 @@
-name: PR / prepare-release
+name: Test action / prepare-release
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   prepare-release:
-    name: prepare-release
+    name: ubuntu-24.04
     runs-on: ubuntu-24.04
     env:
       RELEASE_URL: https://example.invalid/releases/test

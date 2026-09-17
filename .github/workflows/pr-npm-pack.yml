@@ -1,4 +1,4 @@
-name: PR / npm-pack
+name: Test action / npm-pack
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   npm-pack:
-    name: npm-pack
+    name: ubuntu-24.04
     runs-on: ubuntu-24.04
     env:
       PACKAGE_NAME: '@tanaabased/actions-npm-fixture'

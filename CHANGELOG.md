@@ -1,5 +1,9 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+- Added inferred install, setup, and run modes to `setup-openclaw`, with shared Agent System and fixture helpers. [#36](https://github.com/tanaabased/actions/issues/36)
+- Fixed gateway readiness to require a successful OpenClaw CLI request. [#36](https://github.com/tanaabased/actions/issues/36)
+- Removed `setup-agent-system`; its installation and validation now belong to `setup-openclaw`. [#36](https://github.com/tanaabased/actions/issues/36)
+
 ## v1.0.0-beta.1 - [September 17, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.0-beta.1)
 
 - Added [`npm-pack`](https://github.com/tanaabased/actions/tree/main/npm-pack) to pack a package and expose its exact artifact and metadata.
