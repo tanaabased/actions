@@ -120,6 +120,7 @@ additional output contract.
 | `workspace` | Absolute agent workspace. |
 | `state-dir` | Absolute helper state directory. |
 | `config-path` | Absolute OpenClaw configuration path; the file is created during setup. |
+| `gateway-log-path` | Absolute raw gateway log path; the file is created when the gateway starts and may contain sensitive data. |
 | `agent-system-version` | Exact installed Agent System version. |
 | `agent-system-source` | Resolved package, local path, or repository commit. |
 | `agent-system-artifact-path` | Verified Agent System npm tarball. |
@@ -141,6 +142,7 @@ Successful helpers export their results through `GITHUB_ENV` for later steps.
 | `SETUP_OPENCLAW_STATE_DIR` | Helper state directory. |
 | `OPENCLAW_STATE_DIR` | OpenClaw state beneath the helper state directory. |
 | `OPENCLAW_CONFIG_PATH` | OpenClaw configuration path. |
+| `OPENCLAW_GATEWAY_LOG_PATH` | Raw gateway log path; contents are not exported and may contain sensitive data. |
 | `AGENT_SYSTEM_VERSION` | Installed Agent System version. |
 | `AGENT_SYSTEM_SOURCE` | Resolved Agent System provenance. |
 | `AGENT_SYSTEM_ARTIFACT_PATH` | Agent System npm tarball. |
@@ -154,6 +156,8 @@ A helper cannot update its parent shell's environment. After overriding a profil
 or state directory, pass that context to subsequent commands in the same shell.
 Gateway and diagnostic helpers read the saved profile/workspace, including after
 a workspace change in Leia; explicit flags take precedence.
+An explicit non-empty `OPENCLAW_LOG_LEVEL` also takes precedence over the helper's
+debug setting; otherwise helpers select `debug` or `warn` from that setting.
 
 ## CLI commands
 

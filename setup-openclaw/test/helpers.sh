@@ -34,6 +34,14 @@ export PATH="$test_root/bin:$PATH" GITHUB_ACTIONS=true
 context=(--profile fixture --workspace "$test_root/workspace" --state-dir "$test_root/state")
 pid_path="$test_root/state/gateway/gateway.pid"
 
+unset OPENCLAW_LOG_LEVEL
+configure_debug false
+test "$OPENCLAW_LOG_LEVEL" = warn
+OPENCLAW_LOG_LEVEL=debug
+configure_debug false
+test "$OPENCLAW_LOG_LEVEL" = debug
+unset OPENCLAW_LOG_LEVEL
+
 # Every process used by this test belongs to this test; invalid records must never signal it.
 sleep 120 &
 test_pid=$!

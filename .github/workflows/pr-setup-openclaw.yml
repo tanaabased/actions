@@ -43,6 +43,7 @@ jobs:
           EXECUTABLE_PATH: ${{ steps.openclaw.outputs.executable-path }}
           EXPECTED_DEBUG: ${{ matrix.selection == 'explicit' && 'false' || 'true' }}
           HELPER_PATH: ${{ steps.openclaw.outputs.helper-path }}
+          GATEWAY_LOG_PATH: ${{ steps.openclaw.outputs.gateway-log-path }}
           RESOLVED_VERSION: ${{ steps.openclaw.outputs.version }}
           SELECTION: ${{ matrix.selection }}
         run: |
@@ -59,6 +60,8 @@ jobs:
           profile="ci-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$SELECTION"
           workspace="$RUNNER_TEMP/setup-openclaw-$SELECTION-workspace"
           state_dir="$RUNNER_TEMP/setup-openclaw-$SELECTION-state"
+          test "$GATEWAY_LOG_PATH" = "$state_dir/gateway/gateway.log"
+          test "$OPENCLAW_GATEWAY_LOG_PATH" = "$GATEWAY_LOG_PATH"
           {
             echo "OPENCLAW_TEST_PROFILE=$profile"
             echo "OPENCLAW_TEST_WORKSPACE=$workspace"
@@ -69,11 +72,12 @@ jobs:
             --profile "$profile" \
             --workspace "$workspace" \
             --state-dir "$state_dir"
-          openclaw-gateway start \
+          OPENCLAW_LOG_LEVEL=debug openclaw-gateway start \
             --profile "$profile" \
             --workspace "$workspace" \
             --state-dir "$state_dir" \
             --timeout 90
+          test -f "$GATEWAY_LOG_PATH"
           gateway_pid="$(sed -n '1p' "$state_dir/gateway/gateway.pid")"
           echo "OPENCLAW_TEST_GATEWAY_PID=$gateway_pid" >> "$GITHUB_ENV"
 
@@ -294,10 +298,13 @@ jobs:
           PRIVATE_KEY: ${{ steps.setup.outputs.private-key-path || steps.helper.outputs.private-key-path }}
           PUBLIC_KEY: ${{ steps.setup.outputs.public-key-path || steps.helper.outputs.public-key-path }}
           DBUS_ADDRESS: ${{ steps.setup.outputs.dbus-address || steps.helper.outputs.dbus-address }}
+          GATEWAY_LOG_PATH: ${{ steps.setup.outputs.gateway-log-path || steps.helper.outputs.gateway-log-path }}
           SELECTION: ${{ matrix.selection }}
         run: |
           set -euo pipefail
           test "$MODE" = setup
+          test "$GATEWAY_LOG_PATH" = "$OPENCLAW_GATEWAY_LOG_PATH"
+          test "$GATEWAY_LOG_PATH" = "$SETUP_OPENCLAW_STATE_DIR/gateway/gateway.log"
           test "$VERSION" = 0.6.0
           test -f "$ARTIFACT"
           test -d "$PLUGIN_PATH"
@@ -335,12 +342,15 @@ jobs:
             test ! -d agent-system-source/node_modules
           elif [[ "$SELECTION" == tarball ]]; then
             test "$ARTIFACT" = "$LOCAL_PACKAGE"
+            test "$SETUP_OPENCLAW_DEBUG" = false
           elif [[ "$SELECTION" == published ]]; then
             test "$SOURCE" = npm:@tanaab/openclaw-agent-system@0.6.0
           else
             test "$SOURCE" = github:tanaabased/openclaw-agent-system#4fc7dd6abab9d511d4a6a899b65305b74e4eec7b
           fi
-          openclaw-gateway start
+          OPENCLAW_LOG_LEVEL=debug openclaw-gateway start
+          test -s "$GATEWAY_LOG_PATH"
+          grep --fixed-strings --quiet manifest_loaded "$GATEWAY_LOG_PATH"
           openclaw gateway call agents.list --json --timeout 3000
           openclaw-gateway stop
       - name: Clean gateway

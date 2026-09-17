@@ -85,7 +85,7 @@ configure_context "$profile" "$workspace" "$state_dir"
 verify_context
 
 pid_path="$gateway_state_dir/gateway.pid"
-log_path="$gateway_state_dir/gateway.log"
+log_path="$gateway_log_path"
 call_log_path="$gateway_state_dir/gateway-call.log"
 
 wait_for_gateway() {

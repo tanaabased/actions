@@ -125,6 +125,7 @@ test('action setup and direct helper use the same model, plugin, cache, SSH and 
   assert.equal(statSync(`${key}.pub`).mode & 0o777, 0o644);
   const exported = readFileSync(env.GITHUB_ENV, 'utf8');
   assert.match(exported, /AGENT_SYSTEM_VERSION=0.6.0/);
+  assert.ok(exported.includes(`OPENCLAW_GATEWAY_LOG_PATH=${join(directory, 'state/gateway/gateway.log')}\n`));
   assert.match(exported, /OPENCLAW_PROFILE=contract/);
   assert.ok(!exported.includes('BEGIN OPENSSH') && !exported.includes(env.OPENAI_API_KEY));
   const again = spawnSync('bash', [join(root, 'scripts/openclaw-setup'), '--needs-ssh-key'], { env, encoding:'utf8' });
@@ -163,6 +164,9 @@ test('action defaults establish a valid isolated context before run commands', (
   assert.match(outputs.profile, /^[A-Za-z0-9][A-Za-z0-9_-]*$/);
   assert.ok(outputs['state-dir'].startsWith(directory));
   assert.equal(outputs['config-path'], `${outputs['state-dir']}/openclaw/openclaw.json`);
+  assert.equal(outputs['gateway-log-path'], `${outputs['state-dir']}/gateway/gateway.log`);
   assert.equal(existsSync(outputs['config-path']), false);
-  assert.match(readFileSync(env.GITHUB_ENV, 'utf8'), /DBUS_SESSION_BUS_ADDRESS=unix:path=/);
+  const exported = readFileSync(env.GITHUB_ENV, 'utf8');
+  assert.ok(exported.includes(`OPENCLAW_GATEWAY_LOG_PATH=${outputs['gateway-log-path']}\n`));
+  assert.match(exported, /DBUS_SESSION_BUS_ADDRESS=unix:path=/);
 }));
