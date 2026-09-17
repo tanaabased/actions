@@ -1,5 +1,7 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+## v1.0.0-beta.1 - [September 17, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.0-beta.1)
+
 - Added [`npm-pack`](https://github.com/tanaabased/actions/tree/main/npm-pack) to pack a package and expose its exact artifact and metadata.
 - Added [`prepare-release`](https://github.com/tanaabased/actions/tree/main/prepare-release) to prepare release files without pushing Git changes.
 - Added [`publish-clawhub`](https://github.com/tanaabased/actions/tree/main/publish-clawhub) to publish a tested code-plugin tarball to ClawHub.
