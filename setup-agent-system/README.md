@@ -46,7 +46,6 @@ Agent System credentials; those decisions remain with the caller.
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
-| `test-mode` | No | `false` | Must be `true` or `false`; both values perform the same real isolated local installation. |
 | `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `version` | One source | — | Exact published `@tanaab/openclaw-agent-system` semantic version. |
 | `source-directory` | One source | — | Absolute or workspace-relative Agent System source checkout to build and pack. |
@@ -120,8 +119,8 @@ included in the staged build without changing the checkout.
 
 ## Test behavior
 
-Test mode performs the normal download or source build and isolated installation.
-PR tests on Linux and macOS verify plugin loading, artifact provenance, source
+PR checks perform the normal download or source build and isolated installation.
+They verify plugin loading, artifact provenance, source
 preservation, invalid inputs, and caller cleanup without provider credentials.
 
 ## Notes

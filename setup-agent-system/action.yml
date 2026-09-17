@@ -2,10 +2,6 @@ name: Set up Agent System
 description: Install Agent System from an exact release or source checkout into an isolated OpenClaw profile.
 
 inputs:
-  test-mode:
-    description: Perform the same real isolated local installation without remote mutation or publication.
-    required: false
-    default: 'false'
   debug:
     description: Action and owned tool verbosity; auto follows RUNNER_DEBUG=1.
     required: false
@@ -64,14 +60,8 @@ runs:
       env:
         SELECTED_VERSION: ${{ inputs.version }}
         SOURCE_DIRECTORY: ${{ inputs.source-directory }}
-        TEST_MODE: ${{ inputs.test-mode }}
       run: |
         set -euo pipefail
-
-        if [[ "$TEST_MODE" != 'true' && "$TEST_MODE" != 'false' ]]; then
-          echo '::error::test-mode must be true or false'
-          exit 2
-        fi
 
         if [[ -n "$SELECTED_VERSION" && -n "$SOURCE_DIRECTORY" ]]; then
           echo '::error::version and source-directory are mutually exclusive'
@@ -127,7 +117,6 @@ runs:
       if: steps.resolve.outputs.mode == 'source'
       uses: $/setup-bun
       with:
-        test-mode: ${{ inputs.test-mode }}
         debug: ${{ inputs.debug }}
         bun-version: ${{ steps.resolve.outputs.bun-version }}
 

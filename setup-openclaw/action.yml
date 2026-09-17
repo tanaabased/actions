@@ -2,10 +2,6 @@ name: Set up OpenClaw
 description: Install an exact OpenClaw CLI version and expose isolated CI helpers.
 
 inputs:
-  test-mode:
-    description: Perform the same real local installation without remote configuration or delivery.
-    required: false
-    default: 'false'
   debug:
     description: Action and helper verbosity; auto follows RUNNER_DEBUG=1.
     required: false
@@ -54,15 +50,9 @@ runs:
       env:
         PACKAGE_FIELD: ${{ inputs.package-field }}
         PACKAGE_JSON: ${{ inputs.package-json }}
-        TEST_MODE: ${{ inputs.test-mode }}
         VERSION_SPEC: ${{ inputs.version }}
       run: |
         set -euo pipefail
-
-        if [[ "$TEST_MODE" != 'true' && "$TEST_MODE" != 'false' ]]; then
-          echo '::error::test-mode must be true or false'
-          exit 2
-        fi
 
         if [[ "$PACKAGE_JSON" == /* ]]; then
           package_json_path="$PACKAGE_JSON"
@@ -96,7 +86,6 @@ runs:
     - name: Set up compatible Node.js
       uses: $/setup-node
       with:
-        test-mode: ${{ inputs.test-mode }}
         debug: ${{ inputs.debug }}
         node-version: ${{ steps.resolve.outputs.node-range }}
 

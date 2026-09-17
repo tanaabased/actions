@@ -23,8 +23,6 @@ jobs:
         run: bash .github/scripts/check-debug-contract.sh publish-codex-plugin
       - name: Set up Bun for fixture lockfile
         uses: ./setup-bun
-        with:
-          test-mode: true
       - name: Prepare fixture lockfile
         working-directory: publish-codex-plugin/test/fixture
         run: bun install --ignore-scripts
@@ -32,7 +30,7 @@ jobs:
         id: publish
         uses: ./publish-codex-plugin
         with:
-          test-mode: true
+          dry-run: true
           debug: true
           plugin-directory: publish-codex-plugin/test/fixture
           archive-name: fixture-${{ matrix.dependency-policy }}.tar.gz

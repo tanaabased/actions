@@ -2,9 +2,6 @@ name: Set up Node.js
 description: Select the caller's Node.js version and delegate installation to actions/setup-node.
 
 inputs:
-  test-mode:
-    description: Validate inputs and perform the same local runtime installation.
-    default: 'false'
   debug:
     description: Action diagnostics; auto follows RUNNER_DEBUG=1.
     default: auto
@@ -46,7 +43,6 @@ runs:
         RUNTIME: node
         RUNTIME_VERSION: ${{ inputs.node-version }}
         PROJECT_DIRECTORY: ${{ inputs.working-directory }}
-        TEST_MODE: ${{ inputs.test-mode }}
         ACTION_DEBUG: ${{ steps.debug.outputs.enabled }}
       run: |
         node "$GITHUB_ACTION_PATH/../.lib/resolve-runtime.mjs" >> "$GITHUB_OUTPUT"

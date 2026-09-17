@@ -34,8 +34,6 @@ jobs:
         run: bash .github/scripts/check-debug-contract.sh run-leia
       - name: Install Bun
         uses: ./setup-bun
-        with:
-          test-mode: true
       - name: Install Leia
         run: bun add --no-save --ignore-scripts @lando/leia@1.0.0-beta.9
 
@@ -46,7 +44,6 @@ jobs:
           RUN_LEIA_CLEANUP_EVIDENCE: ${{ runner.temp }}/run-leia-cleanup.txt
           RUN_LEIA_EVIDENCE: ${{ runner.temp }}/run-leia-success.txt
         with:
-          test-mode: true
           debug: true
           scenarios: ${{ matrix.success-scenario }}
           shell: ${{ matrix.shell }}
@@ -87,7 +84,6 @@ jobs:
         continue-on-error: true
         uses: ./run-leia
         with:
-          test-mode: true
           scenarios: ${{ matrix.failure-scenario }}
           shell: ${{ matrix.shell }}
           retry: 0

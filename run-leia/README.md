@@ -37,7 +37,6 @@ action with the same exit code after removing its temporary directory.
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
-| `test-mode` | No | `false` | Run the normal local behavior without changing the contract. |
 | `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `scenarios` | Yes | — | Newline-delimited scenario paths or glob patterns, relative to the caller's workspace unless absolute. |
 | `shell` | Yes | — | Scenario shell: `bash` or `pwsh`. |
@@ -75,7 +74,7 @@ by the workflow shell.
 
 ## Test behavior
 
-Test mode runs the supplied scenarios normally. PR tests cover success, failure,
+PR tests run the supplied scenarios normally and cover success, failure,
 temporary state, and cleanup on every supported runner. Caller scenarios must
 avoid external side effects; see [common inputs](../README.md#common-inputs).
 

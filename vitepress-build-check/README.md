@@ -28,7 +28,6 @@ invoking this action.
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
-| `test-mode` | No | `false` | Must be `true` or `false`; both values run the same local commands. |
 | `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `prepare-command` | No | — | Shell command to run before the build. |
 | `build-command` | Yes | — | Shell command that builds the VitePress site. |
@@ -48,6 +47,6 @@ For a multiversion build, supply preparation alongside the build command:
 
 ## Test behavior
 
-Test mode runs the same preparation and build commands. PR tests build a real
+PR tests run the same preparation and build commands and build a real
 VitePress fixture and assert its output, preparation marker, and failure propagation.
 Caller commands must avoid external side effects.

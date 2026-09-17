@@ -38,13 +38,14 @@
 - Put standalone examples in `<name>/examples/` only when they add to the README.
   Combined examples have one owner; other actions link to them.
 
-## Test mode
+## Dry runs
 
-- Every action accepts exactly `test-mode: true|false`, defaulting to `false`.
-  Never infer it from events, paths, repository identity, or missing credentials.
-- Test mode requires no publication credentials and makes no external mutations.
-  Validate real inputs and local artifacts, expose locally determinable outputs,
-  and use native dry runs where available. Non-mutating actions run normally.
+- Non-mutating actions expose no test or dry-run switch: they run normally.
+- An action that can mutate an external system exposes exactly `dry-run:
+  true|false`, defaulting to `false`. Dry runs require no publication
+  credentials, make no external mutations, validate real inputs and local
+  artifacts, expose locally determinable outputs, and use native dry runs where
+  available.
 - Caller commands are not sandboxed. PR fixtures must avoid external side effects;
   local installation and artifact preparation are expected.
 - Each action's Test behavior section identifies what runs locally and what
@@ -64,7 +65,7 @@
 ## Validation
 
 - Each action has `.github/workflows/pr-<name>.yml`, invoking `./<name>` with
-  `test-mode: true` and independently asserting inputs, outputs, and postconditions.
+  safe fixtures and independently asserting inputs, outputs, and postconditions.
   Cover debug auto on/off, explicit precedence, invalid inputs, failure behavior,
   and sentinel-secret redaction on supported runners.
 - Use matrices for meaningful input classes. Preserve stable check identities;

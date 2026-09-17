@@ -2,8 +2,8 @@ name: Publish repository
 description: Prepare and synchronize release changes and Git tags.
 
 inputs:
-  test-mode:
-    description: Exercise the action without mutating external state or requiring publication credentials.
+  dry-run:
+    description: Prepare release changes without committing, pushing, or requiring publication credentials.
     required: false
     default: 'false'
   debug:
@@ -63,13 +63,13 @@ runs:
         echo "enabled=$effective_debug" >> "$GITHUB_OUTPUT"
         [[ "$effective_debug" != 'true' ]] || echo 'Diagnostics enabled for repository publication; the upstream preparation action has no debug input.'
 
-    - name: Validate test mode
+    - name: Validate dry run
       shell: bash
       env:
-        TEST_MODE: ${{ inputs.test-mode }}
+        DRY_RUN: ${{ inputs.dry-run }}
       run: |
-        if [[ "$TEST_MODE" != "true" && "$TEST_MODE" != "false" ]]; then
-          echo "::error::test-mode must be true or false"
+        if [[ "$DRY_RUN" != "true" && "$DRY_RUN" != "false" ]]; then
+          echo "::error::dry-run must be true or false"
           exit 1
         fi
 
@@ -100,7 +100,6 @@ runs:
       with:
         bun-version: ${{ inputs.bun-version }}
         working-directory: ${{ inputs.root }}
-        test-mode: ${{ inputs.test-mode }}
         debug: ${{ inputs.debug }}
 
     - id: publish
@@ -110,11 +109,11 @@ runs:
         bun-version: ${{ steps.runtime.outputs.bun-version }}
         commands: ${{ inputs.commands }}
         root: ${{ inputs.root }}
-        sync: ${{ inputs.test-mode != 'true' }}
+        sync: ${{ inputs.dry-run != 'true' }}
         sync-branch: ${{ inputs.sync-branch }}
         sync-email: tanaabot@tanaab.dev
         sync-tags: ${{ inputs.sync-tags }}
-        sync-token: ${{ inputs.test-mode == 'true' && 'unused' || inputs.sync-token }}
+        sync-token: ${{ inputs.dry-run == 'true' && 'unused' || inputs.sync-token }}
         sync-username: tanaabot
         sync-verified: true
         update-files: CHANGELOG.md
@@ -127,7 +126,7 @@ runs:
         version: ${{ inputs.version }}
 
     - name: Verify synchronized repository
-      if: ${{ inputs.test-mode != 'true' }}
+      if: ${{ inputs.dry-run != 'true' }}
       shell: bash
       env:
         REPOSITORY_ROOT: ${{ inputs.root }}

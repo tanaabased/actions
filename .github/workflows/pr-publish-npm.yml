@@ -39,14 +39,13 @@ jobs:
         id: pack
         uses: ./npm-pack
         with:
-          test-mode: true
           debug: true
           package-directory: publish-npm/test/fixture
       - name: Validate npm publication
         id: publish
         uses: ./publish-npm
         with:
-          test-mode: true
+          dry-run: true
           debug: true
           tarball: ${{ steps.pack.outputs.tarball-path }}
           update-prerelease-tag-on-stable: true

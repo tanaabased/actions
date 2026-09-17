@@ -32,7 +32,6 @@ jobs:
         env:
           RUNNER_DEBUG: '1'
         with:
-          test-mode: true
           debug: ${{ matrix.selection == 'explicit' && 'false' || 'auto' }}
           version: ${{ matrix.selection == 'explicit' && '2026.9.3' || 'auto' }}
           package-json: ${{ matrix.selection == 'explicit' && 'setup-openclaw/test/fixture/conflict-package.json' || 'setup-openclaw/test/fixture/dependency-package.json' }}
@@ -163,7 +162,6 @@ jobs:
           - peer-only
           - missing-field
           - debug
-          - test-mode
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -172,7 +170,6 @@ jobs:
         continue-on-error: true
         uses: ./setup-openclaw
         with:
-          test-mode: ${{ matrix.case == 'test-mode' && 'maybe' || 'true' }}
           debug: ${{ matrix.case == 'debug' && 'verbose' || 'false' }}
           version: ${{ matrix.case == 'dist-tag' && 'latest' || 'auto' }}
           package-json: ${{ matrix.case == 'conflict' && 'setup-openclaw/test/fixture/conflict-package.json' || matrix.case == 'missing' && 'setup-openclaw/test/fixture/missing-package.json' || matrix.case == 'peer-only' && 'setup-openclaw/test/fixture/peer-package.json' || 'setup-openclaw/test/fixture/package.json' }}

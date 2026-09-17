@@ -35,7 +35,7 @@ explicitly.
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
-| `test-mode` | No | `false` | Prepare locally without committing, pushing, or requiring publication credentials. |
+| `dry-run` | No | `false` | Prepare locally without committing, pushing, or requiring publication credentials. |
 | `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `version` | No | Release tag | Semver-valid exact tag and project version. |
 | `release-date` | No | Release publication timestamp | Date or timestamp formatted as `Month D, YYYY` for the changelog. |
@@ -46,6 +46,10 @@ explicitly.
 | `sync-branch` | No | Release target or current branch | Branch that receives the release commit. |
 | `sync-tags` | No | — | Newline-separated moving tags, such as `v1`, forced to the release commit. |
 | `sync-token` | No | `${{ github.token }}` | Token authorized to create the verified commit and push tags. |
+
+For a consumer pull-request dry run, set `dry-run: true`. It validates release
+inputs and prepares generated files, but skips synchronization and remote
+readback. Local release outputs remain meaningful; a live release proves sync.
 
 Runtime discovery uses `root`; the resolved version is passed upstream.
 The upstream preparation action has no debug input.
@@ -68,7 +72,7 @@ and repository publication in independent jobs.
 
 ## Test behavior
 
-Test mode prepares files locally without synchronizing or supplying the sync token.
+Dry run prepares files locally without synchronizing or supplying the sync token.
 PR tests assert metadata, changelog, commands, and unchanged history. Live releases
 prove verified commits and branch/tag updates.
 

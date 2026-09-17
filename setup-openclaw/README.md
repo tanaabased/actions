@@ -47,7 +47,6 @@ returned as `version` and installed. Pin an exact version for reproducibility.
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
-| `test-mode` | No | `false` | Must be `true` or `false`; both values perform the same real local installation. |
 | `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `version` | No | `auto` | `auto`, an exact OpenClaw semantic version, or a range. An explicit version overrides package selection. |
 | `package-json` | No | `package.json` | Package manifest used only when `version` is `auto`; relative paths resolve from the workspace. |
@@ -88,7 +87,6 @@ profile.
 - name: Install OpenClaw
   uses: tanaabased/actions/setup-openclaw@v1
   with:
-    test-mode: true
     version: 2026.9.3
 
 - name: Prepare isolated OpenClaw
@@ -125,8 +123,8 @@ profile.
 
 ## Test behavior
 
-Test mode runs normal resolution, Node.js setup, CLI installation, and any
-caller-invoked helpers. PR tests on Linux and macOS cover version selection,
+PR checks run normal resolution, Node.js setup, CLI installation, and any
+caller-invoked helpers. They cover version selection,
 invalid inputs, exported helpers, gateway readiness, and cleanup.
 
 Setup skips provider authentication, channels, hooks, skills, and daemon

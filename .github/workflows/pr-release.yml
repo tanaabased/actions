@@ -31,15 +31,12 @@ jobs:
         id: prepare
         uses: ./prepare-release
         with:
-          test-mode: true
           version: ${{ matrix.version }}
           release-date: '2026-01-01T00:00:00Z'
           release-url: https://github.com/tanaabased/actions/releases/tag/v${{ matrix.version }}
       - name: Pack catalog
         id: pack
         uses: ./npm-pack
-        with:
-          test-mode: true
       - name: Verify packed catalog
         env:
           EXPECTED_VERSION: ${{ matrix.version }}
@@ -58,7 +55,7 @@ jobs:
         id: publish
         uses: ./publish-npm
         with:
-          test-mode: true
+          dry-run: true
           tarball: ${{ steps.pack.outputs.tarball-path }}
       - name: Verify release metadata
         env:

@@ -22,7 +22,6 @@ parent directories or use this action's own version files.
 
 | Input | Default | Description |
 | --- | --- | --- |
-| `test-mode` | `false` | Run the same real local installation. |
 | `debug` | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `node-version` | `auto` | Project discovery or an explicit upstream version specification. |
 | `working-directory` | `${{ github.workspace }}` | Project directory, relative to the workspace or absolute. |
@@ -46,7 +45,7 @@ parent directories or use this action's own version files.
 
 ## Test behavior
 
-Test mode performs normal setup without publishing. PR tests cover declaration
+PR tests perform normal setup and cover declaration
 precedence, overrides, missing declarations, malformed inputs, and real installs
 from files, package metadata, ranges, and fallbacks on every supported runner.
 

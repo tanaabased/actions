@@ -37,6 +37,11 @@
 
 Choose an action above for its inputs, outputs, permissions, and supported runners.
 Each action runs inside a caller-owned job; callers choose runners and job dependencies.
+Examples demonstrate an action's contract, not a default consumer workflow structure.
+Keep the consumer's existing topology, validation, and meaningful matrix; replace
+only the mechanics necessary to adopt the action as one coherent change. In
+particular, catalog-only test tools, inputs, and matrices do not become consumer
+requirements by osmosis.
 See [the release example](publish-npm/examples/release.yml) for packing and testing
 one artifact before publication, with repository publication in an independent job.
 
@@ -53,10 +58,11 @@ Node `26.x` or Bun `1.4.x`. See [setup-node](setup-node/README.md) and
 
 ## Common inputs
 
-- `test-mode`: `false` by default; accepts only `true` or `false`. Test mode
-  uses real local artifacts and native dry runs without publication credentials
-  or external mutations. Actions whose normal behavior is non-mutating run
-  normally. Caller-supplied commands are not sandboxed; use safe PR fixtures.
+- `dry-run`: mutation-capable publishers accept `true` or `false`, defaulting
+  to `false`. A dry run validates real inputs and local artifacts without
+  publication credentials or external mutation; each publisher documents its
+  exact coverage. Non-mutating actions have no dry-run input. Caller-supplied
+  commands are not sandboxed; use safe PR fixtures.
 - `debug`: `auto` by default; accepts `auto`, `true`, or `false`. Auto follows
   `RUNNER_DEBUG=1`, including GitHub's **Enable debug logging** rerun option.
   Explicit values override it. Diagnostics use supported tool verbosity without

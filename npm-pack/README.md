@@ -22,7 +22,6 @@ Supported runner: Linux (`ubuntu-24.04`).
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
-| `test-mode` | No | `false` | Exercise the action without external mutation or publication credentials. |
 | `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `package-directory` | No | `.` | Directory containing `package.json`, relative to the workspace or absolute. |
 | `node-version` | No | `auto` | [Project discovery](../setup-node/README.md) or explicit Node version. |
@@ -43,5 +42,5 @@ the artifact nor publishes it to a registry.
 
 ## Test behavior
 
-Test mode runs normal packing. PR tests inspect, install, and exercise the exact
+PR tests run normal packing, then inspect, install, and exercise the exact
 fixture tarball.

@@ -2,10 +2,6 @@ name: VitePress build check
 description: Run an optional VitePress preparation command and required build command.
 
 inputs:
-  test-mode:
-    description: Run the normal local build behavior without external mutation.
-    required: false
-    default: 'false'
   debug:
     description: Action diagnostics; auto follows RUNNER_DEBUG=1.
     required: false
@@ -35,14 +31,9 @@ runs:
       shell: bash
       env:
         BUILD_COMMAND: ${{ inputs.build-command }}
-        TEST_MODE: ${{ inputs.test-mode }}
       run: |
         set -euo pipefail
 
-        if [[ "$TEST_MODE" != 'true' && "$TEST_MODE" != 'false' ]]; then
-          echo '::error::test-mode must be true or false'
-          exit 1
-        fi
         if [[ -z "$BUILD_COMMAND" ]]; then
           echo '::error::build-command must not be empty'
           exit 1

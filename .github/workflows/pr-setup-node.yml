@@ -27,7 +27,6 @@ jobs:
         id: file
         uses: ./setup-node
         with:
-          test-mode: true
           debug: true
           working-directory: setup-node/test/fixture/file
       - name: Verify file runtime and outputs
@@ -45,7 +44,6 @@ jobs:
         id: manifest
         uses: ./setup-node
         with:
-          test-mode: true
           debug: true
           working-directory: setup-node/test/fixture/manifest
       - name: Verify manifest runtime and outputs
@@ -63,7 +61,6 @@ jobs:
         id: engines
         uses: ./setup-node
         with:
-          test-mode: true
           debug: true
           working-directory: setup-node/test/fixture/engines
       - name: Verify engines runtime and outputs
@@ -81,7 +78,6 @@ jobs:
         id: fallback
         uses: ./setup-node
         with:
-          test-mode: true
           debug: true
           working-directory: setup-node/test/fixture/fallback
       - name: Verify fallback runtime and outputs
@@ -99,7 +95,6 @@ jobs:
         id: explicit
         uses: ./setup-node
         with:
-          test-mode: true
           debug: true
           working-directory: setup-node/test/fixture/file
           node-version: 24.21.0
@@ -119,19 +114,9 @@ jobs:
         continue-on-error: true
         uses: ./setup-node
         with:
-          test-mode: true
           working-directory: setup-node/test/fixture/invalid
-      - name: Reject invalid-mode
-        id: invalid-mode
-        continue-on-error: true
-        uses: ./setup-node
-        with:
-          test-mode: invalid
-          node-version: 26.9.0
       - name: Verify rejected inputs
         env:
           INVALID: ${{ steps.invalid.outcome }}
-          INVALID_MODE: ${{ steps.invalid-mode.outcome }}
         run: |
           test "$INVALID" = failure
-          test "$INVALID_MODE" = failure

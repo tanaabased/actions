@@ -35,11 +35,11 @@ The token's ClawHub actor must have publisher access to `owner`.
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
-| `test-mode` | No | `false` | Exercise the action without authenticating or publishing. |
+| `dry-run` | No | `false` | Use ClawHub's native dry run without authentication or publication. |
 | `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `tarball` | Yes | — | Code-plugin tarball, relative to the workspace or absolute. |
 | `owner` | Yes | — | ClawHub user or organization publisher handle. |
-| `clawhub-token` | Live publication | — | ClawHub API token; omit in test mode. |
+| `clawhub-token` | Live publication | — | ClawHub API token; omit in dry runs. |
 | `tags` | No | `latest` | Comma-separated release channels. |
 | `source-repo` | No | `${{ github.repository }}` | Source repository recorded by ClawHub. |
 | `source-commit` | No | `${{ github.sha }}` | Source commit recorded by ClawHub. |
@@ -47,6 +47,11 @@ The token's ClawHub actor must have publisher access to `owner`.
 | `working-directory` | No | `${{ github.workspace }}` | Project directory for runtime discovery. |
 | `node-version` | No | `auto` | [Project discovery](../setup-node/README.md) or explicit Node version. |
 | `clawhub-version` | No | `0.23.3` | ClawHub CLI version installed for publication. |
+
+For a consumer pull-request dry run, set `dry-run: true`. It validates the
+supplied tarball and publication metadata through ClawHub's native dry-run path,
+but skips authentication, publication, and readback. Its local artifact outputs
+remain meaningful; a live release proves publication.
 
 Debug enables verbose npm output; ClawHub has no supported verbosity control.
 
@@ -60,7 +65,7 @@ The package family is fixed to `code-plugin`.
 
 ## Test behavior
 
-Test mode uses ClawHub's native dry-run path to validate the supplied tarball
+Dry run uses ClawHub's native dry-run path to validate the supplied tarball
 and publication metadata without logging in or changing ClawHub. It does not
 prove token access, asynchronous security checks, final channel visibility, or
 timeout behavior.

@@ -34,7 +34,7 @@ stamping.
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
-| `test-mode` | No | `false` | Prepare the real archive without uploading it or requiring credentials. |
+| `dry-run` | No | `false` | Prepare the real archive without uploading it or requiring credentials. |
 | `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `plugin-directory` | No | `.` | Plugin root to archive, relative to the workspace or absolute. |
 | `archive-name` | Yes | — | Archive filename ending in `.tar.gz`, using letters, digits, dots, underscores, or hyphens. |
@@ -42,7 +42,11 @@ stamping.
 | `bun-version` | No | `auto` | [Project discovery](../setup-bun/README.md) or explicit Bun version. |
 | `release-tag` | Yes | — | Existing GitHub Release tag that receives the archive. |
 | `repository` | No | `${{ github.repository }}` | GitHub repository containing the release. |
-| `github-token` | Live publication | — | Token with `contents: write`; omit in test mode. |
+| `github-token` | Live publication | — | Token with `contents: write`; omit in dry runs. |
+
+For a consumer pull-request dry run, set `dry-run: true`. It validates inputs
+and builds the real archive, but skips release upload and readback. Archive
+outputs remain meaningful; a live release proves delivery.
 
 Runtime discovery uses `plugin-directory`. Debug enables verbose Bun output.
 
@@ -61,7 +65,7 @@ entirely. Both policies exclude version-control metadata.
 
 ## Test behavior
 
-Test mode prepares the real archive under `RUNNER_TEMP` without GitHub access.
+Dry run prepares the real archive under `RUNNER_TEMP` without GitHub access.
 PR tests compare unpacked contents for both dependency policies. Release access,
 asset replacement, and download require a live consumer release.
 

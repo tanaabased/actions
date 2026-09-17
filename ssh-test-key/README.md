@@ -11,7 +11,6 @@ Supported runners: Linux (`ubuntu-24.04`) and macOS (`macos-26`).
   id: ssh-key
   uses: tanaabased/actions/ssh-test-key@v1
   with:
-    test-mode: true
     destination: ${{ runner.temp }}/fixture/id_ed25519
     comment: fixture@example.test
 ```
@@ -23,7 +22,6 @@ Omit `destination` to create the pair in an isolated directory below
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
-| `test-mode` | No | `false` | Must be `true` or `false`; both values create a real local pair. |
 | `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `destination` | No | — | Private-key destination; the public key is written at `<destination>.pub`. |
 | `comment` | No | `ssh-test-key` | Comment recorded in the public key. |
@@ -39,8 +37,8 @@ Debug includes the public-key fingerprint and path, never private-key contents.
 
 ## Test behavior
 
-Test mode performs the same real, local `ssh-keygen` operation as ordinary
-mode in an isolated temporary directory when no destination is supplied. It
+PR tests perform the real, local `ssh-keygen` operation in an isolated temporary
+directory when no destination is supplied. The action
 does not register a GitHub key, install a key, or make a remote SSH connection.
 
 ## Notes

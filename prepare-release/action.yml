@@ -2,10 +2,6 @@ name: Prepare release
 description: Prepare release files without publishing Git changes.
 
 inputs:
-  test-mode:
-    description: Exercise the action without mutating external state or requiring publication credentials.
-    required: false
-    default: 'false'
   debug:
     description: Action diagnostics; auto follows RUNNER_DEBUG=1.
     required: false
@@ -52,16 +48,6 @@ runs:
         echo "enabled=$effective_debug" >> "$GITHUB_OUTPUT"
         [[ "$effective_debug" != 'true' ]] || echo 'Diagnostics enabled for release preparation; the upstream preparation action has no debug input.'
 
-    - name: Validate test mode
-      shell: bash
-      env:
-        TEST_MODE: ${{ inputs.test-mode }}
-      run: |
-        if [[ "$TEST_MODE" != "true" && "$TEST_MODE" != "false" ]]; then
-          echo "::error::test-mode must be true or false"
-          exit 1
-        fi
-
     - id: release-date
       name: Format release date
       shell: bash
@@ -89,7 +75,6 @@ runs:
       with:
         bun-version: ${{ inputs.bun-version }}
         working-directory: ${{ inputs.root }}
-        test-mode: ${{ inputs.test-mode }}
         debug: ${{ inputs.debug }}
 
     - id: prepare

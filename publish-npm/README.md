@@ -37,7 +37,7 @@ steps:
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
-| `test-mode` | No | `false` | Exercise the action without registry mutation or publication credentials. |
+| `dry-run` | No | `false` | Use npm's native dry run without registry mutation or publication credentials. |
 | `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `tarball` | Yes | — | Tested npm tarball, relative to the workspace or absolute. |
 | `registry-url` | No | `https://registry.npmjs.org` | npm-compatible registry URL. |
@@ -50,6 +50,11 @@ steps:
 | `working-directory` | No | `${{ github.workspace }}` | Project directory for runtime discovery. |
 | `node-version` | No | `auto` | [Project discovery](../setup-node/README.md) or explicit Node version. |
 | `npm-version` | No | `^11.5.1` | npm version range installed for publication. |
+
+For a consumer pull-request dry run, set `dry-run: true`. It packages and
+validates the supplied tarball through npm's native dry-run path, but skips
+registry publication, immutable-version checks, channel updates, and readback.
+Its local artifact outputs remain meaningful; a live release proves publication.
 
 Debug enables verbose npm output.
 
@@ -87,7 +92,7 @@ is published. Adapt its preparation commands and moving tag to the consumer.
 
 ## Test behavior
 
-Test mode inspects the tarball, selects its channel, and runs npm's native dry
+Dry run inspects the tarball, selects its channel, and runs npm's native dry
 run without registry or channel credentials. It skips registry reads, publication,
 and tag updates. PR tests cover stable and prerelease artifacts; live releases
 prove authentication, immutability checks, publication, and channel mutation.

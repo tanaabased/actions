@@ -49,7 +49,6 @@ jobs:
       - name: Install OpenClaw
         uses: ./setup-openclaw
         with:
-          test-mode: true
           version: 2026.9.3
       - name: Prepare isolated OpenClaw
         shell: bash
@@ -64,7 +63,6 @@ jobs:
         id: agent-system
         uses: ./setup-agent-system
         with:
-          test-mode: true
           debug: true
           version: ${{ matrix.selection == 'published' && '0.6.0' || '' }}
           source-directory: ${{ matrix.selection == 'source' && 'agent-system-source' || '' }}
@@ -146,7 +144,6 @@ jobs:
           - version-range
           - missing-directory
           - wrong-package
-          - test-mode
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -155,8 +152,7 @@ jobs:
         continue-on-error: true
         uses: ./setup-agent-system
         with:
-          test-mode: ${{ matrix.case == 'test-mode' && 'maybe' || 'true' }}
-          version: ${{ matrix.case == 'both-sources' && '0.6.0' || matrix.case == 'version-range' && '^0.6.0' || matrix.case == 'test-mode' && '0.6.0' || '' }}
+          version: ${{ matrix.case == 'both-sources' && '0.6.0' || matrix.case == 'version-range' && '^0.6.0' || '' }}
           source-directory: ${{ matrix.case == 'both-sources' && '.' || matrix.case == 'missing-directory' && 'not-a-directory' || matrix.case == 'wrong-package' && '.' || '' }}
       - name: Verify rejection
         env:

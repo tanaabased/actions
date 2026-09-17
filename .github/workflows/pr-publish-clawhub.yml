@@ -19,14 +19,13 @@ jobs:
         id: pack
         uses: ./npm-pack
         with:
-          test-mode: true
           debug: true
           package-directory: publish-clawhub/test/fixture
       - name: Validate ClawHub publication
         id: publish
         uses: ./publish-clawhub
         with:
-          test-mode: true
+          dry-run: true
           debug: true
           tarball: ${{ steps.pack.outputs.tarball-path }}
           owner: tanaab
