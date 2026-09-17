@@ -35,7 +35,7 @@ stamping.
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `dry-run` | No | `false` | Prepare the real archive without uploading it or requiring credentials. |
-| `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
+| `debug` | No | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
 | `plugin-directory` | No | `.` | Plugin root to archive, relative to the workspace or absolute. |
 | `archive-name` | Yes | — | Archive filename ending in `.tar.gz`, using letters, digits, dots, underscores, or hyphens. |
 | `dependency-policy` | No | `include-production` | `include-production` or `exclude-node-modules`. |

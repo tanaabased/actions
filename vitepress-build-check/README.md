@@ -28,7 +28,7 @@ invoking this action.
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
-| `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
+| `debug` | No | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
 | `prepare-command` | No | — | Shell command to run before the build. |
 | `build-command` | Yes | — | Shell command that builds the VitePress site. |
 

@@ -37,7 +37,7 @@ action with the same exit code after removing its temporary directory.
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
-| `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
+| `debug` | No | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
 | `scenarios` | Yes | — | Newline-delimited scenario paths or glob patterns, relative to the caller's workspace unless absolute. |
 | `shell` | Yes | — | Scenario shell: `bash` or `pwsh`. |
 | `retry` | No | `0` | Non-negative number of retries for each failed test. |
@@ -76,7 +76,7 @@ by the workflow shell.
 
 PR tests run the supplied scenarios normally and cover success, failure,
 temporary state, and cleanup on every supported runner. Caller scenarios must
-avoid external side effects; see [common inputs](../README.md#common-inputs).
+avoid external side effects; the action does not sandbox them.
 
 ## Notes
 

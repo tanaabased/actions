@@ -38,7 +38,7 @@ steps:
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `dry-run` | No | `false` | Use npm's native dry run without registry mutation or publication credentials. |
-| `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
+| `debug` | No | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
 | `tarball` | Yes | — | Tested npm tarball, relative to the workspace or absolute. |
 | `registry-url` | No | `https://registry.npmjs.org` | npm-compatible registry URL. |
 | `registry-token` | No | — | Token for registry reads and publication; omit for npm trusted publishing. |

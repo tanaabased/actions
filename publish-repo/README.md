@@ -36,7 +36,7 @@ explicitly.
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `dry-run` | No | `false` | Prepare locally without committing, pushing, or requiring publication credentials. |
-| `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
+| `debug` | No | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
 | `version` | No | Release tag | Semver-valid exact tag and project version. |
 | `release-date` | No | Release publication timestamp | Date or timestamp formatted as `Month D, YYYY` for the changelog. |
 | `release-url` | No | Release URL | Link recorded in the changelog. |

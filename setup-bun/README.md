@@ -22,7 +22,7 @@ parent directories or use this action's own version files.
 
 | Input | Default | Description |
 | --- | --- | --- |
-| `debug` | `auto` | [Common diagnostics](../README.md#common-inputs). |
+| `debug` | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
 | `bun-version` | `auto` | Project discovery or an explicit upstream version specification. |
 | `working-directory` | `${{ github.workspace }}` | Project directory, relative to the workspace or absolute. |
 

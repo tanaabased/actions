@@ -23,7 +23,7 @@ Supported runners: Linux (`ubuntu-24.04`) and macOS (`macos-26`).
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
-| `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
+| `debug` | No | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
 | `plugin-directory` | No | `.` | Plugin root, relative to the workspace or absolute. |
 | `python-version` | No | `3.13` | Python version used to run the validator. |
 

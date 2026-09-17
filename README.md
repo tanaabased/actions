@@ -16,6 +16,12 @@
 
 ## Catalog
 
+Use `tanaabased/actions/<action>@v1`. Select an action below for examples, inputs,
+outputs, and supported runners.
+
+Composed actions use same-repository `$/` references, which GitHub Enterprise
+Server does not support.
+
 | Action | Purpose | PR tests |
 | --- | --- | --- |
 | [npm-pack](npm-pack/README.md) | Pack a package and expose its exact artifact and metadata. | [![npm-pack](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-npm-pack.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-npm-pack.yml) |
@@ -31,46 +37,6 @@
 | [ssh-test-key](ssh-test-key/README.md) | Generate a local Ed25519 SSH key pair for test fixtures. | [![ssh-test-key](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-ssh-test-key.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-ssh-test-key.yml) |
 | [validate-codex-plugin](validate-codex-plugin/README.md) | Validate a Codex plugin against a pinned OpenAI validator snapshot. | [![validate-codex-plugin](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-validate-codex-plugin.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-validate-codex-plugin.yml) |
 | [vitepress-build-check](vitepress-build-check/README.md) | Run optional VitePress preparation and a required build command. | [![vitepress-build-check](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-vitepress-build-check.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-vitepress-build-check.yml) |
-
-## Usage
-
-Choose an action above for its inputs, outputs, permissions, and supported runners.
-Each action runs inside a caller-owned job; callers choose runners and job dependencies.
-Examples demonstrate an action's contract, not a default consumer workflow structure.
-Keep the consumer's existing topology, validation, and meaningful matrix; replace
-only the mechanics necessary to adopt the action as one coherent change. In
-particular, catalog-only test tools, inputs, and matrices do not become consumer
-requirements by osmosis.
-See [the release example](publish-npm/examples/release.yml) for packing and testing
-one artifact before publication, with repository publication in an independent job.
-
-The catalog is available as [v1.0.0-beta.1](https://github.com/tanaabased/actions/releases/tag/v1.0.0-beta.1).
-Examples use the moving `@v1` reference; pin `@v1.0.0-beta.1` or a reviewed commit
-for a fixed revision. The npm catalog package is
-`@tanaab/actions`; GitHub workflows consume Git references such as `@v1`. Composed actions use
-GitHub.com’s same-repository `$/` references to keep wrappers at the caller-selected
-action revision; GitHub Enterprise Server does not support that syntax.
-
-Runtime selection follows project version files, then package metadata, then
-Node `26.x` or Bun `1.4.x`. See [setup-node](setup-node/README.md) and
-[setup-bun](setup-bun/README.md) for precedence and explicit overrides.
-
-## Common inputs
-
-- `dry-run`: mutation-capable publishers accept `true` or `false`, defaulting
-  to `false`. A dry run validates real inputs and local artifacts without
-  publication credentials or external mutation; each publisher documents its
-  exact coverage. Non-mutating actions have no dry-run input. Caller-supplied
-  commands are not sandboxed; use safe PR fixtures.
-- `debug`: `auto` by default; accepts `auto`, `true`, or `false`. Auto follows
-  `RUNNER_DEBUG=1`, including GitHub's **Enable debug logging** rerun option.
-  Explicit values override it. Diagnostics use supported tool verbosity without
-  rewriting caller commands or exposing credentials; failure summaries remain
-  enabled in every mode. Action READMEs note tool-specific exceptions.
-
-The test badges report [PR checks](https://github.com/tanaabased/actions/actions) of local
-behavior and dry runs; live releases prove publication. Publishing actions own
-their production checks.
 
 ## Issues, Questions and Support
 

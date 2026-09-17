@@ -36,7 +36,7 @@ The token's ClawHub actor must have publisher access to `owner`.
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `dry-run` | No | `false` | Use ClawHub's native dry run without authentication or publication. |
-| `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
+| `debug` | No | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
 | `tarball` | Yes | — | Code-plugin tarball, relative to the workspace or absolute. |
 | `owner` | Yes | — | ClawHub user or organization publisher handle. |
 | `clawhub-token` | Live publication | — | ClawHub API token; omit in dry runs. |

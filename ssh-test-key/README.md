@@ -22,7 +22,7 @@ Omit `destination` to create the pair in an isolated directory below
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
-| `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
+| `debug` | No | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
 | `destination` | No | — | Private-key destination; the public key is written at `<destination>.pub`. |
 | `comment` | No | `ssh-test-key` | Comment recorded in the public key. |
 
