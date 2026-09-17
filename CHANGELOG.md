@@ -1,5 +1,9 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+- Removed registry visibility polling and redundant registry lookups from `publish-npm`; publication command results determine success.
+- Removed remote branch and tag readback from `publish-repo`; the upstream synchronization result determines success.
+- Simplified `setup-openclaw` verification while retaining final configuration validation, plugin loading checks, and service readiness.
+
 ## v1.0.0-beta.3 - [September 17, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.0-beta.3)
 
 - Added `openclaw-gateway log-path` to print the absolute raw gateway log path. [#39](https://github.com/tanaabased/actions/pull/39)

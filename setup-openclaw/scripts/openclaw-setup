@@ -185,17 +185,8 @@ if [[ -n "$agent_system" ]]; then
   node "$command_dir/lib/agent-system.mjs" install "$agent_system" "$selection_file"
 fi
 if [[ "$yolo" == true ]]; then run_setup_command run_openclaw exec-policy preset yolo; fi
-validation_file="$(mktemp "$state_dir/validation.XXXXXX")"
-if run_openclaw config validate --json > "$validation_file" 2>&1; then
-  validation_status=0
-else
-  validation_status=$?
-  tail -n 20 "$validation_file" | redact_stream >&2
-  rm -f "$validation_file"
-  error 'OpenClaw configuration validation failed' "$validation_status"
-fi
-node "$command_dir/lib/verify-runtime.mjs" config < "$validation_file"
-rm -f "$validation_file"
+# Validate the final combined configuration after all setup operations.
+run_setup_command run_openclaw config validate --json
 write_context
 if [[ "$needs_ssh_key" == true ]]; then
   printf 'SSH_PRIVATE_KEY_PATH=%s\nSSH_PUBLIC_KEY_PATH=%s.pub\n' "$key_path" "$key_path" >> "$GITHUB_ENV"

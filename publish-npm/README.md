@@ -41,7 +41,7 @@ steps:
 | `debug` | No | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
 | `tarball` | Yes | — | Tested npm tarball, relative to the workspace or absolute. |
 | `registry-url` | No | `https://registry.npmjs.org` | npm-compatible registry URL. |
-| `registry-token` | No | — | Token for registry reads and publication; omit for npm trusted publishing. |
+| `registry-token` | No | — | Token for publication; omit for npm trusted publishing. |
 | `channel-token` | No | — | Token used only to move the prerelease tag after a stable publication. |
 | `stable-tag` | No | `latest` | Distribution tag for stable versions. |
 | `prerelease-tag` | No | `edge` | Distribution tag for prerelease versions. |
@@ -51,10 +51,9 @@ steps:
 | `node-version` | No | `auto` | [Project discovery](../setup-node/README.md) or explicit Node version. |
 | `npm-version` | No | `^11.5.1` | npm version range installed for publication. |
 
-For a consumer pull-request dry run, set `dry-run: true`. It packages and
-validates the supplied tarball through npm's native dry-run path, but skips
-registry publication, immutable-version checks, channel updates, and readback.
-Its local artifact outputs remain meaningful; a live release proves publication.
+For a consumer pull-request dry run, set `dry-run: true`. It inspects and
+validates the supplied tarball through npm's native dry-run path without
+publication or channel updates. Its local artifact outputs remain meaningful.
 
 Debug enables verbose npm output.
 
@@ -93,39 +92,28 @@ is published. Adapt its preparation commands and moving tag to the consumer.
 ## Test behavior
 
 Dry run inspects the tarball, selects its channel, and runs npm's native dry
-run without registry or channel credentials. It skips registry reads, publication,
-and tag updates. PR tests cover stable and prerelease artifacts; live releases
-prove authentication, immutability checks, publication, and channel mutation.
+run without registry or channel credentials. PR tests cover stable and prerelease
+artifacts and command failure propagation. Live releases exercise authentication,
+publication, and channel mutation.
 
 ## Notes
 
 ### Publication and retries
 
-The action inspects the tarball offline, checks the registry for the exact
-package version, dry-runs that tarball, and performs one live
-`npm publish --ignore-scripts` attempt. An existing version fails before
-publication with an immutable-version error. Other lookup failures also stop
-the action; an authentication outage is not evidence that a version is
-available.
+The action inspects the tarball offline and makes one live
+`npm publish --ignore-scripts` attempt. npm enforces version immutability and
+reports publication errors. Successful publication is sufficient; the action
+never polls registry visibility or retries publication.
 
-Do not retry the same version blindly after an interrupted publication. The
-action checks again after a failed publish and reports when the version now
-exists, but registry state remains the authority. A stable publication updates
-the prerelease tag only when `update-prerelease-tag-on-stable` is `true`; the
-action validates the required token before publishing so a missing tag
-credential cannot create a half-finished release.
+A stable publication updates the prerelease tag only when
+`update-prerelease-tag-on-stable` is `true`. The action checks the required token
+before publishing and preserves any `npm dist-tag add` failure.
 
-After publication, the action reads back package identity, tarball integrity,
-and all requested channels. It retries reads up to 12 times with five-second
-pauses; it never retries publication.
-
-If publication succeeds but readback or the distribution-tag update fails, inspect
-the immutable version and current tags, then repair only the tag:
+After an interrupted publication or a failed tag update, inspect the version
+and tags before retrying. If the version exists, repair only the tag:
 
 ```sh
 npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version
 npm dist-tag ls "$PACKAGE_NAME"
 npm dist-tag add "$PACKAGE_NAME@$PACKAGE_VERSION" "$CHANNEL"
 ```
-
-Do not rerun publication after the version exists.

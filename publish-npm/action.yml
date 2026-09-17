@@ -18,7 +18,7 @@ inputs:
     required: false
     default: https://registry.npmjs.org
   registry-token:
-    description: Token used for registry reads and publication; omit for npm trusted publishing.
+    description: Token used for publication; omit for npm trusted publishing.
     required: false
   channel-token:
     description: Token used only to update the prerelease channel after a stable publication.
@@ -200,39 +200,8 @@ runs:
           exit 1
         fi
 
-    - name: Check immutable package version
-      if: ${{ inputs.dry-run != 'true' }}
-      shell: bash
-      env:
-        NODE_AUTH_TOKEN: ${{ inputs.registry-token }}
-        NPM_CONFIG_USERCONFIG: ${{ steps.npm-config.outputs.publish-config }}
-        NPM_CONFIG_LOGLEVEL: ${{ steps.debug.outputs.enabled == 'true' && 'verbose' || 'error' }}
-        PACKAGE_NAME: ${{ steps.package.outputs.package-name }}
-        PACKAGE_VERSION: ${{ steps.package.outputs.package-version }}
-        REGISTRY_URL: ${{ inputs.registry-url }}
-      run: |
-        set -euo pipefail
-
-        query_root="$(mktemp -d)"
-        trap 'rm -rf "$query_root"' EXIT
-
-        set +e
-        npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version --json --registry "$REGISTRY_URL" > "$query_root/stdout" 2> "$query_root/stderr"
-        status=$?
-        set -e
-
-        if [[ $status -eq 0 ]]; then
-          echo "::error::Package version $PACKAGE_NAME@$PACKAGE_VERSION already exists in $REGISTRY_URL; registry versions are immutable and will not be retried."
-          exit 1
-        fi
-
-        if ! grep --quiet 'E404' "$query_root/stdout" "$query_root/stderr"; then
-          cat "$query_root/stderr" >&2
-          echo "::error::Could not determine whether $PACKAGE_NAME@$PACKAGE_VERSION already exists in $REGISTRY_URL."
-          exit "$status"
-        fi
-
     - name: Dry-run publication
+      if: ${{ inputs.dry-run == 'true' }}
       shell: bash
       env:
         ACCESS: ${{ inputs.access }}
@@ -259,8 +228,6 @@ runs:
         CHANNEL: ${{ steps.package.outputs.channel }}
         NODE_AUTH_TOKEN: ${{ inputs.registry-token }}
         NPM_CONFIG_USERCONFIG: ${{ steps.npm-config.outputs.publish-config }}
-        PACKAGE_NAME: ${{ steps.package.outputs.package-name }}
-        PACKAGE_VERSION: ${{ steps.package.outputs.package-version }}
         REGISTRY_URL: ${{ inputs.registry-url }}
         TARBALL_PATH: ${{ steps.package.outputs.tarball-path }}
         NPM_CONFIG_LOGLEVEL: ${{ steps.debug.outputs.enabled == 'true' && 'verbose' || 'error' }}
@@ -272,17 +239,7 @@ runs:
           publish_args+=(--access "$ACCESS")
         fi
 
-        set +e
         npm "${publish_args[@]}"
-        status=$?
-        set -e
-
-        if [[ $status -ne 0 ]]; then
-          if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version --json --registry "$REGISTRY_URL" >/dev/null 2>&1; then
-            echo "::error::Package version $PACKAGE_NAME@$PACKAGE_VERSION now exists in $REGISTRY_URL; the publish may have won a race and must not be retried with the same version."
-          fi
-          exit "$status"
-        fi
 
     - name: Update prerelease channel
       if: ${{ inputs.dry-run != 'true' && inputs.update-prerelease-tag-on-stable == 'true' && steps.package.outputs.release-type == 'stable' }}
@@ -296,18 +253,6 @@ runs:
         PRERELEASE_TAG: ${{ inputs.prerelease-tag }}
         REGISTRY_URL: ${{ inputs.registry-url }}
       run: npm dist-tag add "$PACKAGE_NAME@$PACKAGE_VERSION" "$PRERELEASE_TAG" --registry "$REGISTRY_URL"
-
-    - name: Verify registry publication
-      if: ${{ inputs.dry-run != 'true' }}
-      shell: bash
-      env:
-        NODE_AUTH_TOKEN: ${{ inputs.registry-token }}
-        NPM_CONFIG_USERCONFIG: ${{ steps.npm-config.outputs.publish-config }}
-        CHANNEL: ${{ steps.package.outputs.channel }}
-        EXTRA_CHANNEL: ${{ inputs.update-prerelease-tag-on-stable == 'true' && steps.package.outputs.release-type == 'stable' && inputs.prerelease-tag || '' }}
-        REGISTRY_URL: ${{ inputs.registry-url }}
-        TARBALL_PATH: ${{ steps.package.outputs.tarball-path }}
-      run: node "$GITHUB_ACTION_PATH/scripts/verify-publication.mjs"
 
     - name: Remove temporary npm configuration
       if: always()

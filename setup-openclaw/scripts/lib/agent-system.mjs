@@ -89,8 +89,8 @@ function install() {
   openclaw('config', 'set', 'plugins.entries.agent-system.hooks.allowConversationAccess', 'true');
   openclaw('config', 'set', 'plugins.entries.agent-system.config.opCache',
     process.env.SETUP_OP_CACHE || '{"mode":"process-lifetime","maxEntries":128}', '--strict-json');
-  command(process.execPath, [join(library, 'verify-runtime.mjs'), 'config'], { input: openclaw('config', 'validate', '--json') });
-  const pluginPath = command(process.execPath, [join(library, 'verify-runtime.mjs'), 'plugin', manifest.version, artifact], {
+  // Installation does not establish runtime loading; inspect it and obtain the output path.
+  const pluginPath = command(process.execPath, [join(library, 'verify-runtime.mjs'), manifest.version], {
     input: openclaw('plugins', 'inspect', 'agent-system', '--runtime', '--json'),
   });
   const outputs = { 'agent-system-version': manifest.version, 'agent-system-source': selection.source,

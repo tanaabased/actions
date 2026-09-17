@@ -142,7 +142,6 @@ runs:
         fi
 
         tar "${tar_args[@]}" -czf "$archive_path" -C "$PLUGIN_PATH" .
-        test -f "$archive_path"
         echo "archive-path=$archive_path" >> "$GITHUB_OUTPUT"
 
     - name: Upload release archive

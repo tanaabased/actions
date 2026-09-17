@@ -48,8 +48,8 @@ explicitly.
 | `sync-token` | No | `${{ github.token }}` | Token authorized to create the verified commit and push tags. |
 
 For a consumer pull-request dry run, set `dry-run: true`. It validates release
-inputs and prepares generated files, but skips synchronization and remote
-readback. Local release outputs remain meaningful; a live release proves sync.
+inputs and prepares generated files, but skips synchronization. Local release
+outputs remain meaningful; a live release proves sync.
 
 Runtime discovery uses `root`; the resolved version is passed upstream.
 The upstream preparation action has no debug input.
@@ -85,10 +85,8 @@ prove verified commits and branch/tag updates.
 unreleased header; a missing changelog is left missing. `commands` run from
 `root` and may use `PREPARE_RELEASE_VERSION`.
 
-After synchronization, the action checks that the remote branch, exact release
-tag, and every requested moving tag select the prepared commit and package version.
-Readback uses the selected Bun runtime and `sync-token`, with authentication scoped
-to the Git subprocess so checkout and publisher credentials cannot accumulate.
+The upstream preparation action's result determines synchronization success.
+This wrapper does not re-read remote branches or tags afterward.
 
 A retry runs preparation again, creates a commit when files change, and forces
 the exact and moving tags to the resulting commit. This makes repository

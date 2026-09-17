@@ -79,10 +79,6 @@ runs:
         }
 
         const tarballPath = path.resolve(process.env.PACKAGE_ROOT, filename);
-        if (!fs.statSync(tarballPath).isFile()) {
-          throw new Error(`npm pack reported a missing tarball: ${tarballPath}`);
-        }
-
         process.stdout.write(`tarball-path=${tarballPath}\n`);
         process.stdout.write(`package-name=${name}\n`);
         process.stdout.write(`package-version=${version}\n`);

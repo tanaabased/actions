@@ -13,9 +13,6 @@
   for contracts that require job topology, runners, services, environments,
   approvals, permissions, or concurrency; document that reason.
 - Keep repository lifecycle workflows in `.github/workflows/`.
-- Production guarantees, including publication readback, belong inside actions.
-  Consumer workflows may add product-specific checks such as catalog contents.
-  Independent assertions in this repository's PR tests are expected.
 - Use `Tanaab Maneuvering Systems LLC` for project copyright and authorship.
   Preserve third-party notices and functional package, account, and bot identities.
 
@@ -61,6 +58,18 @@
 - Preserve exit status, cleanup, outputs, retries, and destination state.
   Keep bounded failure diagnostics in every mode; never print credentials,
   private keys, authentication configuration, full environments, or shell traces.
+
+## Command success and verification
+
+- Treat a command or upstream action's successful exit as sufficient evidence
+  that its documented operation succeeded.
+- Add a follow-up check only for a specific requirement that success does not
+  establish. Explain that requirement briefly beside the check.
+- Never fail a successful publication because an external system has not
+  immediately exposed the result. Do not add custom propagation polling.
+- Retain necessary input validation, output extraction, safety checks, native
+  asynchronous completion, and service readiness checks. Independent assertions
+  in tests and consumer-specific checks such as catalog contents remain appropriate.
 
 ## Validation
 

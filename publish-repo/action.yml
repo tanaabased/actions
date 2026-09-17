@@ -124,14 +124,3 @@ runs:
           UNRELEASED_LINK=${{ inputs.release-url }}
           UNRELEASED_VERSION=${{ inputs.version }}
         version: ${{ inputs.version }}
-
-    - name: Verify synchronized repository
-      if: ${{ inputs.dry-run != 'true' }}
-      shell: bash
-      env:
-        REPOSITORY_ROOT: ${{ inputs.root }}
-        RESOLVED_VERSION: ${{ steps.publish.outputs.resolved-version }}
-        SYNC_BRANCH: ${{ inputs.sync-branch }}
-        SYNC_TAGS: ${{ inputs.sync-tags }}
-        SYNC_TOKEN: ${{ inputs.sync-token }}
-      run: bun "$GITHUB_ACTION_PATH/scripts/verify-publication.mjs"

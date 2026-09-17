@@ -102,7 +102,8 @@ Action setup installs the required Bun version; later helper calls require it
 already on `PATH`.
 
 Installation authorizes capabilities and conversation hooks, applies `op-cache`,
-and verifies the loaded runtime and artifact provenance.
+and checks that the requested plugin version loads. Configuration is validated once
+after setup completes.
 
 ## Outputs
 

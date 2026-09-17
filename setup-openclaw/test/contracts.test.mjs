@@ -43,7 +43,7 @@ if (args.includes('onboard')) {
 }
 if (args.includes('validate')) {
   if (process.env.FAIL_VALIDATE) { console.error(process.env.OPENAI_API_KEY); process.exit(17); }
-  console.log(JSON.stringify({valid:true}));
+  console.log('configuration accepted');
 }
 if (args.includes('inspect')) {
  const artifact = process.env.TEST_ARTIFACT;
@@ -135,6 +135,7 @@ test('action setup and direct helper use the same model, plugin, cache, SSH and 
   const result = spawnSync('bash', ['-eo', 'pipefail', '-c', shellBlock('orchestrate')], { env, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   const calls = readFileSync(env.CALLS, 'utf8');
+  assert.equal(calls.split('\n').filter(line => line.includes('"validate"')).length, 1);
   for (const expected of ['openai-api-key', 'openai/gpt-5.4-nano', 'codexDynamicToolsLoading', 'npm-pack:', '--accept-capabilities', 'allowConversationAccess', 'opCache', 'process-lifetime', 'exec-policy', 'yolo']) assert.ok(calls.includes(expected), expected);
   assert.ok(!result.stdout.includes(env.OPENAI_API_KEY) && !result.stderr.includes(env.OPENAI_API_KEY));
   const key = join(env.HOME, '.ssh/big-test-bucket-ssh');
@@ -167,7 +168,7 @@ test('invalid helper flags fail before onboarding; failure diagnostics redact ra
   env.OPENAI_API_KEY = 'raw-credential-sentinel';
   env.FAIL_VALIDATE = 'true';
   const result = spawnSync('bash', [join(root, 'scripts/openclaw-setup'), '--debug'], { env, encoding:'utf8' });
-  assert.notEqual(result.status, 0);
+  assert.equal(result.status, 17);
   assert.match(result.stderr, /REDACTED/);
   assert.ok(!result.stderr.includes(env.OPENAI_API_KEY));
 }));
@@ -184,3 +185,19 @@ test('action defaults establish a valid isolated context before run commands', (
   const exported = readFileSync(env.GITHUB_ENV, 'utf8');
   assert.match(exported, /DBUS_SESSION_BUS_ADDRESS=unix:path=/);
 }));
+
+// Runtime inspection supplies readiness and the plugin-path output, not a schema audit.
+test('runtime inspection requires loading and output path without internal layout assumptions', () => {
+  const report = { plugin: { id: 'agent-system', enabled: true, status: 'loaded', version: '0.6.0' },
+    install: { installPath: '/plugin' } };
+  const inspect = value => spawnSync(process.execPath, [join(root, 'scripts/lib/verify-runtime.mjs'), '0.6.0'], {
+    input: JSON.stringify(value), encoding: 'utf8',
+  });
+  const result = inspect(report);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, '/plugin\n');
+  for (const change of [{ status: 'error' }, { enabled: false }, { version: '0.5.0' }, { id: 'other' }]) {
+    assert.notEqual(inspect({ ...report, plugin: { ...report.plugin, ...change } }).status, 0);
+  }
+  assert.notEqual(inspect({ ...report, install: {} }).status, 0);
+});
