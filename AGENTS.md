@@ -13,6 +13,9 @@
   for contracts that require job topology, runners, services, environments,
   approvals, permissions, or concurrency; document that reason.
 - Keep repository lifecycle workflows in `.github/workflows/`.
+- Release publication jobs check out `ref: ${{ github.sha }}` and prepare their
+  own artifacts from that commit. Do not depend on a release tag that a peer
+  publisher can move; preserve independent publication and retries.
 - Use `Tanaab Maneuvering Systems LLC` for project copyright and authorship.
   Preserve third-party notices and functional package, account, and bot identities.
 

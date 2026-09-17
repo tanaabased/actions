@@ -19,6 +19,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
         with:
+          ref: ${{ github.sha }}
           fetch-depth: 0
       - name: Prepare catalog release
         id: prepare
@@ -50,6 +51,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
         with:
+          ref: ${{ github.sha }}
           fetch-depth: 0
       - name: Publish repository
         uses: ./publish-repo
