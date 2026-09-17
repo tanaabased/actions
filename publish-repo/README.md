@@ -18,6 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ github.sha }}
           fetch-depth: 0
       - uses: tanaabased/actions/publish-repo@v1
         with:
@@ -27,9 +28,11 @@ jobs:
 ```
 
 Run this in an independent job so a package publisher can fail or be retried
-without coupling its registry result to Git synchronization. Outside a
-`release` event, provide `version`, `release-date`, and `release-url`
-explicitly.
+without coupling its registry result to Git synchronization. Every release job
+must check out `ref: ${{ github.sha }}` and prepare its own files from that
+original commit: this action moves the release tag, which can otherwise break
+a peer job's checkout or change its retry inputs. Outside a `release` event,
+provide `version`, `release-date`, and `release-url` explicitly.
 
 ## Inputs
 

@@ -1,5 +1,7 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+- Fixed parallel release jobs racing with repository publication by checking out the triggering commit instead of the moving release tag.
+
 ## v1.0.0-beta.4 - [September 17, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.0-beta.4)
 
 - Removed registry visibility polling and redundant registry lookups from `publish-npm`; publication command results determine success. [#40](https://github.com/tanaabased/actions/pull/40)

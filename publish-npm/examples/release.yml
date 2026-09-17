@@ -14,6 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ github.sha }}
           fetch-depth: 0
       - name: Prepare release files
         uses: tanaabased/actions/prepare-release@v1
@@ -42,6 +43,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ github.sha }}
           fetch-depth: 0
       - uses: tanaabased/actions/publish-repo@v1
         with:

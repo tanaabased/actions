@@ -16,6 +16,10 @@ isolated temporary configuration, and removes that configuration afterward.
 The token's ClawHub actor must have publisher access to `owner`.
 
 ```yaml
+- uses: actions/checkout@v7
+  with:
+    ref: ${{ github.sha }}
+
 - name: Pack plugin
   id: pack
   uses: tanaabased/actions/npm-pack@v1
@@ -30,6 +34,8 @@ The token's ClawHub actor must have publisher access to `owner`.
     source-commit: ${{ github.sha }}
     clawhub-token: ${{ secrets.CLAWHUB_TOKEN }}
 ```
+
+For parallel release jobs, follow the [shared checkout guidance](../publish-repo/README.md#usage).
 
 ## Inputs
 

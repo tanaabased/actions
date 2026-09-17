@@ -24,6 +24,8 @@ permissions:
 
 steps:
   - uses: actions/checkout@v7
+    with:
+      ref: ${{ github.sha }}
   - id: pack
     uses: tanaabased/actions/npm-pack@v1
   - uses: tanaabased/actions/publish-npm@v1
