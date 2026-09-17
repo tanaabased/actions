@@ -1,8 +1,14 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
-- Added inferred install, setup, and run modes to `setup-openclaw`, with shared Agent System and fixture helpers. [#36](https://github.com/tanaabased/actions/issues/36)
-- Fixed gateway readiness to require a successful OpenClaw CLI request. [#36](https://github.com/tanaabased/actions/issues/36)
-- Removed `setup-agent-system`; its installation and validation now belong to `setup-openclaw`. [#36](https://github.com/tanaabased/actions/issues/36)
+- Added Agent System installation from exact versions, local tarballs or source directories, and explicit GitHub refs. [#37](https://github.com/tanaabased/actions/pull/37)
+- Added inferred install, setup, and run modes to `setup-openclaw`, sharing one helper contract with later Leia commands. [#37](https://github.com/tanaabased/actions/pull/37)
+- Added optional Secret Service, SSH, model, opCache, and YOLO setup with verified Agent System runtime and fixture path outputs. [#37](https://github.com/tanaabased/actions/pull/37)
+- Fixed gateway and diagnostic helpers to reuse saved context after Leia workspace changes. [#37](https://github.com/tanaabased/actions/pull/37)
+- Fixed gateway readiness to require an OpenClaw CLI request and retain onboarding authentication. [#37](https://github.com/tanaabased/actions/pull/37)
+- Removed `setup-agent-system`; use `setup-openclaw` with `agent-system` or the `openclaw-setup --agent-system` helper. [#37](https://github.com/tanaabased/actions/pull/37)
+- Removed the no-op `test-mode` input from non-mutating actions; these actions now always run normally. [#35](https://github.com/tanaabased/actions/pull/35)
+- Renamed publishers' `test-mode` input to `dry-run`; consumers must update it before adopting this release. [#35](https://github.com/tanaabased/actions/pull/35)
+- Updated action check names to `Test action / <action-name>` with concise runner and case labels. [#37](https://github.com/tanaabased/actions/pull/37)
 
 ## v1.0.0-beta.1 - [September 17, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.0-beta.1)
 
