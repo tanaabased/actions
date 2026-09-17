@@ -1,5 +1,7 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+## v1.0.0-beta.5 - [September 17, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.0-beta.5)
+
 - Fixed parallel release checkout failures by pinning each job to the triggering commit. [#41](https://github.com/tanaabased/actions/pull/41)
 
 ## v1.0.0-beta.4 - [September 17, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.0-beta.4)
