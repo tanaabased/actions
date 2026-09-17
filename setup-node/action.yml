@@ -1,0 +1,59 @@
+name: Set up Node.js
+description: Select the caller's Node.js version and delegate installation to actions/setup-node.
+
+inputs:
+  test-mode:
+    description: Validate inputs and perform the same local runtime installation.
+    default: 'false'
+  debug:
+    description: Action diagnostics; auto follows RUNNER_DEBUG=1.
+    default: auto
+  node-version:
+    description: Explicit upstream version specification, or auto for project discovery.
+    default: auto
+  working-directory:
+    description: Project directory for discovery, relative to the workspace or absolute.
+    default: ${{ github.workspace }}
+
+outputs:
+  node-version:
+    description: Installed runtime version.
+    value: ${{ steps.setup.outputs.node-version }}
+  version-spec:
+    description: Version specification passed to the upstream installer.
+    value: ${{ steps.resolve.outputs.version }}
+  version-source:
+    description: Input, project declaration, or fallback that selected the version.
+    value: ${{ steps.resolve.outputs.source }}
+
+runs:
+  using: composite
+  steps:
+    - id: debug
+      name: Resolve debug mode
+      shell: bash
+      env:
+        DEBUG_INPUT: ${{ inputs.debug }}
+      run: |
+        effective_debug="$(bash "$GITHUB_ACTION_PATH/../.lib/resolve-debug.sh" "$DEBUG_INPUT")"
+        echo "enabled=$effective_debug" >> "$GITHUB_OUTPUT"
+        [[ "$effective_debug" != 'true' ]] || echo 'Diagnostics enabled for node setup.'
+
+    - id: resolve
+      name: Select runtime version
+      shell: bash
+      env:
+        RUNTIME: node
+        RUNTIME_VERSION: ${{ inputs.node-version }}
+        PROJECT_DIRECTORY: ${{ inputs.working-directory }}
+        TEST_MODE: ${{ inputs.test-mode }}
+        ACTION_DEBUG: ${{ steps.debug.outputs.enabled }}
+      run: |
+        node "$GITHUB_ACTION_PATH/../.lib/resolve-runtime.mjs" >> "$GITHUB_OUTPUT"
+
+    - id: setup
+      name: Install selected runtime
+      uses: actions/setup-node@v7
+      with:
+        node-version: ${{ steps.resolve.outputs.version }}
+        package-manager-cache: false

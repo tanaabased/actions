@@ -5,9 +5,9 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const tarball = process.argv[2];
-assert(tarball && process.argv.length === 3, 'Usage: node scripts/check-package-task.mjs <tarball>');
+assert(tarball && process.argv.length === 3, 'Usage: node .github/scripts/check-package-task.mjs <tarball>');
 const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
 const actions = readdirSync(root).filter((name) => existsSync(join(root, name, 'action.yml'))).sort();
 assert(actions.length > 0, 'The catalog must contain actions');
@@ -25,7 +25,8 @@ const expected = [
   'README.md',
   'CHANGELOG.md',
   'LICENSE',
-  'scripts/resolve-debug.sh',
+  '.lib/resolve-debug.sh',
+  '.lib/resolve-runtime.mjs',
 ];
 for (const action of actions) {
   expected.push(`${action}/action.yml`, `${action}/README.md`);

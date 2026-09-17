@@ -33,12 +33,12 @@ runs:
       env:
         DEBUG_INPUT: ${{ inputs.debug }}
       run: |
-        effective_debug="$(bash "$GITHUB_ACTION_PATH/../scripts/resolve-debug.sh" "$DEBUG_INPUT")"
+        effective_debug="$(bash "$GITHUB_ACTION_PATH/../.lib/resolve-debug.sh" "$DEBUG_INPUT")"
         echo "enabled=$effective_debug" >> "$GITHUB_OUTPUT"
         [[ "$effective_debug" != 'true' ]] || echo 'Diagnostics enabled for Codex plugin validation.'
 
     - name: Set up Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: ${{ inputs.python-version }}
 

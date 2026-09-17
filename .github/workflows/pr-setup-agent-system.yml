@@ -23,7 +23,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
       - name: Verify debug contract
-        run: bash scripts/check-debug-contract.sh setup-agent-system
+        run: bash .github/scripts/check-debug-contract.sh setup-agent-system
       - name: Checkout pinned Agent System source
         if: matrix.selection == 'source'
         uses: actions/checkout@v7

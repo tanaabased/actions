@@ -19,10 +19,6 @@ Supported runner: Linux (`ubuntu-24.04`).
       version-injector dist/index.js --style js --version "$PREPARE_RELEASE_VERSION"
 ```
 
-Package or archive publication can follow in the same job. The action modifies
-that job's original release checkout and fixes upstream synchronization to
-`false`; it does not push a branch or tags.
-
 Outside a `release` event, provide `version`, `release-date`, and `release-url`
 explicitly.
 
@@ -31,18 +27,16 @@ explicitly.
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `test-mode` | No | `false` | Exercise the action without external mutation or publication credentials. |
-| `debug` | No | `auto` | Action diagnostics: `auto`, `true`, or `false`. |
+| `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `version` | No | Release tag | Semver-valid release version. |
 | `release-date` | No | Release publication timestamp | Date or timestamp formatted as `Month D, YYYY` for the changelog. |
 | `release-url` | No | Release URL | Link recorded in the changelog. |
 | `commands` | No | — | Project-specific preparation commands. |
 | `root` | No | `${{ github.workspace }}` | Root containing the release source and `package.json`. |
-| `bun-version` | No | `auto` | Bun version, or automatic project resolution. |
+| `bun-version` | No | `auto` | [Project discovery](../setup-bun/README.md) or explicit Bun version. |
 
-Set `debug: true` for extra action detail, or use GitHub's **Enable debug
-logging** rerun option with `auto`. Explicit `true` or `false` overrides runner
-debug. The upstream preparation action has no debug input, and caller-supplied
-`commands` are never rewritten.
+Runtime discovery uses `root`; the resolved version is passed upstream.
+The upstream preparation action has no debug input.
 
 ## Outputs
 
@@ -52,10 +46,8 @@ debug. The upstream preparation action has no debug input, and caller-supplied
 
 ## Test behavior
 
-Release preparation already fixes synchronization to `false`, so
-`test-mode: true` runs the normal action against a local fixture. Pull requests
-verify the resolved version, package metadata, changelog, project commands, and
-unchanged Git history.
+Test mode runs normal local preparation. PR tests verify package metadata,
+changelog, commands, resolved version, and unchanged Git history.
 
 ## Notes
 
@@ -66,7 +58,5 @@ unchanged Git history.
 unreleased header; a missing changelog is left missing. `commands` run from
 `root` and may use `PREPARE_RELEASE_VERSION`.
 
-Each invocation performs preparation again. In particular, a retry can add
-another changelog header if it starts from already-prepared files. Consumers
-should publish from the original release source and should not mistake
-`sync: false` for an unconditional no-op.
+Retries can add another changelog header to already-prepared files. Start from
+the original release source.

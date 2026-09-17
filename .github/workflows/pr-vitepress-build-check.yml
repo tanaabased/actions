@@ -14,11 +14,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
       - name: Verify debug contract
-        run: bash scripts/check-debug-contract.sh vitepress-build-check
+        run: bash .github/scripts/check-debug-contract.sh vitepress-build-check
       - name: Set up Bun
-        uses: oven-sh/setup-bun@v2
+        uses: ./setup-bun
         with:
-          bun-version-file: .bun-version
+          test-mode: true
       - name: Install fixture dependencies
         working-directory: vitepress-build-check/test/fixture
         run: bun install --frozen-lockfile --ignore-scripts

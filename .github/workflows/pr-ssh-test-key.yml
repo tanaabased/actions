@@ -20,7 +20,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
       - name: Verify debug contract
-        run: bash scripts/check-debug-contract.sh ssh-test-key
+        run: bash .github/scripts/check-debug-contract.sh ssh-test-key
       - name: Generate SSH test key
         id: key
         uses: ./ssh-test-key

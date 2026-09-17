@@ -167,11 +167,15 @@ start_gateway() {
   local failure_status
 
   if [[ -f "$pid_path" ]]; then
+    if ! read_gateway_pid; then
+      error_message "gateway PID file is invalid: $pid_path"
+      return 1
+    fi
     if gateway_is_running; then
       error_message "gateway is already running: $gateway_pid"
       return 1
     fi
-    if read_gateway_pid && kill -0 "$gateway_pid" 2>/dev/null; then
+    if kill -0 "$gateway_pid" 2>/dev/null; then
       error_message "refusing to replace a gateway PID file for an unowned process: $gateway_pid"
       return 1
     fi
@@ -191,7 +195,13 @@ start_gateway() {
         --port "$gateway_port" >> "$log_path" 2>&1 < /dev/null
   ) &
   gateway_pid="$!"
-  printf '%s\n' "$gateway_pid" > "$pid_path"
+  if ! gateway_started="$(gateway_process_start "$gateway_pid")" || [[ -z "$gateway_started" ]]; then
+    error_message 'could not record gateway process identity'
+    # This is the child just launched above, never a PID read from disk.
+    kill -TERM "$gateway_pid" 2>/dev/null || true
+    return 1
+  fi
+  printf '%s\n%s\n' "$gateway_pid" "$gateway_started" > "$pid_path"
 
   if wait_for_gateway "$start_timeout"; then
     return 0

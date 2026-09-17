@@ -1,0 +1,137 @@
+name: PR / setup-bun
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  setup-bun:
+    name: setup-bun (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-26, windows-2025]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - name: Verify selection rules
+        run: node --test setup-bun/test/resolve.test.mjs
+      - name: Verify debug contract
+        run: bash .github/scripts/check-debug-contract.sh setup-bun
+      - name: Set up from file
+        id: file
+        uses: ./setup-bun
+        with:
+          test-mode: true
+          debug: true
+          working-directory: setup-bun/test/fixture/file
+      - name: Verify file runtime and outputs
+        env:
+          INSTALLED: ${{ steps.file.outputs.bun-version }}
+          SPEC: ${{ steps.file.outputs.version-spec }}
+          SOURCE: ${{ steps.file.outputs.version-source }}
+        run: |
+          test "$SPEC" = '1.4.2'
+          test "$SOURCE" = '.bun-version'
+          actual="$(bun --version)"
+          test "${actual#v}" = "${INSTALLED#v}"
+          test "${actual#v}" = '1.4.2'
+      - name: Set up from manifest
+        id: manifest
+        uses: ./setup-bun
+        with:
+          test-mode: true
+          debug: true
+          working-directory: setup-bun/test/fixture/manifest
+      - name: Verify manifest runtime and outputs
+        env:
+          INSTALLED: ${{ steps.manifest.outputs.bun-version }}
+          SPEC: ${{ steps.manifest.outputs.version-spec }}
+          SOURCE: ${{ steps.manifest.outputs.version-source }}
+        run: |
+          test "$SPEC" = '1.4.2'
+          test "$SOURCE" = 'package.json#packageManager'
+          actual="$(bun --version)"
+          test "${actual#v}" = "${INSTALLED#v}"
+          test "${actual#v}" = '1.4.2'
+      - name: Set up from engines
+        id: engines
+        uses: ./setup-bun
+        with:
+          test-mode: true
+          debug: true
+          working-directory: setup-bun/test/fixture/engines
+      - name: Verify engines runtime and outputs
+        env:
+          INSTALLED: ${{ steps.engines.outputs.bun-version }}
+          SPEC: ${{ steps.engines.outputs.version-spec }}
+          SOURCE: ${{ steps.engines.outputs.version-source }}
+        run: |
+          test "$SPEC" = '1.4.x'
+          test "$SOURCE" = 'package.json#engines.bun'
+          actual="$(bun --version)"
+          test "${actual#v}" = "${INSTALLED#v}"
+          [[ "${actual#v}" == 1.4.* ]]
+      - name: Set up from fallback
+        id: fallback
+        uses: ./setup-bun
+        with:
+          test-mode: true
+          debug: true
+          working-directory: setup-bun/test/fixture/fallback
+      - name: Verify fallback runtime and outputs
+        env:
+          INSTALLED: ${{ steps.fallback.outputs.bun-version }}
+          SPEC: ${{ steps.fallback.outputs.version-spec }}
+          SOURCE: ${{ steps.fallback.outputs.version-source }}
+        run: |
+          test "$SPEC" = '1.4.x'
+          test "$SOURCE" = 'fallback'
+          actual="$(bun --version)"
+          test "${actual#v}" = "${INSTALLED#v}"
+          [[ "${actual#v}" == 1.4.* ]]
+      - name: Set up from explicit
+        id: explicit
+        uses: ./setup-bun
+        with:
+          test-mode: true
+          debug: true
+          working-directory: setup-bun/test/fixture/file
+          bun-version: 1.3.14
+      - name: Verify explicit runtime and outputs
+        env:
+          INSTALLED: ${{ steps.explicit.outputs.bun-version }}
+          SPEC: ${{ steps.explicit.outputs.version-spec }}
+          SOURCE: ${{ steps.explicit.outputs.version-source }}
+        run: |
+          test "$SPEC" = '1.3.14'
+          test "$SOURCE" = 'input'
+          actual="$(bun --version)"
+          test "${actual#v}" = "${INSTALLED#v}"
+          test "${actual#v}" = '1.3.14'
+      - name: Reject invalid
+        id: invalid
+        continue-on-error: true
+        uses: ./setup-bun
+        with:
+          test-mode: true
+          working-directory: setup-bun/test/fixture/invalid
+      - name: Reject invalid-mode
+        id: invalid-mode
+        continue-on-error: true
+        uses: ./setup-bun
+        with:
+          test-mode: invalid
+          bun-version: 1.4.2
+      - name: Verify rejected inputs
+        env:
+          INVALID: ${{ steps.invalid.outcome }}
+          INVALID_MODE: ${{ steps.invalid-mode.outcome }}
+        run: |
+          test "$INVALID" = failure
+          test "$INVALID_MODE" = failure

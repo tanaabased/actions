@@ -23,7 +23,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
       - name: Verify debug contract
-        run: bash scripts/check-debug-contract.sh setup-openclaw
+        run: bash .github/scripts/check-debug-contract.sh setup-openclaw
+      - name: Verify helper ownership and diagnostics
+        run: bash setup-openclaw/test/helpers.sh
       - name: Install OpenClaw
         id: openclaw
         uses: ./setup-openclaw
@@ -71,7 +73,7 @@ jobs:
             --workspace "$workspace" \
             --state-dir "$state_dir" \
             --timeout 90
-          gateway_pid="$(cat "$state_dir/gateway/gateway.pid")"
+          gateway_pid="$(sed -n '1p' "$state_dir/gateway/gateway.pid")"
           echo "OPENCLAW_TEST_GATEWAY_PID=$gateway_pid" >> "$GITHUB_ENV"
 
       - name: Verify later-step readiness and failure preservation

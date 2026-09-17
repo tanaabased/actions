@@ -39,10 +39,14 @@ inputs:
     description: npm package access passed to npm publish; leave empty to use registry defaults.
     required: false
     default: public
-  node-version:
-    description: Node.js version used for publication.
+  working-directory:
+    description: Project directory for automatic runtime selection, relative to the workspace or absolute.
     required: false
-    default: '24'
+    default: ${{ github.workspace }}
+  node-version:
+    description: Node.js version, or auto to discover it from working-directory.
+    required: false
+    default: auto
   npm-version:
     description: npm version range installed for publication and trusted-publishing support.
     required: false
@@ -74,7 +78,7 @@ runs:
       env:
         DEBUG_INPUT: ${{ inputs.debug }}
       run: |
-        effective_debug="$(bash "$GITHUB_ACTION_PATH/../scripts/resolve-debug.sh" "$DEBUG_INPUT")"
+        effective_debug="$(bash "$GITHUB_ACTION_PATH/../.lib/resolve-debug.sh" "$DEBUG_INPUT")"
         echo "enabled=$effective_debug" >> "$GITHUB_OUTPUT"
         [[ "$effective_debug" != 'true' ]] || echo 'Diagnostics enabled for npm publication.'
 
@@ -89,8 +93,11 @@ runs:
         fi
 
     - name: Set up Node.js
-      uses: actions/setup-node@v5
+      uses: $/setup-node
       with:
+        test-mode: ${{ inputs.test-mode }}
+        debug: ${{ inputs.debug }}
+        working-directory: ${{ inputs.working-directory }}
         node-version: ${{ inputs.node-version }}
 
     - name: Install supported npm
@@ -290,6 +297,18 @@ runs:
         PRERELEASE_TAG: ${{ inputs.prerelease-tag }}
         REGISTRY_URL: ${{ inputs.registry-url }}
       run: npm dist-tag add "$PACKAGE_NAME@$PACKAGE_VERSION" "$PRERELEASE_TAG" --registry "$REGISTRY_URL"
+
+    - name: Verify registry publication
+      if: ${{ inputs.test-mode != 'true' }}
+      shell: bash
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.registry-token }}
+        NPM_CONFIG_USERCONFIG: ${{ steps.npm-config.outputs.publish-config }}
+        CHANNEL: ${{ steps.package.outputs.channel }}
+        EXTRA_CHANNEL: ${{ inputs.update-prerelease-tag-on-stable == 'true' && steps.package.outputs.release-type == 'stable' && inputs.prerelease-tag || '' }}
+        REGISTRY_URL: ${{ inputs.registry-url }}
+        TARBALL_PATH: ${{ steps.package.outputs.tarball-path }}
+      run: node "$GITHUB_ACTION_PATH/scripts/verify-publication.mjs"
 
     - name: Remove temporary npm configuration
       if: always()
