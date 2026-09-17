@@ -300,10 +300,14 @@ runs:
         set -euo pipefail
         if [[ "$HARNESS_MODE" == setup ]]; then
           args=()
-          for option in model agent-system needs-secret-service needs-ssh-key op-cache yolo; do
+          for option in model agent-system op-cache; do
             variable="SETUP_$(printf '%s' "$option" | tr '[:lower:]-' '[:upper:]_')"
             value="${!variable}"
             [[ -z "$value" ]] || args+=("--$option" "$value")
+          done
+          for option in needs-secret-service needs-ssh-key yolo; do
+            variable="SETUP_$(printf '%s' "$option" | tr '[:lower:]-' '[:upper:]_')"
+            [[ "${!variable}" != true ]] || args+=("--$option")
           done
           openclaw-setup "${args[@]}"
         elif [[ "$HARNESS_MODE" == run ]]; then

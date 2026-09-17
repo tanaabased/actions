@@ -154,6 +154,8 @@ A helper cannot update its parent shell's environment. After overriding a profil
 or state directory, pass that context to subsequent commands in the same shell.
 Gateway and diagnostic helpers read the saved profile/workspace, including after
 a workspace change in Leia; explicit flags take precedence.
+An explicit non-empty `OPENCLAW_LOG_LEVEL` also takes precedence over the helper's
+debug setting; otherwise helpers select `debug` or `warn` from that setting.
 
 ## CLI commands
 
@@ -176,16 +178,15 @@ openclaw-setup [options]
 | `--state-dir <path>` | `SETUP_OPENCLAW_STATE_DIR` | Absolute directory containing helper state and saved context. |
 | `--agent-system <selector>` | — | Install from any [Agent System selector](#agent-system). |
 | `--model <openai/model>` | — | Authenticate with `OPENAI_API_KEY` and select a model. |
-| `--needs-secret-service [boolean]` | `false` | Prepare Linux Secret Service; skip on macOS. |
-| `--needs-ssh-key [boolean]` | `false` | Create `~/.ssh/big-test-bucket-ssh` and its public key. |
+| `--needs-secret-service` | `false` | Prepare Linux Secret Service; skip on macOS. |
+| `--needs-ssh-key` | `false` | Create `~/.ssh/big-test-bucket-ssh` and its public key. |
 | `--op-cache <json>` | process-lifetime, 128 entries | Agent System cache policy; requires `--agent-system`. |
-| `--yolo [boolean]` | `false` | Enable unattended execution in this profile. |
-| `--debug <value>` | `SETUP_OPENCLAW_DEBUG` or `auto` | `auto`, `true`, or `false`; `auto` follows `RUNNER_DEBUG=1`. |
+| `--yolo` | `false` | Enable unattended execution in this profile. |
+| `--debug` | `SETUP_OPENCLAW_DEBUG` or `auto` | Enable verbose helper and OpenClaw logging. |
 | `-h`, `--help` | — | Display command help. |
 
-Boolean flags accept `true` or `false`; a bare flag means `true`. Unknown or repeated
-options fail. Without action context, supply `--profile`, `--workspace`, and
-`--state-dir`.
+Setup booleans are bare switches. Unknown or repeated options fail. Without action
+context, supply `--profile`, `--workspace`, and `--state-dir`.
 
 Setup skips channels, daemon installation, hooks, and skills. Provider authentication
 runs only when a model is requested; Agent System adds its own hooks. GPT-5.4
@@ -206,6 +207,7 @@ openclaw-gateway <command> [options]
 | `restart` | Stop, then start the gateway. |
 | `stop` | Stop the owned gateway; leave fixtures available for later scenarios. |
 | `diagnostics` | Print bounded, redacted gateway evidence. |
+| `log-path` | Print only the absolute raw gateway log path. |
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -213,12 +215,14 @@ openclaw-gateway <command> [options]
 | `--workspace <path>` | Saved workspace, then `OPENCLAW_WORKSPACE` | Select and verify the absolute agent workspace. |
 | `--state-dir <path>` | `SETUP_OPENCLAW_STATE_DIR` | Absolute directory containing helper state and saved context. |
 | `--timeout <seconds>` | `90`; `30` for `stop` | Positive integer bounding readiness or shutdown; `restart` applies it to each phase. |
-| `--debug <value>` | `SETUP_OPENCLAW_DEBUG` or `auto` | `auto`, `true`, or `false`; `auto` follows `RUNNER_DEBUG=1`. |
+| `--debug` | `SETUP_OPENCLAW_DEBUG` or `auto` | Enable verbose helper and OpenClaw logging. |
 | `-h`, `--help` | — | Display command help. |
 
 The gateway binds to loopback and keeps onboarding's authentication; its token is
 never an action output. Helpers verify process ownership before signaling it.
 A failed start prints diagnostics, stops its process, and preserves the failure.
+Use `openclaw-gateway log-path` when a later step needs the raw log. The command
+resolves saved or explicit helper context and prints the path, never log contents.
 
 ### `openclaw-diagnostics`
 
@@ -235,7 +239,7 @@ openclaw-diagnostics [options]
 | `--workspace <path>` | Saved workspace, then `OPENCLAW_WORKSPACE` | Select and verify the absolute agent workspace. |
 | `--state-dir <path>` | `SETUP_OPENCLAW_STATE_DIR` | Absolute directory containing helper state and saved context. |
 | `--exit-code <code>` | `0` | Exit with this integer from `0` through `255` after reporting. |
-| `--debug <value>` | `SETUP_OPENCLAW_DEBUG` or `auto` | `auto`, `true`, or `false`; `auto` follows `RUNNER_DEBUG=1`. |
+| `--debug` | `SETUP_OPENCLAW_DEBUG` or `auto` | Enable verbose diagnostic detail. |
 | `-h`, `--help` | — | Display command help. |
 
 ## Notes

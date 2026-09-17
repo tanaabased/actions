@@ -34,6 +34,23 @@ export PATH="$test_root/bin:$PATH" GITHUB_ACTIONS=true
 context=(--profile fixture --workspace "$test_root/workspace" --state-dir "$test_root/state")
 pid_path="$test_root/state/gateway/gateway.pid"
 
+unset OPENCLAW_LOG_LEVEL
+
+for helper in openclaw-setup openclaw-gateway openclaw-diagnostics; do
+  bash "$command_dir/$helper" --help > "$test_root/output"
+  grep -Eq -- '^  --debug +enable' "$test_root/output"
+  if grep -Eq -- '--debug +(\[|<)' "$test_root/output"; then exit 1; fi
+done
+gateway_log_path="$(bash "$command_dir/openclaw-gateway" log-path "${context[@]}" 2> "$test_root/log-path-error")"
+test "$gateway_log_path" = "$test_root/state/gateway/gateway.log"
+test ! -s "$test_root/log-path-error"
+configure_debug false
+test "$OPENCLAW_LOG_LEVEL" = warn
+OPENCLAW_LOG_LEVEL=debug
+configure_debug false
+test "$OPENCLAW_LOG_LEVEL" = debug
+unset OPENCLAW_LOG_LEVEL
+
 # Every process used by this test belongs to this test; invalid records must never signal it.
 sleep 120 &
 test_pid=$!
@@ -115,6 +132,15 @@ for setting in auto true false; do
     fi
   done
 done
+set +e
+bash "$command_dir/openclaw-diagnostics" \
+  "${context[@]}" --debug --exit-code 23 > "$test_root/output" 2>&1
+status=$?
+set -e
+test "$status" = 23
+grep -Fq 'gateway log:' "$test_root/output"
+bash "$command_dir/openclaw-gateway" diagnostics "${context[@]}" --debug > "$test_root/output" 2>&1
+grep -Fq 'gateway log:' "$test_root/output"
 for helper in openclaw-setup openclaw-gateway openclaw-diagnostics; do
   args=("${context[@]}" --debug diagnostic-sentinel-secret)
   [[ "$helper" != openclaw-gateway ]] || args=(diagnostics "${args[@]}")

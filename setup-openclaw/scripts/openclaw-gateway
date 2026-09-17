@@ -15,7 +15,7 @@ debug_setting="${SETUP_OPENCLAW_DEBUG:-auto}"
 
 usage() {
   cat <<'EOF'
-Usage: openclaw-gateway <start|wait|restart|stop|diagnostics> --profile <name> --workspace <path> --state-dir <path> [options]
+Usage: openclaw-gateway <start|wait|restart|stop|diagnostics|log-path> --profile <name> --workspace <path> --state-dir <path> [options]
 
 Commands:
   start                             starts the isolated gateway and waits for readiness
@@ -23,29 +23,34 @@ Commands:
   restart                           stops and starts the isolated gateway
   stop                              stops the isolated gateway
   diagnostics                       prints bounded, redacted gateway diagnostics
+  log-path                          prints the absolute raw gateway log path
 
 Options:
   --profile <name>                  selects the isolated OpenClaw profile
   --workspace <path>                verifies the isolated agent workspace
   --state-dir <path>                locates isolated OpenClaw and process state
   --timeout <seconds>               bounds readiness or shutdown [default: 90; stop: 30]
-  --debug <auto|true|false>         controls helper and OpenClaw verbosity [default: action setting or auto]
+  --debug                           enables verbose helper and OpenClaw logging
   -h, --help                        displays this help message
 EOF
 }
 
 while (($# > 0)); do
   case "$1" in
-    --profile | --workspace | --state-dir | --timeout | --debug)
+    --profile | --workspace | --state-dir | --timeout)
       (($# >= 2)) || error "$1 requires a value" 2
       case "$1" in
         --profile) profile="$2" ;;
         --workspace) workspace="$2" ;;
         --state-dir) state_dir="$2" ;;
         --timeout) timeout_seconds="$2" ;;
-        --debug) debug_setting="$2" ;;
       esac
       shift 2
+      ;;
+    --debug)
+      debug_setting=true
+      if (($# > 1)) && [[ "$2" != -* ]]; then debug_setting="$2"; shift; fi
+      shift
       ;;
     -h | --help)
       usage
@@ -67,10 +72,10 @@ while (($# > 0)); do
 done
 
 case "$action" in
-  start | wait | restart | stop | diagnostics) ;;
+  start | wait | restart | stop | diagnostics | log-path) ;;
   '')
     usage >&2
-    error 'a command is required: start, wait, restart, stop, or diagnostics' 2
+    error 'a command is required: start, wait, restart, stop, diagnostics, or log-path' 2
     ;;
   *)
     usage >&2
@@ -85,7 +90,7 @@ configure_context "$profile" "$workspace" "$state_dir"
 verify_context
 
 pid_path="$gateway_state_dir/gateway.pid"
-log_path="$gateway_state_dir/gateway.log"
+log_path="$gateway_log_path"
 call_log_path="$gateway_state_dir/gateway-call.log"
 
 wait_for_gateway() {
@@ -248,5 +253,8 @@ case "$action" in
     ;;
   diagnostics)
     print_gateway_diagnostics
+    ;;
+  log-path)
+    printf '%s\n' "$gateway_log_path"
     ;;
 esac

@@ -69,11 +69,17 @@ jobs:
             --profile "$profile" \
             --workspace "$workspace" \
             --state-dir "$state_dir"
-          openclaw-gateway start \
+          gateway_log_path="$(openclaw-gateway log-path \
+            --profile "$profile" \
+            --workspace "$workspace" \
+            --state-dir "$state_dir")"
+          test "$gateway_log_path" = "$state_dir/gateway/gateway.log"
+          openclaw-gateway start --debug \
             --profile "$profile" \
             --workspace "$workspace" \
             --state-dir "$state_dir" \
             --timeout 90
+          test -f "$gateway_log_path"
           gateway_pid="$(sed -n '1p' "$state_dir/gateway/gateway.pid")"
           echo "OPENCLAW_TEST_GATEWAY_PID=$gateway_pid" >> "$GITHUB_ENV"
 
@@ -279,10 +285,9 @@ jobs:
           MODE: ${{ steps.install.outputs.mode }}
         run: |
           test "$MODE" = install
-          secret_service=false
-          if [[ "$RUNNER_OS" == Linux ]]; then secret_service=true; fi
-          openclaw-setup --agent-system "$LOCAL_PACKAGE" \
-            --needs-secret-service "$secret_service" --needs-ssh-key --yolo
+          args=(--agent-system "$LOCAL_PACKAGE" --needs-ssh-key --yolo)
+          if [[ "$RUNNER_OS" == Linux ]]; then args+=(--needs-secret-service); fi
+          openclaw-setup "${args[@]}"
           echo 'mode=setup' >> "$GITHUB_OUTPUT"
       - name: Verify installed runtime and fixture outputs
         env:
@@ -335,12 +340,17 @@ jobs:
             test ! -d agent-system-source/node_modules
           elif [[ "$SELECTION" == tarball ]]; then
             test "$ARTIFACT" = "$LOCAL_PACKAGE"
+            test "$SETUP_OPENCLAW_DEBUG" = false
           elif [[ "$SELECTION" == published ]]; then
             test "$SOURCE" = npm:@tanaab/openclaw-agent-system@0.6.0
           else
             test "$SOURCE" = github:tanaabased/openclaw-agent-system#4fc7dd6abab9d511d4a6a899b65305b74e4eec7b
           fi
-          openclaw-gateway start
+          gateway_log_path="$(openclaw-gateway log-path)"
+          test "$gateway_log_path" = "$SETUP_OPENCLAW_STATE_DIR/gateway/gateway.log"
+          OPENCLAW_LOG_LEVEL=debug openclaw-gateway start
+          # Lifecycle records use OpenClaw's file logger; this raw file proves path usability only.
+          test -s "$gateway_log_path"
           openclaw gateway call agents.list --json --timeout 3000
           openclaw-gateway stop
       - name: Clean gateway

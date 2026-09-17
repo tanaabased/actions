@@ -40,10 +40,12 @@ configure_debug() {
       ;;
   esac
 
-  if [[ "$debug_enabled" == 'true' ]]; then
-    export OPENCLAW_LOG_LEVEL=debug
-  else
-    export OPENCLAW_LOG_LEVEL=warn
+  if [[ -z "${OPENCLAW_LOG_LEVEL:-}" ]]; then
+    if [[ "$debug_enabled" == 'true' ]]; then
+      export OPENCLAW_LOG_LEVEL=debug
+    else
+      export OPENCLAW_LOG_LEVEL=warn
+    fi
   fi
 }
 
@@ -83,6 +85,7 @@ configure_context() {
   openclaw_state_dir="$state_dir/openclaw"
   openclaw_config_path="$openclaw_state_dir/openclaw.json"
   gateway_state_dir="$state_dir/gateway"
+  gateway_log_path="$gateway_state_dir/gateway.log"
   context_path="$state_dir/context"
   mkdir -p "$openclaw_state_dir" "$gateway_state_dir"
 }
@@ -172,7 +175,7 @@ gateway_is_running() {
 }
 
 print_gateway_diagnostics() {
-  local log_path="$gateway_state_dir/gateway.log"
+  local log_path="$gateway_log_path"
   local call_log_path="$gateway_state_dir/gateway-call.log"
 
   printf 'OpenClaw gateway diagnostics\n' >&2

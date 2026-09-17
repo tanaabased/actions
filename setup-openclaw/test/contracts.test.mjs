@@ -104,6 +104,23 @@ test('run mode provides helpers, executes multiline commands, preserves failure,
   assert.equal(execFileSync('find', [directory, '-name', 'openclaw-run.*'], { encoding: 'utf8' }), '');
 }));
 
+test('action setup emits boolean inputs as bare helper switches', () => fixture(directory => {
+  const env = environment(directory);
+  const bin = join(directory, 'bin');
+  mkdirSync(bin);
+  writeFileSync(join(bin, 'openclaw-setup'), '#!/usr/bin/env bash\nprintf \'%s\\n\' "$@" > "$CALLS"\n', { mode: 0o755 });
+  Object.assign(env, {
+    CALLS: join(directory, 'calls'), HARNESS_MODE: 'setup',
+    SETUP_NEEDS_SECRET_SERVICE: 'true', SETUP_NEEDS_SSH_KEY: 'true', SETUP_YOLO: 'true',
+    PATH: `${bin}:${process.env.PATH}`,
+  });
+  const result = spawnSync('bash', ['-eo', 'pipefail', '-c', shellBlock('orchestrate')], { env, encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(readFileSync(env.CALLS, 'utf8').trim().split('\n'), [
+    '--needs-secret-service', '--needs-ssh-key', '--yolo',
+  ]);
+}));
+
 test('action setup and direct helper use the same model, plugin, cache, SSH and policy contract', () => fixture(directory => {
   const env = environment(directory);
   mockOpenclaw(directory, env);
@@ -149,7 +166,7 @@ test('invalid helper flags fail before onboarding; failure diagnostics redact ra
   }
   env.OPENAI_API_KEY = 'raw-credential-sentinel';
   env.FAIL_VALIDATE = 'true';
-  const result = spawnSync('bash', [join(root, 'scripts/openclaw-setup'), '--debug', 'true'], { env, encoding:'utf8' });
+  const result = spawnSync('bash', [join(root, 'scripts/openclaw-setup'), '--debug'], { env, encoding:'utf8' });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /REDACTED/);
   assert.ok(!result.stderr.includes(env.OPENAI_API_KEY));
@@ -164,5 +181,6 @@ test('action defaults establish a valid isolated context before run commands', (
   assert.ok(outputs['state-dir'].startsWith(directory));
   assert.equal(outputs['config-path'], `${outputs['state-dir']}/openclaw/openclaw.json`);
   assert.equal(existsSync(outputs['config-path']), false);
-  assert.match(readFileSync(env.GITHUB_ENV, 'utf8'), /DBUS_SESSION_BUS_ADDRESS=unix:path=/);
+  const exported = readFileSync(env.GITHUB_ENV, 'utf8');
+  assert.match(exported, /DBUS_SESSION_BUS_ADDRESS=unix:path=/);
 }));
