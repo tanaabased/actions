@@ -48,6 +48,9 @@ The token's ClawHub actor must have publisher access to `owner`.
 | `node-version` | No | `auto` | [Project discovery](../setup-node/README.md) or explicit Node version. |
 | `clawhub-version` | No | `0.23.3` | ClawHub CLI version installed for publication. |
 
+For a consumer pull-request dry run, set `test-mode: true` to validate its
+tarball and publication metadata while suppressing authentication and publication.
+
 Debug enables verbose npm output; ClawHub has no supported verbosity control.
 
 The package family is fixed to `code-plugin`.

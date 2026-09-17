@@ -51,6 +51,9 @@ steps:
 | `node-version` | No | `auto` | [Project discovery](../setup-node/README.md) or explicit Node version. |
 | `npm-version` | No | `^11.5.1` | npm version range installed for publication. |
 
+For a consumer pull-request dry run, set `test-mode: true` to validate its
+tarball and inputs while suppressing registry publication and channel mutation.
+
 Debug enables verbose npm output.
 
 ## Outputs

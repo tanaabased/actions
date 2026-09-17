@@ -53,6 +53,9 @@ returned as `version` and installed. Pin an exact version for reproducibility.
 | `package-json` | No | `package.json` | Package manifest used only when `version` is `auto`; relative paths resolve from the workspace. |
 | `package-field` | No | — | Optional dot-delimited field that replaces automatic `devDependencies`/`dependencies` discovery. |
 
+`test-mode` performs the same local installation. Consumer pull-request checks
+normally omit it: setup does not publish or otherwise mutate an external system.
+
 The action rejects missing files, invalid JSON, missing or non-string fields,
 conflicting automatic declarations, tags such as `latest`, URLs, invalid
 ranges, ranges with no published match, and packages without a declared
@@ -88,7 +91,6 @@ profile.
 - name: Install OpenClaw
   uses: tanaabased/actions/setup-openclaw@v1
   with:
-    test-mode: true
     version: 2026.9.3
 
 - name: Prepare isolated OpenClaw

@@ -47,6 +47,9 @@ explicitly.
 | `sync-tags` | No | — | Newline-separated moving tags, such as `v1`, forced to the release commit. |
 | `sync-token` | No | `${{ github.token }}` | Token authorized to create the verified commit and push tags. |
 
+For a consumer pull-request dry run, set `test-mode: true` to validate its
+release inputs and artifact wiring while suppressing commits, pushes, and tags.
+
 Runtime discovery uses `root`; the resolved version is passed upstream.
 The upstream preparation action has no debug input.
 

@@ -27,6 +27,9 @@ parent directories or use this action's own version files.
 | `node-version` | `auto` | Project discovery or an explicit upstream version specification. |
 | `working-directory` | `${{ github.workspace }}` | Project directory, relative to the workspace or absolute. |
 
+`test-mode` performs the same local installation. Consumer pull-request checks
+normally omit it: setup does not publish or otherwise mutate an external system.
+
 ## Outputs
 
 | Output | Description |

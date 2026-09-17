@@ -54,6 +54,10 @@ Agent System credentials; those decisions remain with the caller.
 | `config-path` | Context tuple | exported context | Absolute path to the existing OpenClaw configuration file. |
 | `state-directory` | Context tuple | exported context | Absolute path to the existing OpenClaw state directory. |
 
+`test-mode` performs the same isolated local installation. Consumer
+pull-request checks normally omit it: setup does not publish or otherwise
+mutate an external system.
+
 Debug enables verbose package preparation and owned OpenClaw invocations.
 
 Exactly one of `version` or `source-directory` is required. Versions must be

@@ -37,6 +37,11 @@
 
 Choose an action above for its inputs, outputs, permissions, and supported runners.
 Each action runs inside a caller-owned job; callers choose runners and job dependencies.
+Examples demonstrate an action's contract, not a default consumer workflow structure.
+Keep the consumer's existing topology, validation, and meaningful matrix; replace
+only the mechanics necessary to adopt the action as one coherent change. In
+particular, catalog-only test tools, inputs, and matrices do not become consumer
+requirements by osmosis.
 See [the release example](publish-npm/examples/release.yml) for packing and testing
 one artifact before publication, with repository publication in an independent job.
 

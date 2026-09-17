@@ -44,6 +44,9 @@ stamping.
 | `repository` | No | `${{ github.repository }}` | GitHub repository containing the release. |
 | `github-token` | Live publication | — | Token with `contents: write`; omit in test mode. |
 
+For a consumer pull-request dry run, set `test-mode: true` to validate its
+archive and inputs while suppressing release upload.
+
 Runtime discovery uses `plugin-directory`. Debug enables verbose Bun output.
 
 `include-production` removes the plugin root's existing `node_modules` and runs
