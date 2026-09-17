@@ -45,7 +45,7 @@ stamping.
 | `github-token` | Live publication | — | Token with `contents: write`; omit in dry runs. |
 
 For a consumer pull-request dry run, set `dry-run: true`. It validates inputs
-and builds the real archive, but skips release upload and readback. Archive
+and builds the real archive, but skips release upload. Archive
 outputs remain meaningful; a live release proves delivery.
 
 Runtime discovery uses `plugin-directory`. Debug enables verbose Bun output.
@@ -77,5 +77,4 @@ Live mode calls `gh release upload` once with `--clobber`. An existing asset
 with the same name is replaced; an absent release, invalid token, or failed
 upload fails the action. The action does not retry automatically. Inspect the
 release before rerunning after an ambiguous transport failure, then rerun the
-workflow to replace the named asset. A successful command proves upload, while
-consumer lifecycle verification must download and inspect the published asset.
+workflow to replace the named asset. A successful upload command completes the action.

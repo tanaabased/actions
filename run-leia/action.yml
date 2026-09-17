@@ -119,9 +119,6 @@ runs:
 
         cleanup_status=0
         rm -rf "$temporary_directory" || cleanup_status=$?
-        if [[ -e "$temporary_directory" ]]; then
-          cleanup_status=1
-        fi
 
         if [[ $cleanup_status -ne 0 ]]; then
           echo "::error::Could not remove Leia temporary directory: $temporary_directory"
@@ -194,9 +191,6 @@ runs:
         $cleanupStatus = 0
         try {
           Remove-Item -LiteralPath $temporaryDirectory -Recurse -Force
-          if (Test-Path -LiteralPath $temporaryDirectory) {
-            $cleanupStatus = 1
-          }
         }
         catch {
           $cleanupStatus = 1

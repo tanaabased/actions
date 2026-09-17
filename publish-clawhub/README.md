@@ -50,7 +50,7 @@ The token's ClawHub actor must have publisher access to `owner`.
 
 For a consumer pull-request dry run, set `dry-run: true`. It validates the
 supplied tarball and publication metadata through ClawHub's native dry-run path,
-but skips authentication, publication, and readback. Its local artifact outputs
+but skips authentication and publication. Its local artifact outputs
 remain meaningful; a live release proves publication.
 
 Debug enables verbose npm output; ClawHub has no supported verbosity control.

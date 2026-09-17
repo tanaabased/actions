@@ -331,6 +331,13 @@ jobs:
             assert.equal(report.plugin.enabled, true);
             assert.equal(report.plugin.version, "0.6.0");
             assert.equal(report.install.sourcePath, process.env.ARTIFACT);
+            assert.equal(report.install.source, "npm");
+            assert.equal(report.install.artifactKind, "npm-pack");
+            assert.equal(report.install.artifactFormat, "tgz");
+            assert.equal(report.install.installPath, process.env.PLUGIN_PATH);
+            assert.equal(report.install.version, process.env.VERSION);
+            assert.ok(report.plugin.source.endsWith("/dist/index.js"));
+            assert.ok(report.diagnostics.every(diagnostic => diagnostic.level !== "error"));
             assert.equal(report.policy.allowConversationAccess, true);
             assert.ok(report.typedHooks.some(hook => hook.name === "before_prompt_build"));
           ' "$RUNNER_TEMP/plugin.json"

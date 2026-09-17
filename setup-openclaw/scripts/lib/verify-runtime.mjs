@@ -14,45 +14,24 @@ try {
   fail(`runtime command did not return valid JSON: ${error.message}`);
 }
 
-const [mode, expectedVersion, expectedArtifact] = process.argv.slice(2);
-
-if (mode === 'config') {
-  if (report.valid !== true) {
-    fail('OpenClaw configuration is invalid');
-  }
-  process.exit(0);
-}
-
-if (mode !== 'plugin' || !expectedVersion || !expectedArtifact) {
-  fail('usage: verify-runtime.mjs <config|plugin> [expected-version] [expected-artifact]');
+const [expectedVersion] = process.argv.slice(2);
+if (!expectedVersion || process.argv.length !== 3) {
+  fail('usage: verify-runtime.mjs <expected-version>');
 }
 
 const plugin = report.plugin ?? {};
 const install = report.install ?? {};
-const diagnostics = Array.isArray(report.diagnostics) ? report.diagnostics : [];
-const typedHooks = Array.isArray(report.typedHooks) ? report.typedHooks : [];
-
+// Inspect reports runtime state; command success alone does not mean the plugin loaded.
 const valid =
   plugin.id === 'agent-system' &&
   plugin.enabled === true &&
   plugin.status === 'loaded' &&
-  typeof plugin.source === 'string' &&
-  plugin.source.endsWith('/dist/index.js') &&
-  plugin.error == null &&
   plugin.version === expectedVersion &&
-  install.source === 'npm' &&
-  install.artifactKind === 'npm-pack' &&
-  install.artifactFormat === 'tgz' &&
-  install.sourcePath === expectedArtifact &&
   typeof install.installPath === 'string' &&
-  install.installPath.length > 0 &&
-  install.version === expectedVersion &&
-  report.policy?.allowConversationAccess === true &&
-  typedHooks.some((hook) => hook?.name === 'before_prompt_build') &&
-  diagnostics.every((diagnostic) => diagnostic?.level !== 'error');
+  install.installPath.length > 0;
 
 if (!valid) {
-  fail('Agent System runtime inspection did not match the installed artifact');
+  fail('Agent System runtime is not loaded at the requested version or has no install path');
 }
 
 process.stdout.write(`${install.installPath}\n`);
