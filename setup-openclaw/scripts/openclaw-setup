@@ -28,11 +28,11 @@ Options:
   --state-dir <path>               absolute helper state; defaults to action context
   --agent-system <selector>        exact version, local .tgz/directory, or github:owner/repo#ref
   --model <openai/model>           authenticate with OPENAI_API_KEY and select a model
-  --needs-secret-service [boolean] prepare the Linux Secret Service fixture [default: false]
-  --needs-ssh-key [boolean]        create ~/.ssh/big-test-bucket-ssh [default: false]
+  --needs-secret-service           prepare the Linux Secret Service fixture [default: false]
+  --needs-ssh-key                  create ~/.ssh/big-test-bucket-ssh [default: false]
   --op-cache <json>                Agent System cache policy [default: process-lifetime, 128 entries]
-  --yolo [boolean]                 allow unattended execution in this profile [default: false]
-  --debug <auto|true|false>         verbosity [default: action setting or auto]
+  --yolo                           allow unattended execution in this profile [default: false]
+  --debug                          enable verbose helper and OpenClaw logging
   -h, --help                       display help
 
 Environment Variables:
@@ -50,7 +50,7 @@ while (($# > 0)); do
   [[ "$seen_options" != *" $1 "* ]] || error 'setup options must not be repeated' 2
   seen_options+="$1 "
   case "$1" in
-    --profile | --workspace | --state-dir | --model | --agent-system | --op-cache | --debug)
+    --profile | --workspace | --state-dir | --model | --agent-system | --op-cache)
       (($# >= 2)) || error "$1 requires a value" 2
       [[ -n "$2" && "$2" != --* ]] || error "$1 requires a nonempty value" 2
       case "$1" in
@@ -60,9 +60,12 @@ while (($# > 0)); do
         --model) model="$2" ;;
         --agent-system) agent_system="$2" ;;
         --op-cache) op_cache="$2" ;;
-        --debug) debug_setting="$2" ;;
       esac
       shift 2 ;;
+    --debug)
+      debug_setting=true
+      if (($# > 1)) && [[ "$2" != -* ]]; then debug_setting="$2"; shift; fi
+      shift ;;
     --needs-secret-service | --needs-ssh-key | --yolo)
       flag="$1"
       value=true

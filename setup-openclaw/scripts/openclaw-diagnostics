@@ -21,23 +21,27 @@ Options:
   --workspace <path>                verifies the isolated agent workspace
   --state-dir <path>                locates isolated OpenClaw and process state
   --exit-code <code>                exits with an original failure code after reporting [default: 0]
-  --debug <auto|true|false>         controls diagnostic detail [default: action setting or auto]
+  --debug                           enables verbose diagnostic detail
   -h, --help                        displays this help message
 EOF
 }
 
 while (($# > 0)); do
   case "$1" in
-    --profile | --workspace | --state-dir | --exit-code | --debug)
+    --profile | --workspace | --state-dir | --exit-code)
       (($# >= 2)) || error "$1 requires a value" 2
       case "$1" in
         --profile) profile="$2" ;;
         --workspace) workspace="$2" ;;
         --state-dir) state_dir="$2" ;;
         --exit-code) exit_code="$2" ;;
-        --debug) debug_setting="$2" ;;
       esac
       shift 2
+      ;;
+    --debug)
+      debug_setting=true
+      if (($# > 1)) && [[ "$2" != -* ]]; then debug_setting="$2"; shift; fi
+      shift
       ;;
     -h | --help)
       usage

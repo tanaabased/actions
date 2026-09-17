@@ -1,6 +1,6 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
-- Fixed `setup-openclaw` helpers to preserve explicit OpenClaw log levels and export the raw gateway log path. [#38](https://github.com/tanaabased/actions/pull/38)
+- Normalized `setup-openclaw` helper switches, preserved explicit OpenClaw log levels, and exposed the raw log through `openclaw-gateway log-path`. [#39](https://github.com/tanaabased/actions/pull/39)
 
 ## v1.0.0-beta.2 - [September 17, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.0-beta.2)
 

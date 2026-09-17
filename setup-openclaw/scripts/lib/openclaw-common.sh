@@ -95,14 +95,13 @@ write_context() {
   {
     printf 'OPENCLAW_PROFILE=%s\n' "$profile"
     printf 'OPENCLAW_CONFIG_PATH=%s\n' "$openclaw_config_path"
-    printf 'OPENCLAW_GATEWAY_LOG_PATH=%s\n' "$gateway_log_path"
     printf 'OPENCLAW_STATE_DIR=%s\n' "$openclaw_state_dir"
     printf 'OPENCLAW_WORKSPACE=%s\n' "$workspace"
     printf 'SETUP_OPENCLAW_STATE_DIR=%s\n' "$state_dir"
   } >> "$GITHUB_ENV"
   if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
-    printf 'profile=%s\nworkspace=%s\nstate-dir=%s\nconfig-path=%s\ngateway-log-path=%s\n' \
-      "$profile" "$workspace" "$state_dir" "$openclaw_config_path" "$gateway_log_path" >> "$GITHUB_OUTPUT"
+    printf 'profile=%s\nworkspace=%s\nstate-dir=%s\nconfig-path=%s\n' \
+      "$profile" "$workspace" "$state_dir" "$openclaw_config_path" >> "$GITHUB_OUTPUT"
   fi
 }
 

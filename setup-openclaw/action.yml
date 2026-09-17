@@ -76,9 +76,6 @@ outputs:
   config-path:
     description: Absolute OpenClaw configuration path; created during setup.
     value: ${{ steps.context.outputs.config-path }}
-  gateway-log-path:
-    description: Absolute raw gateway log path; contents may contain sensitive data.
-    value: ${{ steps.context.outputs.gateway-log-path }}
   agent-system-version:
     description: Exact installed Agent System version in setup mode.
     value: ${{ steps.orchestrate.outputs.agent-system-version }}
@@ -255,7 +252,6 @@ runs:
           echo "SETUP_OPENCLAW_STATE_DIR=$state_dir"
           echo "OPENCLAW_STATE_DIR=$state_dir/openclaw"
           echo "OPENCLAW_CONFIG_PATH=$state_dir/openclaw/openclaw.json"
-          echo "OPENCLAW_GATEWAY_LOG_PATH=$state_dir/gateway/gateway.log"
           echo "DBUS_SESSION_BUS_ADDRESS=${DBUS_SESSION_BUS_ADDRESS:-unix:path=$state_dir/secret-service-bus}"
           echo "SSH_PRIVATE_KEY_PATH=$HOME/.ssh/big-test-bucket-ssh"
           echo "SSH_PUBLIC_KEY_PATH=$HOME/.ssh/big-test-bucket-ssh.pub"
@@ -265,7 +261,6 @@ runs:
           echo "workspace=$workspace"
           echo "state-dir=$state_dir"
           echo "config-path=$state_dir/openclaw/openclaw.json"
-          echo "gateway-log-path=$state_dir/gateway/gateway.log"
         } >> "$GITHUB_OUTPUT"
 
     - id: agent-system
@@ -305,10 +300,14 @@ runs:
         set -euo pipefail
         if [[ "$HARNESS_MODE" == setup ]]; then
           args=()
-          for option in model agent-system needs-secret-service needs-ssh-key op-cache yolo; do
+          for option in model agent-system op-cache; do
             variable="SETUP_$(printf '%s' "$option" | tr '[:lower:]-' '[:upper:]_')"
             value="${!variable}"
             [[ -z "$value" ]] || args+=("--$option" "$value")
+          done
+          for option in needs-secret-service needs-ssh-key yolo; do
+            variable="SETUP_$(printf '%s' "$option" | tr '[:lower:]-' '[:upper:]_')"
+            [[ "${!variable}" != true ]] || args+=("--$option")
           done
           openclaw-setup "${args[@]}"
         elif [[ "$HARNESS_MODE" == run ]]; then

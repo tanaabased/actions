@@ -120,7 +120,6 @@ additional output contract.
 | `workspace` | Absolute agent workspace. |
 | `state-dir` | Absolute helper state directory. |
 | `config-path` | Absolute OpenClaw configuration path; the file is created during setup. |
-| `gateway-log-path` | Absolute raw gateway log path; the file is created when the gateway starts and may contain sensitive data. |
 | `agent-system-version` | Exact installed Agent System version. |
 | `agent-system-source` | Resolved package, local path, or repository commit. |
 | `agent-system-artifact-path` | Verified Agent System npm tarball. |
@@ -142,7 +141,6 @@ Successful helpers export their results through `GITHUB_ENV` for later steps.
 | `SETUP_OPENCLAW_STATE_DIR` | Helper state directory. |
 | `OPENCLAW_STATE_DIR` | OpenClaw state beneath the helper state directory. |
 | `OPENCLAW_CONFIG_PATH` | OpenClaw configuration path. |
-| `OPENCLAW_GATEWAY_LOG_PATH` | Raw gateway log path; contents are not exported and may contain sensitive data. |
 | `AGENT_SYSTEM_VERSION` | Installed Agent System version. |
 | `AGENT_SYSTEM_SOURCE` | Resolved Agent System provenance. |
 | `AGENT_SYSTEM_ARTIFACT_PATH` | Agent System npm tarball. |
@@ -180,16 +178,15 @@ openclaw-setup [options]
 | `--state-dir <path>` | `SETUP_OPENCLAW_STATE_DIR` | Absolute directory containing helper state and saved context. |
 | `--agent-system <selector>` | — | Install from any [Agent System selector](#agent-system). |
 | `--model <openai/model>` | — | Authenticate with `OPENAI_API_KEY` and select a model. |
-| `--needs-secret-service [boolean]` | `false` | Prepare Linux Secret Service; skip on macOS. |
-| `--needs-ssh-key [boolean]` | `false` | Create `~/.ssh/big-test-bucket-ssh` and its public key. |
+| `--needs-secret-service` | `false` | Prepare Linux Secret Service; skip on macOS. |
+| `--needs-ssh-key` | `false` | Create `~/.ssh/big-test-bucket-ssh` and its public key. |
 | `--op-cache <json>` | process-lifetime, 128 entries | Agent System cache policy; requires `--agent-system`. |
-| `--yolo [boolean]` | `false` | Enable unattended execution in this profile. |
-| `--debug <value>` | `SETUP_OPENCLAW_DEBUG` or `auto` | `auto`, `true`, or `false`; `auto` follows `RUNNER_DEBUG=1`. |
+| `--yolo` | `false` | Enable unattended execution in this profile. |
+| `--debug` | `SETUP_OPENCLAW_DEBUG` or `auto` | Enable verbose helper and OpenClaw logging. |
 | `-h`, `--help` | — | Display command help. |
 
-Boolean flags accept `true` or `false`; a bare flag means `true`. Unknown or repeated
-options fail. Without action context, supply `--profile`, `--workspace`, and
-`--state-dir`.
+Setup booleans are bare switches. Unknown or repeated options fail. Without action
+context, supply `--profile`, `--workspace`, and `--state-dir`.
 
 Setup skips channels, daemon installation, hooks, and skills. Provider authentication
 runs only when a model is requested; Agent System adds its own hooks. GPT-5.4
@@ -210,6 +207,7 @@ openclaw-gateway <command> [options]
 | `restart` | Stop, then start the gateway. |
 | `stop` | Stop the owned gateway; leave fixtures available for later scenarios. |
 | `diagnostics` | Print bounded, redacted gateway evidence. |
+| `log-path` | Print only the absolute raw gateway log path. |
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -217,12 +215,14 @@ openclaw-gateway <command> [options]
 | `--workspace <path>` | Saved workspace, then `OPENCLAW_WORKSPACE` | Select and verify the absolute agent workspace. |
 | `--state-dir <path>` | `SETUP_OPENCLAW_STATE_DIR` | Absolute directory containing helper state and saved context. |
 | `--timeout <seconds>` | `90`; `30` for `stop` | Positive integer bounding readiness or shutdown; `restart` applies it to each phase. |
-| `--debug <value>` | `SETUP_OPENCLAW_DEBUG` or `auto` | `auto`, `true`, or `false`; `auto` follows `RUNNER_DEBUG=1`. |
+| `--debug` | `SETUP_OPENCLAW_DEBUG` or `auto` | Enable verbose helper and OpenClaw logging. |
 | `-h`, `--help` | — | Display command help. |
 
 The gateway binds to loopback and keeps onboarding's authentication; its token is
 never an action output. Helpers verify process ownership before signaling it.
 A failed start prints diagnostics, stops its process, and preserves the failure.
+Use `openclaw-gateway log-path` when a later step needs the raw log. The command
+resolves saved or explicit helper context and prints the path, never log contents.
 
 ### `openclaw-diagnostics`
 
@@ -239,7 +239,7 @@ openclaw-diagnostics [options]
 | `--workspace <path>` | Saved workspace, then `OPENCLAW_WORKSPACE` | Select and verify the absolute agent workspace. |
 | `--state-dir <path>` | `SETUP_OPENCLAW_STATE_DIR` | Absolute directory containing helper state and saved context. |
 | `--exit-code <code>` | `0` | Exit with this integer from `0` through `255` after reporting. |
-| `--debug <value>` | `SETUP_OPENCLAW_DEBUG` or `auto` | `auto`, `true`, or `false`; `auto` follows `RUNNER_DEBUG=1`. |
+| `--debug` | `SETUP_OPENCLAW_DEBUG` or `auto` | Enable verbose diagnostic detail. |
 | `-h`, `--help` | — | Display command help. |
 
 ## Notes

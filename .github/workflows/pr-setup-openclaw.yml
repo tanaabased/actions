@@ -43,7 +43,6 @@ jobs:
           EXECUTABLE_PATH: ${{ steps.openclaw.outputs.executable-path }}
           EXPECTED_DEBUG: ${{ matrix.selection == 'explicit' && 'false' || 'true' }}
           HELPER_PATH: ${{ steps.openclaw.outputs.helper-path }}
-          GATEWAY_LOG_PATH: ${{ steps.openclaw.outputs.gateway-log-path }}
           RESOLVED_VERSION: ${{ steps.openclaw.outputs.version }}
           SELECTION: ${{ matrix.selection }}
         run: |
@@ -60,8 +59,6 @@ jobs:
           profile="ci-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$SELECTION"
           workspace="$RUNNER_TEMP/setup-openclaw-$SELECTION-workspace"
           state_dir="$RUNNER_TEMP/setup-openclaw-$SELECTION-state"
-          test "$GATEWAY_LOG_PATH" = "$state_dir/gateway/gateway.log"
-          test "$OPENCLAW_GATEWAY_LOG_PATH" = "$GATEWAY_LOG_PATH"
           {
             echo "OPENCLAW_TEST_PROFILE=$profile"
             echo "OPENCLAW_TEST_WORKSPACE=$workspace"
@@ -72,12 +69,17 @@ jobs:
             --profile "$profile" \
             --workspace "$workspace" \
             --state-dir "$state_dir"
-          OPENCLAW_LOG_LEVEL=debug openclaw-gateway start \
+          gateway_log_path="$(openclaw-gateway log-path \
+            --profile "$profile" \
+            --workspace "$workspace" \
+            --state-dir "$state_dir")"
+          test "$gateway_log_path" = "$state_dir/gateway/gateway.log"
+          openclaw-gateway start --debug \
             --profile "$profile" \
             --workspace "$workspace" \
             --state-dir "$state_dir" \
             --timeout 90
-          test -f "$GATEWAY_LOG_PATH"
+          test -f "$gateway_log_path"
           gateway_pid="$(sed -n '1p' "$state_dir/gateway/gateway.pid")"
           echo "OPENCLAW_TEST_GATEWAY_PID=$gateway_pid" >> "$GITHUB_ENV"
 
@@ -283,10 +285,9 @@ jobs:
           MODE: ${{ steps.install.outputs.mode }}
         run: |
           test "$MODE" = install
-          secret_service=false
-          if [[ "$RUNNER_OS" == Linux ]]; then secret_service=true; fi
-          openclaw-setup --agent-system "$LOCAL_PACKAGE" \
-            --needs-secret-service "$secret_service" --needs-ssh-key --yolo
+          args=(--agent-system "$LOCAL_PACKAGE" --needs-ssh-key --yolo)
+          if [[ "$RUNNER_OS" == Linux ]]; then args+=(--needs-secret-service); fi
+          openclaw-setup "${args[@]}"
           echo 'mode=setup' >> "$GITHUB_OUTPUT"
       - name: Verify installed runtime and fixture outputs
         env:
@@ -298,13 +299,10 @@ jobs:
           PRIVATE_KEY: ${{ steps.setup.outputs.private-key-path || steps.helper.outputs.private-key-path }}
           PUBLIC_KEY: ${{ steps.setup.outputs.public-key-path || steps.helper.outputs.public-key-path }}
           DBUS_ADDRESS: ${{ steps.setup.outputs.dbus-address || steps.helper.outputs.dbus-address }}
-          GATEWAY_LOG_PATH: ${{ steps.setup.outputs.gateway-log-path || steps.helper.outputs.gateway-log-path }}
           SELECTION: ${{ matrix.selection }}
         run: |
           set -euo pipefail
           test "$MODE" = setup
-          test "$GATEWAY_LOG_PATH" = "$OPENCLAW_GATEWAY_LOG_PATH"
-          test "$GATEWAY_LOG_PATH" = "$SETUP_OPENCLAW_STATE_DIR/gateway/gateway.log"
           test "$VERSION" = 0.6.0
           test -f "$ARTIFACT"
           test -d "$PLUGIN_PATH"
@@ -348,9 +346,11 @@ jobs:
           else
             test "$SOURCE" = github:tanaabased/openclaw-agent-system#4fc7dd6abab9d511d4a6a899b65305b74e4eec7b
           fi
+          gateway_log_path="$(openclaw-gateway log-path)"
+          test "$gateway_log_path" = "$SETUP_OPENCLAW_STATE_DIR/gateway/gateway.log"
           OPENCLAW_LOG_LEVEL=debug openclaw-gateway start
-          test -s "$GATEWAY_LOG_PATH"
-          grep --fixed-strings --quiet manifest_loaded "$GATEWAY_LOG_PATH"
+          test -s "$gateway_log_path"
+          grep --fixed-strings --quiet manifest_loaded "$gateway_log_path"
           openclaw gateway call agents.list --json --timeout 3000
           openclaw-gateway stop
       - name: Clean gateway
