@@ -5,8 +5,7 @@ exposes opt-in helpers for isolated CI setup, gateway lifecycle, and bounded
 diagnostics. Installation is the default; none of the helpers run unless a
 later caller step invokes them.
 
-Supported runners: Linux (`ubuntu-24.04`) and macOS (`macos-26`). Native
-Windows is not part of the initial contract.
+Supported runners: Linux (`ubuntu-24.04`) and macOS (`macos-26`).
 
 ## Usage
 
@@ -22,10 +21,8 @@ Pin the version explicitly when the workflow owns the tested version:
 
 The default `version: auto` reads `devDependencies.openclaw`, then
 `dependencies.openclaw`, from `package-json`. If both fields are present, their
-declarations must match. A broad peer compatibility range is a different claim,
-so `peerDependencies` is never consulted automatically. If neither installation
-field is present, the action requires an explicit version instead of making the
-usual regrettable pilgrimage to `latest`.
+declarations must match. Automatic selection ignores `peerDependencies` and
+requires an explicit version if neither installation field is present.
 
 ```yaml
 - name: Install the package-tested OpenClaw version
@@ -44,16 +41,14 @@ conflict.
 The accepted explicit value is an exact semantic version or npm
 semantic-version range, not a dist-tag or URL. A range resolves through npm to
 the highest matching published version at run time; the exact result is
-returned as `version` and installed. Use an exact version when reproducibility
-matters, which is most of the time and all of the time people later pretend
-mattered.
+returned as `version` and installed. Pin an exact version for reproducibility.
 
 ## Inputs
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `test-mode` | No | `false` | Must be `true` or `false`; both values perform the same real local installation. |
-| `debug` | No | `auto` | `auto`, `true`, or `false`. `auto` enables extra detail only when `RUNNER_DEBUG=1`; explicit values override it. |
+| `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `version` | No | `auto` | `auto`, an exact OpenClaw semantic version, or a range. An explicit version overrides package selection. |
 | `package-json` | No | `package.json` | Package manifest used only when `version` is `auto`; relative paths resolve from the workspace. |
 | `package-field` | No | — | Optional dot-delimited field that replaces automatic `devDependencies`/`dependencies` discovery. |
@@ -65,11 +60,8 @@ ranges, ranges with no published match, and packages without a declared
 selected OpenClaw package's requirement before installing the exact resolved
 package.
 
-`debug` changes action and helper verbosity, not GitHub's runner logging. Useful
-failure summaries remain visible when it is `false`. The action persists its
-effective value for helpers invoked in later steps; a helper's explicit
-`--debug` value takes precedence. Set `debug: true` directly, or leave it at
-`auto` and use GitHub's **Enable debug logging** option when rerunning the job.
+The resolved debug value persists for later helpers; an explicit helper
+`--debug` value takes precedence.
 
 ## Outputs
 
@@ -133,20 +125,13 @@ profile.
 
 ## Test behavior
 
-Test mode performs the normal npm resolution, compatible Node.js setup, exact
-local CLI installation, PATH export, output generation, and any isolated helper
-commands the caller invokes. The setup helper onboards without model-provider
-credentials, channels, hooks, skills, daemon installation, or remote delivery.
-The gateway binds to loopback, uses no authentication for the isolated runner,
-and is started as a caller-owned process with bounded readiness and shutdown.
+Test mode runs normal resolution, Node.js setup, CLI installation, and any
+caller-invoked helpers. PR tests on Linux and macOS cover version selection,
+invalid inputs, exported helpers, gateway readiness, and cleanup.
 
-Test mode does not configure a remote system, publish an artifact, send a
-message, or prove model-provider access. The Linux and macOS pull-request checks
-install and invoke the real CLI, exercise package and explicit selection,
-cover automatic dependency fallback, matching and conflicting declarations,
-missing values, explicit field selection, and explicit-version precedence,
-reject invalid inputs, call the exported helpers from later steps, and verify
-gateway readiness and cleanup.
+Setup skips provider authentication, channels, hooks, skills, and daemon
+installation. The isolated gateway binds to loopback without authentication;
+these checks do not prove model-provider access.
 
 ## Notes
 

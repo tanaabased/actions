@@ -2,110 +2,66 @@
 
 ## Product boundaries
 
-- Default to a composite action when the reusable product is a sequence of
-  steps that belongs inside a caller-owned job.
-- Put each public composite action in a root-level `<name>/` directory. Require
-  `action.yml` and `README.md`; keep optional runtime helpers under `scripts/`
-  and action-owned fixtures under `test/fixture/`. An action may compose another
-  public action but must not reach into another action's private scripts or
-  fixtures.
-- Add a reusable workflow only when the reusable contract genuinely owns job
-  topology that a composite action cannot: multiple jobs or dependencies,
-  runner selection, service containers, environments or approvals, job-level
-  permissions, or job-level concurrency. Document that reason with the
-  workflow. Prefer a caller workflow plus composite actions when the caller can
-  own those choices.
-- Keep repository-owned verification and release workflows in
-  `.github/workflows/`. They are lifecycle configuration, not catalog products.
-- Keep short usage examples in the owning action's README. Put standalone
-  examples under `<name>/examples/` only when they add something the README
-  does not cover. Examples combining actions have one primary owner; other
-  actions link to that copy. Keep executable test fixtures under
-  `<name>/test/fixture/`.
+- Public actions must work across caller repositories. Resolve consumer files
+  from inputs or the workspace and bundled helpers from `GITHUB_ACTION_PATH`.
+  Keep catalog package names, fixtures, and release policy in repository automation.
+- Put each public action in a root `<name>/` with `action.yml` and `README.md`.
+  Action-owned helpers belong in `<name>/scripts/`, fixtures in `<name>/test/fixture/`,
+  shared runtime in `.lib/`, and repository-only checks in `.github/scripts/`.
+  Compose public actions; never reach into another action's private files.
+- Prefer composite actions inside caller-owned jobs. Use reusable workflows only
+  for contracts that require job topology, runners, services, environments,
+  approvals, permissions, or concurrency; document that reason.
+- Keep repository lifecycle workflows in `.github/workflows/`.
+- Production guarantees, including publication readback, belong inside actions.
+  Consumer workflows may add product-specific checks such as catalog contents.
+  Independent assertions in this repository's PR tests are expected.
+- Use `Tanaab Maneuvering Systems LLC` for project copyright and authorship.
+  Preserve third-party notices and functional package, account, and bot identities.
 
-## Action documentation
+## Documentation
 
-- Use this README order: description, Usage, Inputs, Outputs, Examples,
-  Test behavior, then action-specific Notes. Omit sections with no useful
-  content; put required permissions and credentials beside the relevant usage.
-- Keep the root README focused on the catalog. Action contracts and examples
-  belong in the owning action; link to them rather than duplicating them.
-- State supported operating systems in each action README and back those
-  claims with its PR runner matrix. Add platforms for actual consumer needs.
+- Keep the root README to the catalog and common behavior. Action READMEs own
+  usage, inputs, outputs, distinct examples, test behavior, and operational notes,
+  in that order. Omit empty sections and duplicated explanations.
+- Keep permissions and credentials beside usage. State supported operating
+  systems and cover them in the action's PR matrix; add platforms for consumer needs.
+- Put standalone examples in `<name>/examples/` only when they add to the README.
+  Combined examples have one owner; other actions link to them.
 
-## Test-mode contract
+## Test mode
 
-- Every public action exposes `test-mode`, defaults it to `false`, and rejects
-  values other than `true` or `false`.
-- `test-mode: true` must not mutate a registry, repository, tag, release, or
-  other external system and must not require publication credentials. It must
-  still validate real inputs, operate on real local artifacts, expose every
-  locally determinable output, and use a native dry-run mechanism when one
-  exists.
-- For an action whose normal behavior is already non-mutating, test mode runs
-  that normal behavior. Never invent a lesser implementation merely to make
-  the switch appear consequential.
-- Select test mode explicitly. Never infer it from the event, action path,
-  action repository, missing credentials, or any other caller context. A
-  misconfigured live publication must fail rather than quietly become a test.
-- Each action README includes a **Test behavior** section naming what test mode
-  exercises and what only a live lifecycle can prove.
-- Test mode is not a sandbox for caller-supplied commands. PR fixtures must use
-  commands without external side effects; local installation and artifact
-  preparation are expected behavior.
+- Every action accepts exactly `test-mode: true|false`, defaulting to `false`.
+  Never infer it from events, paths, repository identity, or missing credentials.
+- Test mode requires no publication credentials and makes no external mutations.
+  Validate real inputs and local artifacts, expose locally determinable outputs,
+  and use native dry runs where available. Non-mutating actions run normally.
+- Caller commands are not sandboxed. PR fixtures must avoid external side effects;
+  local installation and artifact preparation are expected.
+- Each action's Test behavior section identifies what runs locally and what
+  requires a live lifecycle to prove.
 
-## Debug contract
+## Debug
 
-- Every public composite action exposes `debug`, defaults it to `auto`, and
-  accepts exactly `auto`, `true`, or `false`.
-- `auto` enables action diagnostics only when `RUNNER_DEBUG=1`; explicit `true`
-  or `false` overrides that signal. Do not infer debug from failure, retry
-  attempts, or repository settings that are not exported to child processes.
-- Apply the resolved value only to supported verbosity controls for tools the
-  action owns, and propagate it to composed public actions or helpers when they
-  accept the same contract. Leave caller-supplied commands unchanged. Document
-  upstream tools without suitable controls instead of inventing flags.
-- Keep bounded failure diagnostics enabled in every mode and preserve the
-  original exit status, cleanup, outputs, retries, test-mode behavior, and
-  destination state. Debug must never print credentials, private keys,
-  authentication configuration, or full environments; do not use blanket
-  shell tracing.
-- Extend the action-owned PR workflow with auto on/off, explicit precedence,
-  invalid-input, failure-path, and harmless sentinel-secret checks appropriate
-  to every supported runner.
+- Every action accepts exactly `debug: auto|true|false`, defaulting to `auto`.
+  Auto follows only `RUNNER_DEBUG=1`; explicit values override it.
+- Apply supported verbosity controls to owned tools and propagate the resolved
+  value to composed actions and helpers. Leave caller commands unchanged and
+  document upstream tools without verbosity controls.
+- Preserve exit status, cleanup, outputs, retries, and destination state.
+  Keep bounded failure diagnostics in every mode; never print credentials,
+  private keys, authentication configuration, full environments, or shell traces.
 
-## Pull-request validation
+## Validation
 
-- Give every composite action one `.github/workflows/pr-<name>.yml` workflow.
-  It checks out the repository, invokes `./<name>` with `test-mode: true`, and
-  asserts inputs, outputs, and observable postconditions. Use a matrix when the
-  same assertions meaningfully cover several input classes.
-- Keep workflow and job names aligned with the action basename. Preserve stable
-  check identities when changing matrices or repository rules.
-- Run static workflow validation and all non-mutating action tests on pull
-  requests. Do not repeat tests across GitHub event types unless an event
-  payload is part of the public contract; events are triggers, not test
-  dimensions.
-- Verify behavior whose defining result is an external mutation during the
-  first real lifecycle that consumes it. Do not maintain synthetic registries,
-  publication packages, branches, or tags merely to impersonate production.
-- Keep lint checks separate from action behavior tests. Avoid conditionally
-  skipped test jobs and workflows created only to manufacture event coverage.
-- Include action-owned example workflows in the existing static lint check.
-
-### Testing vectors
-
-| Product | Pull-request workflow and runners | Release lifecycle |
-| --- | --- | --- |
-| `prepare-release` | [`pr-prepare-release.yml`](.github/workflows/pr-prepare-release.yml), Linux: prepare and inspect its local fixture | None |
-| `npm-pack` | [`pr-npm-pack.yml`](.github/workflows/pr-npm-pack.yml), Linux: pack, inspect, install, and exercise its exact tarball | This repository's catalog package in [`pr-release.yml`](.github/workflows/pr-release.yml) and `release.yml` |
-| `publish-clawhub` | [`pr-publish-clawhub.yml`](.github/workflows/pr-publish-clawhub.yml), Linux: pack its code-plugin fixture and exercise ClawHub's dry-run path | First real downstream Agent System ClawHub publication in [#13](https://github.com/tanaabased/actions/issues/13) |
-| `publish-codex-plugin` | [`pr-publish-codex-plugin.yml`](.github/workflows/pr-publish-codex-plugin.yml), Linux: prepare both dependency-policy archives and compare their exact unpacked contents | First real downstream GitHub Release upload and download in [#13](https://github.com/tanaabased/actions/issues/13) |
-| `publish-npm` | [`pr-publish-npm.yml`](.github/workflows/pr-publish-npm.yml), Linux: exercise stable and prerelease tarballs through npm's dry-run path | This repository's catalog publication in [#7](https://github.com/tanaabased/actions/issues/7); downstream publication in [#13](https://github.com/tanaabased/actions/issues/13) |
-| `publish-repo` | [`pr-publish-repo.yml`](.github/workflows/pr-publish-repo.yml), Linux: prepare and inspect its local fixture without synchronizing Git | This repository's first release in [#7](https://github.com/tanaabased/actions/issues/7) |
-| `run-leia` | [`pr-run-leia.yml`](.github/workflows/pr-run-leia.yml), Linux and macOS with Bash plus Windows with PowerShell | None |
-| `setup-agent-system` | [`pr-setup-agent-system.yml`](.github/workflows/pr-setup-agent-system.yml), Linux and macOS: install exact published and source artifacts | None |
-| `setup-openclaw` | [`pr-setup-openclaw.yml`](.github/workflows/pr-setup-openclaw.yml), Linux and macOS: install an exact CLI and exercise isolated helpers | None |
-| `ssh-test-key` | [`pr-ssh-test-key.yml`](.github/workflows/pr-ssh-test-key.yml), Linux and macOS: generate, inspect, and reject collisions | None |
-| `validate-codex-plugin` | [`pr-validate-codex-plugin.yml`](.github/workflows/pr-validate-codex-plugin.yml), Linux and macOS: accept a valid fixture and reject an invalid fixture | None |
-| `vitepress-build-check` | [`pr-vitepress-build-check.yml`](.github/workflows/pr-vitepress-build-check.yml), Linux: build its fixture and preserve command failures | None |
+- Each action has `.github/workflows/pr-<name>.yml`, invoking `./<name>` with
+  `test-mode: true` and independently asserting inputs, outputs, and postconditions.
+  Cover debug auto on/off, explicit precedence, invalid inputs, failure behavior,
+  and sentinel-secret redaction on supported runners.
+- Use matrices for meaningful input classes. Preserve stable check identities;
+  align workflow and job names with action basenames.
+- Run non-mutating tests and separate static lint on PRs, including example
+  workflows. Avoid skipped jobs and repeated event coverage unless the payload
+  changes the public contract.
+- Prove external mutations in the first real consuming lifecycle. Do not maintain
+  synthetic registries, publication packages, branches, or tags as production substitutes.

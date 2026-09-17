@@ -24,13 +24,11 @@ Supported runners: Linux (`ubuntu-24.04`) and macOS (`macos-26`).
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `test-mode` | No | `false` | Exercise the action without external mutation. |
-| `debug` | No | `auto` | Action and pip verbosity: `auto`, `true`, or `false`. |
+| `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `plugin-directory` | No | `.` | Plugin root, relative to the workspace or absolute. |
 | `python-version` | No | `3.13` | Python version used to run the validator. |
 
-Set `debug: true` for verbose pip and action diagnostics, or use GitHub's
-**Enable debug logging** rerun option with `auto`. Explicit `true` or `false`
-overrides runner debug.
+Debug enables verbose pip output.
 
 The action installs the validator's sole non-standard dependency,
 [`PyYAML==6.0.2`](https://pypi.org/project/PyYAML/6.0.2/), before invoking the
@@ -69,6 +67,4 @@ To update the snapshot, choose a reviewed OpenAI Codex commit, copy both files
 from the same `plugin-creator/scripts` directory without modification, refresh
 the bundled license and NOTICE if upstream changed them, and update the commit,
 checksums, and pinned PyYAML version here. Verify both SHA-256 values locally,
-then let the valid/invalid runner matrix exercise the replacement. A file from
-another repository or commit is not an update merely because it has a similar
-name; software supply chains have suffered enough improv comedy.
+then run the valid/invalid runner matrix.

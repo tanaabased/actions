@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@v7
       - name: Verify debug contract
         shell: bash
-        run: bash scripts/check-debug-contract.sh run-leia
+        run: bash .github/scripts/check-debug-contract.sh run-leia
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
       - name: Install Leia

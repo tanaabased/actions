@@ -4,8 +4,7 @@ Builds or downloads one exact Agent System npm package, installs that real
 tarball into an existing isolated OpenClaw profile, enables the plugin, and
 verifies the loaded runtime against the selected version and artifact.
 
-Supported runners: Linux (`ubuntu-24.04`) and macOS (`macos-26`). Native
-Windows is not part of the initial contract.
+Supported runners: Linux (`ubuntu-24.04`) and macOS (`macos-26`).
 
 ## Usage
 
@@ -48,16 +47,14 @@ Agent System credentials; those decisions remain with the caller.
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `test-mode` | No | `false` | Must be `true` or `false`; both values perform the same real isolated local installation. |
-| `debug` | No | `auto` | Action and owned tool verbosity: `auto`, `true`, or `false`. |
+| `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `version` | One source | — | Exact published `@tanaab/openclaw-agent-system` semantic version. |
 | `source-directory` | One source | — | Absolute or workspace-relative Agent System source checkout to build and pack. |
 | `profile` | Context tuple | exported context | Isolated non-default OpenClaw profile. |
 | `config-path` | Context tuple | exported context | Absolute path to the existing OpenClaw configuration file. |
 | `state-directory` | Context tuple | exported context | Absolute path to the existing OpenClaw state directory. |
 
-Set `debug: true` for verbose package preparation and OpenClaw diagnostics, or
-use GitHub's **Enable debug logging** rerun option with `auto`. Explicit `true`
-or `false` overrides runner debug, including for owned OpenClaw invocations.
+Debug enables verbose package preparation and owned OpenClaw invocations.
 
 Exactly one of `version` or `source-directory` is required. Versions must be
 exact; ranges, tags such as `latest`, URLs, and missing releases fail instead
@@ -70,9 +67,7 @@ runner also needs network access for its frozen dependency installation. The
 action copies the checkout without `.git`, `node_modules`, or `dist`, runs the
 source-declared Bun version with `bun install --frozen-lockfile --ignore-scripts`,
 builds, checks, and packs it. Tracked modifications, untracked files, and the
-original checkout remain intact; registry substitution would be clever only in
-the way forged evidence is clever, so the source path never downloads Agent
-System itself.
+original checkout remain intact. Source mode never downloads Agent System itself.
 
 ## Outputs
 
@@ -125,23 +120,12 @@ included in the staged build without changing the checkout.
 
 ## Test behavior
 
-Test mode performs the normal registry download or frozen source build, creates
-the real npm tarball, installs and enables it in the selected isolated profile,
-validates OpenClaw configuration, and performs runtime plugin inspection. It
-does not publish a package, mutate a repository or release, configure a
-provider, send a notification, or provision an Agent System agent.
-
-Pull-request checks exercise pinned published and source installations on Linux
-and macOS. They verify actual plugin loading, output provenance, a harmless
-`openclaw agent-system --help` command, preservation of source changes, invalid
-selection failures, and caller cleanup without provider credentials.
+Test mode performs the normal download or source build and isolated installation.
+PR tests on Linux and macOS verify plugin loading, artifact provenance, source
+preservation, invalid inputs, and caller cleanup without provider credentials.
 
 ## Notes
 
-Source build staging is removed on success and failure. The installed tarball
-is deliberately retained at `artifact-path` so later steps can inspect or
-archive the exact bytes that OpenClaw consumed. It lives under `RUNNER_TEMP` and
-is removed with the runner; callers that need earlier cleanup may delete the
-tarball's parent directory after their final inspection. OpenClaw profile and
-plugin state remain in the caller-owned state directory and follow the caller's
-cleanup policy.
+Source build staging is removed on success and failure. The tarball stays under
+`RUNNER_TEMP` at `artifact-path` for inspection; callers may remove its parent
+directory afterward. OpenClaw profile and plugin cleanup remain caller-owned.

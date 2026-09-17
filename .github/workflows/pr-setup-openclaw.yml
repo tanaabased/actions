@@ -23,7 +23,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
       - name: Verify debug contract
-        run: bash scripts/check-debug-contract.sh setup-openclaw
+        run: bash .github/scripts/check-debug-contract.sh setup-openclaw
       - name: Verify helper ownership and diagnostics
         run: bash setup-openclaw/test/helpers.sh
       - name: Install OpenClaw

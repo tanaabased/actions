@@ -59,7 +59,7 @@ runs:
       env:
         DEBUG_INPUT: ${{ inputs.debug }}
       run: |
-        effective_debug="$(bash "$GITHUB_ACTION_PATH/../scripts/resolve-debug.sh" "$DEBUG_INPUT")"
+        effective_debug="$(bash "$GITHUB_ACTION_PATH/../.lib/resolve-debug.sh" "$DEBUG_INPUT")"
         echo "enabled=$effective_debug" >> "$GITHUB_OUTPUT"
         [[ "$effective_debug" != 'true' ]] || echo 'Diagnostics enabled for repository publication; the upstream preparation action has no debug input.'
 
@@ -116,3 +116,13 @@ runs:
           UNRELEASED_LINK=${{ inputs.release-url }}
           UNRELEASED_VERSION=${{ inputs.version }}
         version: ${{ inputs.version }}
+
+    - name: Verify synchronized repository
+      if: ${{ inputs.test-mode != 'true' }}
+      shell: bash
+      env:
+        REPOSITORY_ROOT: ${{ inputs.root }}
+        RESOLVED_VERSION: ${{ steps.publish.outputs.resolved-version }}
+        SYNC_BRANCH: ${{ inputs.sync-branch }}
+        SYNC_TAGS: ${{ inputs.sync-tags }}
+      run: node "$GITHUB_ACTION_PATH/scripts/verify-publication.mjs"

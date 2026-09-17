@@ -13,16 +13,17 @@
     "README.md",
     "CHANGELOG.md",
     "LICENSE",
-    "scripts/resolve-debug.sh",
-    "*/action.yml",
-    "*/README.md",
-    "*/scripts/**",
-    "*/examples/**",
-    "*/LICENSE*",
-    "*/NOTICE*"
+    ".lib/resolve-debug.sh",
+    "[!.]*/action.yml",
+    "[!.]*/README.md",
+    "[!.]*/scripts/**",
+    "[!.]*/examples/**",
+    "[!.]*/LICENSE*",
+    "[!.]*/NOTICE*"
   ],
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"
-  }
+  },
+  "author": "Tanaab Maneuvering Systems LLC"
 }

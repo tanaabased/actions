@@ -17,7 +17,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
       - name: Verify debug contract
-        run: bash scripts/check-debug-contract.sh npm-pack
+        run: bash .github/scripts/check-debug-contract.sh npm-pack
       - name: Set fixture version
         working-directory: npm-pack/test/fixture
         run: npm pkg set "version=$PACKAGE_VERSION"

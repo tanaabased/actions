@@ -29,7 +29,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
       - name: Verify debug contract
-        run: bash scripts/check-debug-contract.sh publish-npm
+        run: bash .github/scripts/check-debug-contract.sh publish-npm
+      - name: Test registry readback
+        run: node --test publish-npm/test/verify-publication.test.mjs
       - name: Set fixture version
         working-directory: publish-npm/test/fixture
         run: npm pkg set "version=$PACKAGE_VERSION"

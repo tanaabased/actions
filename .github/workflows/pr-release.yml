@@ -53,7 +53,7 @@ jobs:
           test "$PACKED_NAME" = '@tanaab/actions'
           test "$PACKED_VERSION" = "$EXPECTED_VERSION"
           test "${PREPARED_VERSION#v}" = "$EXPECTED_VERSION"
-          node scripts/check-package-task.mjs "$TARBALL_PATH"
+          node .github/scripts/check-package-task.mjs "$TARBALL_PATH"
       - name: Validate npm publication
         id: publish
         uses: ./publish-npm

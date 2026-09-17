@@ -20,7 +20,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
       - name: Verify debug contract
-        run: bash scripts/check-debug-contract.sh validate-codex-plugin
+        run: bash .github/scripts/check-debug-contract.sh validate-codex-plugin
       - name: Validate valid plugin fixture
         id: valid
         uses: ./validate-codex-plugin

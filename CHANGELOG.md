@@ -13,6 +13,7 @@
 - Added shared release preparation and repository publication actions.
 - Added SSH test-key generation for Linux and macOS fixtures. [#11](https://github.com/tanaabased/actions/issues/11)
 - Added the initial action catalog and repository structure.
+- Moved npm artifact/channel and repository branch/tag verification into the publishing actions.
 - Fixed gateway cleanup accepting unrelated processes or unsafe PID values.
 - Replaced directory-based npm publication with tested-tarball publication, trusted publishing, explicit channels, and immutable-version checks.
 - Standardized the catalog on root-level composite actions with explicit non-mutating test modes and one pull-request workflow per action.

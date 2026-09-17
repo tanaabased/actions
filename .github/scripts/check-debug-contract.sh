@@ -4,7 +4,7 @@ set -euo pipefail
 
 action_name="${1:-}"
 action_file="$action_name/action.yml"
-resolver='scripts/resolve-debug.sh'
+resolver='.lib/resolve-debug.sh'
 
 [[ -f "$action_file" ]] || {
   echo "missing action metadata: $action_file" >&2
@@ -32,7 +32,7 @@ awk '
   in_debug && /default: auto/ { found = 1 }
   END { exit !found }
 ' "$action_file"
-grep -Fq 'scripts/resolve-debug.sh' "$action_file"
+grep -Fq '.lib/resolve-debug.sh' "$action_file"
 if grep -Eq '(^|[[:space:]])set[[:space:]]+-[^[:space:]]*x' "$action_file"; then exit 1; fi
 
 # Execute the checked-in shell blocks, without installing tools or invoking publishers.

@@ -19,7 +19,9 @@ jobs:
         with:
           fetch-depth: 0
       - name: Verify debug contract
-        run: bash scripts/check-debug-contract.sh publish-repo
+        run: bash .github/scripts/check-debug-contract.sh publish-repo
+      - name: Test repository readback
+        run: node --test publish-repo/test/verify-publication.test.mjs
       - name: Validate repository publication
         id: publish
         uses: ./publish-repo

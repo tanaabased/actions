@@ -43,7 +43,7 @@ runs:
       env:
         DEBUG_INPUT: ${{ inputs.debug }}
       run: |
-        effective_debug="$(bash "$GITHUB_ACTION_PATH/../scripts/resolve-debug.sh" "$DEBUG_INPUT")"
+        effective_debug="$(bash "$GITHUB_ACTION_PATH/../.lib/resolve-debug.sh" "$DEBUG_INPUT")"
         echo "enabled=$effective_debug" >> "$GITHUB_OUTPUT"
         echo "SETUP_OPENCLAW_DEBUG=$effective_debug" >> "$GITHUB_ENV"
         [[ "$effective_debug" != 'true' ]] || echo 'Diagnostics enabled for OpenClaw setup and exported helpers.'

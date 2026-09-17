@@ -1,8 +1,7 @@
 # `npm-pack`
 
-Packs one npm package once and exposes the exact tarball for consumer tests and
-publication. Package scripts are disabled: release preparation belongs before
-packing, not halfway through an artifact handoff.
+Packs one npm package and exposes its exact tarball for tests and publication.
+Package scripts are disabled; prepare release files before packing.
 
 Supported runner: Linux (`ubuntu-24.04`).
 
@@ -24,13 +23,9 @@ Supported runner: Linux (`ubuntu-24.04`).
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `test-mode` | No | `false` | Exercise the action without external mutation or publication credentials. |
-| `debug` | No | `auto` | Action and npm verbosity: `auto`, `true`, or `false`. |
+| `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `package-directory` | No | `.` | Directory containing `package.json`, relative to the workspace or absolute. |
 | `node-version` | No | `24` | Node.js version used to run `npm pack`. |
-
-Set `debug: true` for verbose npm and action diagnostics, or use GitHub's
-**Enable debug logging** rerun option with `auto`. Explicit `true` or `false`
-overrides runner debug. Useful failure output remains enabled in every mode.
 
 ## Outputs
 
@@ -46,6 +41,5 @@ the artifact nor publishes it to a registry.
 
 ## Test behavior
 
-Packing is already non-mutating outside the runner, so `test-mode: true` runs
-the normal action. Pull requests pack, inspect, install, and exercise the exact
-fixture tarball; no live lifecycle evidence is required.
+Test mode runs normal packing. PR tests inspect, install, and exercise the exact
+fixture tarball.

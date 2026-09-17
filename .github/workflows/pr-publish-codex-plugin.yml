@@ -20,7 +20,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
       - name: Verify debug contract
-        run: bash scripts/check-debug-contract.sh publish-codex-plugin
+        run: bash .github/scripts/check-debug-contract.sh publish-codex-plugin
       - name: Set up Bun for fixture lockfile
         uses: oven-sh/setup-bun@v2
         with:

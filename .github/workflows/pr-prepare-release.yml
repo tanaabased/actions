@@ -19,7 +19,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Verify debug contract
-        run: bash scripts/check-debug-contract.sh prepare-release
+        run: bash .github/scripts/check-debug-contract.sh prepare-release
       - name: Prepare release
         id: prepare
         uses: ./prepare-release

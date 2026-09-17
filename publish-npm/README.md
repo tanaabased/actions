@@ -2,8 +2,7 @@
 
 Publishes one supplied, tested npm tarball without repacking the checkout. The
 action selects `latest` for stable versions and `edge` for prereleases by
-default. Registry versions remain immutable, despite the industry having had
-ample time to wish otherwise.
+default. Existing registry versions cannot be republished.
 
 Use [`npm-pack`](../npm-pack/README.md) to produce the artifact.
 
@@ -39,7 +38,7 @@ steps:
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `test-mode` | No | `false` | Exercise the action without registry mutation or publication credentials. |
-| `debug` | No | `auto` | Action and npm verbosity: `auto`, `true`, or `false`. |
+| `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `tarball` | Yes | — | Tested npm tarball, relative to the workspace or absolute. |
 | `registry-url` | No | `https://registry.npmjs.org` | npm-compatible registry URL. |
 | `registry-token` | No | — | Token for registry reads and publication; omit for npm trusted publishing. |
@@ -51,10 +50,7 @@ steps:
 | `node-version` | No | `24` | Node.js version used for publication. |
 | `npm-version` | No | `^11.5.1` | npm version range installed for publication. |
 
-Set `debug: true` for verbose npm and action diagnostics, or use GitHub's
-**Enable debug logging** rerun option with `auto`. Explicit `true` or `false`
-overrides runner debug. Registry and channel tokens remain environment-only and
-are never printed by the action.
+Debug enables verbose npm output.
 
 ## Outputs
 
@@ -90,12 +86,10 @@ is published. Adapt its preparation commands and moving tag to the consumer.
 
 ## Test behavior
 
-With `test-mode: true`, the action inspects the supplied tarball, selects its
-stable or prerelease channel, and runs npm's native publication dry run. It
-skips registry existence checks, live publication, and distribution-tag
-updates, and requires no registry or channel token. Pull requests exercise both
-stable and prerelease packages; only a real downstream release proves registry
-authentication, immutability checks, publication, and channel mutation.
+Test mode inspects the tarball, selects its channel, and runs npm's native dry
+run without registry or channel credentials. It skips registry reads, publication,
+and tag updates. PR tests cover stable and prerelease artifacts; live releases
+prove authentication, immutability checks, publication, and channel mutation.
 
 ## Notes
 
@@ -115,7 +109,11 @@ the prerelease tag only when `update-prerelease-tag-on-stable` is `true`; the
 action validates the required token before publishing so a missing tag
 credential cannot create a half-finished release.
 
-If publication succeeds but the later distribution-tag update fails, inspect
+After publication, the action reads back package identity, tarball integrity,
+and all requested channels. It retries reads up to 12 times with five-second
+pauses; it never retries publication.
+
+If publication succeeds but readback or the distribution-tag update fails, inspect
 the immutable version and current tags, then repair only the tag:
 
 ```sh

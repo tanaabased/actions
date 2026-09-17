@@ -38,17 +38,14 @@ action with the same exit code after removing its temporary directory.
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `test-mode` | No | `false` | Run the normal local behavior without changing the contract. |
-| `debug` | No | `auto` | Action diagnostics: `auto`, `true`, or `false`. |
+| `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `scenarios` | Yes | — | Newline-delimited scenario paths or glob patterns, relative to the caller's workspace unless absolute. |
 | `shell` | Yes | — | Scenario shell: `bash` or `pwsh`. |
 | `retry` | No | `0` | Non-negative number of retries for each failed test. |
 | `stdin` | No | `true` | Whether Leia attaches standard input to scenario commands. |
 | `cleanup-header` | No | — | Optional comma-separated H2 prefixes Leia treats as cleanup sections. |
 
-Set `debug: true` for extra action detail, or use GitHub's **Enable debug
-logging** rerun option with `auto`. Explicit `true` or `false` overrides runner
-debug. Leia exposes no supported verbosity control, so its invocation and retry
-behavior are unchanged.
+Leia has no supported verbosity control.
 
 Blank lines in `scenarios` are ignored. Each nonblank line is passed to Leia as
 one argument, so glob patterns should remain quoted by YAML rather than expanded
@@ -78,16 +75,9 @@ by the workflow shell.
 
 ## Test behavior
 
-Leia scenario execution is already local and non-publishing, so
-`test-mode: true` runs the normal action against the scenarios supplied by the
-caller. Pull requests exercise real Leia fixtures and verify success, failure
-propagation, temporary variables, custom cleanup headings, and removal of the
-temporary directory on each supported runner.
-
-Test mode is **not** a sandbox. Leia executes scenario commands as the workflow
-runner, and arbitrary caller-provided scenarios can change files, install
-software, use available credentials, or mutate external systems. Review
-scenarios before running them; use non-mutating fixtures in pull requests.
+Test mode runs the supplied scenarios normally. PR tests cover success, failure,
+temporary state, and cleanup on every supported runner. Caller scenarios must
+avoid external side effects; see [common inputs](../README.md#common-inputs).
 
 ## Notes
 

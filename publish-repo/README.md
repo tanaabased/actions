@@ -36,7 +36,7 @@ explicitly.
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `test-mode` | No | `false` | Prepare locally without committing, pushing, or requiring publication credentials. |
-| `debug` | No | `auto` | Action diagnostics: `auto`, `true`, or `false`. |
+| `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
 | `version` | No | Release tag | Semver-valid exact tag and project version. |
 | `release-date` | No | Release publication timestamp | Date or timestamp formatted as `Month D, YYYY` for the changelog. |
 | `release-url` | No | Release URL | Link recorded in the changelog. |
@@ -44,13 +44,10 @@ explicitly.
 | `root` | No | `${{ github.workspace }}` | Repository root containing the release source and `package.json`. |
 | `bun-version` | No | `auto` | Bun version, or automatic project resolution. |
 | `sync-branch` | No | Release target or current branch | Branch that receives the release commit. |
-| `sync-tags` | No | — | Additional moving tags, such as `v1`, forced to the release commit. |
+| `sync-tags` | No | — | Newline-separated moving tags, such as `v1`, forced to the release commit. |
 | `sync-token` | No | `${{ github.token }}` | Token authorized to create the verified commit and push tags. |
 
-Set `debug: true` for extra action detail, or use GitHub's **Enable debug
-logging** rerun option with `auto`. Explicit `true` or `false` overrides runner
-debug. The upstream preparation action has no debug input, and caller-supplied
-`commands` are never rewritten.
+The upstream preparation action has no debug input.
 
 The local synchronization identity is fixed to
 `tanaabot <tanaabot@tanaab.dev>` and verified commit mode. GitHub attributes
@@ -70,11 +67,9 @@ and repository publication in independent jobs.
 
 ## Test behavior
 
-With `test-mode: true`, the action performs the normal release preparation but
-disables synchronization and withholds the synchronization token. Pull requests
-verify the resolved version, package metadata, changelog, project commands, and
-unchanged Git history. Only this repository's real release proves verified
-commit creation, branch synchronization, and exact or moving tag updates.
+Test mode prepares files locally without synchronizing or supplying the sync token.
+PR tests assert metadata, changelog, commands, and unchanged history. Live releases
+prove verified commits and branch/tag updates.
 
 ## Notes
 
@@ -84,6 +79,9 @@ commit creation, branch synchronization, and exact or moving tag updates.
 `CHANGELOG.md` has its current unreleased tokens resolved and receives a fresh
 unreleased header; a missing changelog is left missing. `commands` run from
 `root` and may use `PREPARE_RELEASE_VERSION`.
+
+After synchronization, the action checks that the remote branch, exact release
+tag, and every requested moving tag select the prepared commit and package version.
 
 A retry runs preparation again, creates a commit when files change, and forces
 the exact and moving tags to the resulting commit. This makes repository
