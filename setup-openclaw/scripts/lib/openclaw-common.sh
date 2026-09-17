@@ -79,6 +79,7 @@ configure_context() {
   profile="$requested_profile"
   workspace="$(cd "$requested_workspace" && pwd -P)"
   state_dir="$(cd "$requested_state_dir" && pwd -P)"
+  [[ "$workspace" != '/' && "$state_dir" != '/' ]] || error 'workspace and state directory must not resolve to root' 2
   openclaw_state_dir="$state_dir/openclaw"
   openclaw_config_path="$openclaw_state_dir/openclaw.json"
   gateway_state_dir="$state_dir/gateway"
@@ -92,7 +93,28 @@ write_context() {
     printf 'OPENCLAW_PROFILE=%s\n' "$profile"
     printf 'OPENCLAW_CONFIG_PATH=%s\n' "$openclaw_config_path"
     printf 'OPENCLAW_STATE_DIR=%s\n' "$openclaw_state_dir"
+    printf 'OPENCLAW_WORKSPACE=%s\n' "$workspace"
+    printf 'SETUP_OPENCLAW_STATE_DIR=%s\n' "$state_dir"
   } >> "$GITHUB_ENV"
+  if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+    printf 'profile=%s\nworkspace=%s\nstate-dir=%s\nconfig-path=%s\n' \
+      "$profile" "$workspace" "$state_dir" "$openclaw_config_path" >> "$GITHUB_OUTPUT"
+  fi
+}
+
+run_setup_command() {
+  local log_file status
+  log_file="$(mktemp "$state_dir/setup-log.XXXXXX")"
+  if "$@" > "$log_file" 2>&1; then
+    status=0
+  else
+    status=$?
+  fi
+  if ((status != 0)) || [[ "$debug_enabled" == true ]]; then
+    tail -n 30 "$log_file" | redact_stream >&2
+  fi
+  rm -f "$log_file"
+  return "$status"
 }
 
 verify_context() {
@@ -113,6 +135,8 @@ run_openclaw() {
 }
 
 redact_stream() {
+  # Supplied by each executable entrypoint.
+  # shellcheck disable=SC2154
   node "$command_dir/lib/redact-stream.mjs"
 }
 

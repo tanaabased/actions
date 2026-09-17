@@ -7,9 +7,9 @@ command_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$command_dir/lib/openclaw-common.sh"
 
 action=''
-profile=''
-workspace=''
-state_dir=''
+profile="${OPENCLAW_PROFILE:-}"
+workspace="${OPENCLAW_WORKSPACE:-}"
+state_dir="${SETUP_OPENCLAW_STATE_DIR:-}"
 timeout_seconds=''
 debug_setting="${SETUP_OPENCLAW_DEBUG:-auto}"
 
@@ -86,13 +86,6 @@ verify_context
 pid_path="$gateway_state_dir/gateway.pid"
 log_path="$gateway_state_dir/gateway.log"
 call_log_path="$gateway_state_dir/gateway-call.log"
-if ! gateway_port="$(run_openclaw config get gateway.port 2>/dev/null)"; then
-  error 'OpenClaw gateway port is unavailable'
-fi
-if [[ ! "$gateway_port" =~ ^[1-9][0-9]*$ ]] || ((gateway_port > 65535)); then
-  error "OpenClaw gateway port is invalid: $gateway_port"
-fi
-gateway_health_url="http://127.0.0.1:$gateway_port/health"
 
 wait_for_gateway() {
   local wait_timeout="$1"
@@ -107,7 +100,7 @@ wait_for_gateway() {
     return 1
   fi
   debug "waiting for gateway pid=$gateway_pid timeout=$wait_timeout"
-  until node "$command_dir/lib/probe-health.mjs" "$gateway_health_url" > /dev/null 2> "$call_log_path"; do
+  until run_openclaw gateway call agents.list --json --timeout 3000 > /dev/null 2> "$call_log_path"; do
     if ! gateway_is_running; then
       error_message 'gateway exited before becoming ready'
       return 1
@@ -182,6 +175,12 @@ start_gateway() {
     rm -f "$pid_path"
   fi
 
+  if ! gateway_port="$(run_openclaw config get gateway.port 2>/dev/null)"; then
+    error 'OpenClaw gateway port is unavailable'
+  fi
+  if [[ ! "$gateway_port" =~ ^[1-9][0-9]*$ ]] || ((gateway_port > 65535)); then
+    error 'invalid gateway port'
+  fi
   : > "$log_path"
   debug "starting gateway log=$log_path"
   (

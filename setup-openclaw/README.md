@@ -1,186 +1,211 @@
 # `setup-openclaw`
 
-Installs one exact OpenClaw CLI version with a compatible Node.js runtime and
-exposes opt-in helpers for isolated CI setup, gateway lifecycle, and bounded
-diagnostics. Installation is the default; none of the helpers run unless a
-later caller step invokes them.
-
-Supported runners: Linux (`ubuntu-24.04`) and macOS (`macos-26`).
+Installs an exact OpenClaw CLI with a compatible Node.js runtime and exposes one
+helper suite for isolated OpenClaw and Agent System tests. Runs on Linux
+(`ubuntu-24.04`) and macOS (`macos-26`).
 
 ## Usage
 
-Pin the version explicitly when the workflow owns the tested version:
+Install the CLI and helpers for later commands:
 
 ```yaml
-- name: Install OpenClaw
-  id: openclaw
-  uses: tanaabased/actions/setup-openclaw@v1
+- uses: tanaabased/actions/setup-openclaw@v1
   with:
     version: 2026.9.3
 ```
 
-The default `version: auto` reads `devDependencies.openclaw`, then
-`dependencies.openclaw`, from `package-json`. If both fields are present, their
-declarations must match. Automatic selection ignores `peerDependencies` and
-requires an explicit version if neither installation field is present.
+Select a setup input to prepare the harness in the action step:
 
 ```yaml
-- name: Install the package-tested OpenClaw version
+- uses: tanaabased/actions/setup-openclaw@v1
   id: openclaw
-  uses: tanaabased/actions/setup-openclaw@v1
   with:
-    package-json: package.json
+    version: 2026.9.3
+    agent-system: 0.6.0
+    needs-secret-service: true
+    needs-ssh-key: true
+    yolo: true
 ```
 
-Set `package-field` to a dot-delimited field when the project intentionally
-stores its tested version somewhere else. That explicit override reads only the
-selected field. An explicit `version` always wins and does not require
-`package-json` to exist, even when the manifest's automatic declarations
-conflict.
+Or run caller-owned commands after installation:
 
-The accepted explicit value is an exact semantic version or npm
-semantic-version range, not a dist-tag or URL. A range resolves through npm to
-the highest matching published version at run time; the exact result is
-returned as `version` and installed. Pin an exact version for reproducibility.
+```yaml
+- uses: tanaabased/actions/setup-openclaw@v1
+  with:
+    version: 2026.9.3
+    run: |
+      openclaw-setup --workspace "$RUNNER_TEMP/main"
+      openclaw-gateway start
+      openclaw gateway call agents.list --json --timeout 3000
+      openclaw-gateway stop
+```
+
+The action needs no publication credentials or write permissions. Model setup
+requires the caller's `OPENAI_API_KEY`; source downloads need repository read
+access and dependency installation needs network access. Linux Secret Service
+setup uses `sudo apt-get` on the supported Ubuntu runner. Arbitrary `run`
+commands and source build scripts execute with the job's permissions and
+credentials; the action does not sandbox them.
 
 ## Inputs
 
-| Input | Required | Default | Description |
-| --- | --- | --- | --- |
-| `debug` | No | `auto` | [Common diagnostics](../README.md#common-inputs). |
-| `version` | No | `auto` | `auto`, an exact OpenClaw semantic version, or a range. An explicit version overrides package selection. |
-| `package-json` | No | `package.json` | Package manifest used only when `version` is `auto`; relative paths resolve from the workspace. |
-| `package-field` | No | — | Optional dot-delimited field that replaces automatic `devDependencies`/`dependencies` discovery. |
+| Input | Default | Description |
+| --- | --- | --- |
+| `debug` | `auto` | [Common diagnostics](../README.md#common-inputs); also applies to later helpers. |
+| `version` | `auto` | Exact OpenClaw version or npm semver range; ranges resolve to one exact published version. |
+| `package-json` | `package.json` | Workspace-relative or absolute manifest for automatic OpenClaw selection. |
+| `package-field` | — | Dot-delimited field overriding automatic manifest discovery. |
+| `run` | — | Multiline Bash commands, run after installation with `-eo pipefail`. |
+| `profile` | unique CI profile | Isolated non-default profile. |
+| `workspace` | temporary context workspace | Absolute agent workspace. |
+| `state-dir` | unique directory below `RUNNER_TEMP` | Absolute helper state directory. |
+| `model` | — | `openai/model`; authenticates with `OPENAI_API_KEY` and selects the model. |
+| `agent-system` | — | Exact published version, local package/source, or explicit repository ref. |
+| `needs-secret-service` | — | `true` prepares Linux Secret Service; `false` disables it. Skipped on macOS. |
+| `needs-ssh-key` | — | `true` creates the SSH fixture; `false` disables it. |
+| `op-cache` | process-lifetime, 128 entries | Agent System cache JSON object; requires `agent-system`. |
+| `yolo` | — | `true` enables unattended execution in this isolated profile; `false` disables it. |
 
-The action rejects missing files, invalid JSON, missing or non-string fields,
-conflicting automatic declarations, tags such as `latest`, URLs, invalid
-ranges, ranges with no published match, and packages without a declared
-`engines.node` requirement. It installs a Node.js version satisfying the
-selected OpenClaw package's requirement before installing the exact resolved
-package.
+No orchestration inputs selects **install** mode. Any explicitly supplied setup
+input (`profile` through `yolo`, including an explicit `false`) selects **setup**
+mode. Nonblank `run` selects **run** mode. Mixing `run` with setup inputs fails
+before installation or fixture creation. Version-selection inputs and `debug`
+are common to all modes. There is no `test-mode` or `dry-run` switch.
 
-The resolved debug value persists for later helpers; an explicit helper
-`--debug` value takes precedence.
+Automatic OpenClaw selection reads `devDependencies.openclaw`, then
+`dependencies.openclaw`; both must match when present. It ignores peer
+dependencies. An explicit `package-field` replaces that discovery. An explicit
+`version` wins even if the manifest is absent or conflicting. Dist-tags, URLs,
+invalid ranges, missing declarations, and packages without `engines.node` fail.
+The action installs a Node.js runtime satisfying the resolved OpenClaw package.
+
+Agent System selection is deliberately unambiguous:
+
+| Form | Meaning |
+| --- | --- |
+| `0.6.0` | Exact published `@tanaab/openclaw-agent-system` version; no ranges or dist-tags. |
+| `/absolute/plugin.tgz`, `./plugin.tgz`, `file:plugin.tgz` | Existing npm tarball, installed directly. |
+| `.`, `./checkout`, `/absolute/checkout`, `file:checkout` | Existing source directory, staged without modifying the checkout. |
+| `github:tanaabased/openclaw-agent-system#<ref>` | Explicit repository source; resolves the ref to a recorded commit before building. |
+
+Missing paths never fall back to npm or GitHub. Source packages must declare the
+correct package identity, an exact version, exact `bun@` package manager,
+`bun.lock`, `build`, and `plugin:check`. Builds exclude `.git`, `node_modules`,
+and `dist`, install frozen dependencies with lifecycle scripts disabled, then
+run the declared build/check and pack. Action setup provisions the source's Bun
+version through `setup-bun`; later source-helper calls require that Bun version
+already on `PATH`. A prebuilt local tarball avoids rebuilding consumer artifacts.
 
 ## Outputs
 
 | Output | Description |
 | --- | --- |
-| `version` | Exact installed OpenClaw version after range resolution. |
-| `executable-path` | Absolute path to the installed `openclaw` executable. |
-| `helper-path` | Absolute directory containing the supported helper commands. |
+| `mode` | `install`, `setup`, or `run`. |
+| `version` | Exact installed OpenClaw version. |
+| `executable-path`, `helper-path` | Installed CLI and public helper directory, added to `PATH`. |
+| `profile`, `workspace`, `state-dir`, `config-path` | Isolated context; configuration is created during setup. |
+| `agent-system-version`, `agent-system-source` | Installed package version and resolved provenance. |
+| `agent-system-artifact-path`, `agent-system-plugin-path` | Verified npm tarball and loaded plugin directory. |
+| `private-key-path`, `public-key-path` | SSH fixture paths; never private-key contents. |
+| `dbus-address`, `secret-service-home` | Linux Secret Service address and isolated home. |
 
-The action adds the executable directory and `helper-path` to `GITHUB_PATH`, so
-later steps can call `openclaw`, `openclaw-setup`, `openclaw-gateway`, and
-`openclaw-diagnostics` by name.
+Agent System and fixture outputs describe setup mode. A caller's `run` block
+may invoke helpers multiple times and owns any additional output contract.
+Helpers export successful setup results to later steps through `GITHUB_ENV`:
+`OPENCLAW_PROFILE`, `OPENCLAW_WORKSPACE`, `OPENCLAW_CONFIG_PATH`,
+`OPENCLAW_STATE_DIR`, `SETUP_OPENCLAW_STATE_DIR`, `AGENT_SYSTEM_VERSION`,
+`AGENT_SYSTEM_SOURCE`, `AGENT_SYSTEM_ARTIFACT_PATH`, `AGENT_SYSTEM_PLUGIN_PATH`,
+`SSH_PRIVATE_KEY_PATH`, `SSH_PUBLIC_KEY_PATH`, `DBUS_SESSION_BUS_ADDRESS`, and
+`SECRET_SERVICE_HOME`.
+
+All modes establish default context and fixture addresses before caller commands
+run, so plain `openclaw` and helpers share that context within the same shell.
+Explicit helper profile/state overrides apply to that helper and later steps;
+commands in the current parent shell must also use the overridden context.
 
 ## Examples
 
-### Isolated gateway lifecycle
+### Later Leia helper invocation
 
-Every helper call names the same non-default profile, absolute workspace, and
-absolute state directory. `openclaw-setup` records that context; the other
-helpers reject mismatches instead of quietly operating on somebody else's
-profile.
+Install the action before the consumer's existing Leia command. A scenario can
+then use the same setup implementation with a previously packed plugin:
+
+```bash
+openclaw-setup \
+  --workspace "$TMPDIR/main" \
+  --agent-system "$AGENT_SYSTEM_PACKAGE" \
+  --needs-secret-service \
+  --needs-ssh-key \
+  --yolo
+openclaw-gateway start
+openclaw gateway call agents.list --json --timeout 3000
+openclaw-gateway stop
+```
+
+Keep the consumer's Leia invocation, model fixtures, diagnostic commands,
+permissions, and matrix. This example documents the helper contract.
+
+### Model setup
 
 ```yaml
-- name: Install OpenClaw
-  uses: tanaabased/actions/setup-openclaw@v1
+- uses: tanaabased/actions/setup-openclaw@v1
+  env:
+    OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
   with:
     version: 2026.9.3
-
-- name: Prepare isolated OpenClaw
-  shell: bash
-  run: |
-    openclaw-setup \
-      --profile ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT} \
-      --workspace "$RUNNER_TEMP/openclaw-workspace" \
-      --state-dir "$RUNNER_TEMP/openclaw-state"
-
-- name: Start and inspect the gateway
-  shell: bash
-  run: |
-    openclaw-gateway start \
-      --profile ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT} \
-      --workspace "$RUNNER_TEMP/openclaw-workspace" \
-      --state-dir "$RUNNER_TEMP/openclaw-state" \
-      --timeout 90
-    openclaw-diagnostics \
-      --profile ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT} \
-      --workspace "$RUNNER_TEMP/openclaw-workspace" \
-      --state-dir "$RUNNER_TEMP/openclaw-state"
-
-- name: Stop the gateway
-  if: always()
-  shell: bash
-  run: |
-    openclaw-gateway stop \
-      --profile ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT} \
-      --workspace "$RUNNER_TEMP/openclaw-workspace" \
-      --state-dir "$RUNNER_TEMP/openclaw-state" \
-      --timeout 30
+    model: openai/gpt-5.4-nano
 ```
 
 ## Test behavior
 
-PR checks run normal resolution, Node.js setup, CLI installation, and any
-caller-invoked helpers. They cover version selection,
-invalid inputs, exported helpers, gateway readiness, and cleanup.
+PR checks exercise normal isolated installation and setup on Linux/macOS,
+install and run modes, direct action and later-helper usage, exact-version,
+local-tarball, source-directory and repository selection, source preservation,
+Linux Secret Service readback, SSH fixtures, CLI readiness, process ownership,
+invalid inputs, debug precedence, redaction, and original failure status.
 
-Setup skips provider authentication, channels, hooks, skills, and daemon
-installation. The isolated gateway binds to loopback without authentication;
-these checks do not prove model-provider access.
+Local contract tests use controlled command fixtures. They do not prove hosted
+installation or provider access. PR integration checks use real OpenClaw and
+Agent System packages without publishing or calling a model provider. Live
+provider authentication and consumer scenarios remain consumer lifecycle proof.
 
 ## Notes
 
-### Supported helper interface
+### Public helpers
 
-Only these executable commands are public. Files below `scripts/lib/` are
-private implementation details and may change without notice.
+- `openclaw-setup [options]`: action setup inputs have matching flags. Boolean
+  flags accept `true|false` and default to `true` when supplied without a value.
+  `--debug` accepts `auto|true|false`. Repeated and unknown flags fail.
+- `openclaw-gateway <start|wait|restart|stop|diagnostics> [--timeout <seconds>]`:
+  readiness requires a successful CLI `agents.list` request. Start/wait default
+  to 90 seconds; stop defaults to 30. Failed starts report evidence, stop the
+  owned process, and preserve the readiness failure.
+- `openclaw-diagnostics [--exit-code <0-255>]`: reports bounded redacted evidence
+  and preserves a supplied original failure code.
 
-#### `openclaw-setup`
+Every helper accepts `--profile`, `--workspace`, `--state-dir`, and
+`--debug auto|true|false`; otherwise it uses the action context. Helpers require
+GitHub Actions. Files in `scripts/lib/` are private implementation details.
+Gateway helpers verify the recorded profile/workspace and PID start time before
+signaling a process. The gateway binds to loopback with authentication disabled;
+use this harness only on an isolated test runner.
 
-```text
-openclaw-setup --profile <name> --workspace <path> --state-dir <path> [--debug <auto|true|false>]
-```
+Setup skips channels, daemon installation, hooks, skills, and provider
+authentication unless a model was requested. GPT-5.4 models retain the former
+helper's direct Codex tool-loading configuration. Agent System installation
+authorizes capabilities and conversation hooks, sets the requested cache policy,
+and verifies configuration, loaded runtime, artifact provenance, and typed hooks.
+YOLO is opt-in.
 
-Creates the workspace and state directory when needed, performs unattended
-local onboarding with provider authentication skipped, validates the generated
-configuration, and records the isolated context for later helpers. After
-successful setup it exports `OPENCLAW_PROFILE`, `OPENCLAW_CONFIG_PATH`, and
-`OPENCLAW_STATE_DIR` through `GITHUB_ENV`, allowing later public actions and
-commands to use the same profile without reading this action's private helper
-state. It requires GitHub Actions and rejects the default profile and root
-paths.
+SSH setup creates `$HOME/.ssh/big-test-bucket-ssh` with mode `600` and its public
+key with mode `644`; existing files or symlinks are rejected. Linux Secret Service
+uses an isolated home and a disposable D-Bus socket, respecting an existing
+`DBUS_SESSION_BUS_ADDRESS` selection. Fixture services live for the runner job;
+failed setup stops services it started and removes its new SSH key. Gateway
+`stop` leaves successful fixtures available for later scenarios. Source staging
+is removed; successful tarballs and diagnostic state remain for inspection.
 
-#### `openclaw-gateway`
-
-```text
-openclaw-gateway <start|wait|restart|stop|diagnostics> \
-  --profile <name> --workspace <path> --state-dir <path> \
-  [--timeout <seconds>] [--debug <auto|true|false>]
-```
-
-`start` launches the loopback gateway and waits for a successful health call;
-`wait` probes an existing process; `restart` performs bounded stop and start;
-`stop` terminates the recorded process; and `diagnostics` prints bounded,
-redacted process and log evidence. Readiness defaults to 90 seconds and stop to
-30 seconds. A failed start reports diagnostics, attempts cleanup, and returns
-the original readiness failure.
-
-The helper records the process start time alongside its PID and checks both
-before signaling it. Invalid records, including older PID-only files, fail
-closed; a reused PID does not authorize stopping the replacement process.
-
-#### `openclaw-diagnostics`
-
-```text
-openclaw-diagnostics --profile <name> --workspace <path> --state-dir <path> \
-  [--exit-code <0-255>] [--debug <auto|true|false>]
-```
-
-Reports the CLI version, configuration validity, gateway process state, and
-bounded redacted failures. `--exit-code` defaults to `0`; pass a captured
-failure code to report evidence without replacing the original result.
-Diagnostics never dump environment variables, model credentials, channel
-configuration, agent configuration, or complete OpenClaw configuration.
+`setup-agent-system` is retired. Use `setup-openclaw` with `agent-system` or
+invoke `openclaw-setup --agent-system` after install-only setup. The former
+`version` maps to `agent-system`, and `source-directory` maps to an explicit
+local directory selector. Consumers must migrate before using the revised ref.

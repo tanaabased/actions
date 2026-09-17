@@ -1,5 +1,5 @@
 name: Set up OpenClaw
-description: Install an exact OpenClaw CLI version and expose isolated CI helpers.
+description: Install OpenClaw and prepare an isolated test harness through shared helpers.
 
 inputs:
   debug:
@@ -19,6 +19,37 @@ inputs:
     required: false
     default: ''
 
+  run:
+    description: Caller-owned multiline Bash commands; mutually exclusive with setup inputs.
+    default: ''
+  profile:
+    description: Isolated non-default profile; defaults to a unique runner-temporary context.
+    default: ''
+  workspace:
+    description: Absolute isolated agent workspace; defaults below the action context.
+    default: ''
+  state-dir:
+    description: Absolute helper state directory; defaults below RUNNER_TEMP.
+    default: ''
+  model:
+    description: Optional openai/model reference; requires OPENAI_API_KEY in the environment.
+    default: ''
+  agent-system:
+    description: Exact version, local .tgz or source directory, or github:owner/repo#ref.
+    default: ''
+  needs-secret-service:
+    description: true or false; prepare Linux Secret Service when true.
+    default: ''
+  needs-ssh-key:
+    description: true or false; create the SSH fixture when true.
+    default: ''
+  op-cache:
+    description: Agent System cache JSON; defaults to process-lifetime with 128 entries.
+    default: ''
+  yolo:
+    description: true or false; allow unattended isolated tool execution when true.
+    default: ''
+
 outputs:
   version:
     description: Exact installed OpenClaw version after npm range resolution.
@@ -30,9 +61,65 @@ outputs:
     description: Absolute directory containing the supported public helper commands.
     value: ${{ steps.install.outputs.helper-path }}
 
+  mode:
+    description: Inferred install, setup, or run mode.
+    value: ${{ steps.inputs.outputs.mode }}
+  profile:
+    description: Isolated OpenClaw profile.
+    value: ${{ steps.context.outputs.profile }}
+  workspace:
+    description: Absolute isolated agent workspace.
+    value: ${{ steps.context.outputs.workspace }}
+  state-dir:
+    description: Absolute helper state directory.
+    value: ${{ steps.context.outputs.state-dir }}
+  config-path:
+    description: Absolute OpenClaw configuration path; created during setup.
+    value: ${{ steps.context.outputs.config-path }}
+  agent-system-version:
+    description: Exact installed Agent System version in setup mode.
+    value: ${{ steps.orchestrate.outputs.agent-system-version }}
+  agent-system-source:
+    description: Resolved package, path, or repository commit in setup mode.
+    value: ${{ steps.orchestrate.outputs.agent-system-source }}
+  agent-system-artifact-path:
+    description: Agent System npm tarball in setup mode.
+    value: ${{ steps.orchestrate.outputs.agent-system-artifact-path }}
+  agent-system-plugin-path:
+    description: Loaded Agent System plugin directory in setup mode.
+    value: ${{ steps.orchestrate.outputs.agent-system-plugin-path }}
+  private-key-path:
+    description: SSH private-key path; never key contents.
+    value: ${{ steps.orchestrate.outputs.private-key-path }}
+  public-key-path:
+    description: SSH public-key path.
+    value: ${{ steps.orchestrate.outputs.public-key-path }}
+  dbus-address:
+    description: Linux Secret Service D-Bus address.
+    value: ${{ steps.orchestrate.outputs.dbus-address }}
+  secret-service-home:
+    description: Isolated Linux Secret Service home.
+    value: ${{ steps.orchestrate.outputs.secret-service-home }}
+
 runs:
   using: composite
   steps:
+    - id: inputs
+      name: Validate setup and run modes
+      shell: bash
+      env:
+        SETUP_RUN: ${{ inputs.run }}
+        SETUP_PROFILE: ${{ inputs.profile }}
+        SETUP_WORKSPACE: ${{ inputs.workspace }}
+        SETUP_STATE_DIR: ${{ inputs.state-dir }}
+        SETUP_MODEL: ${{ inputs.model }}
+        SETUP_AGENT_SYSTEM: ${{ inputs.agent-system }}
+        SETUP_NEEDS_SECRET_SERVICE: ${{ inputs.needs-secret-service }}
+        SETUP_NEEDS_SSH_KEY: ${{ inputs.needs-ssh-key }}
+        SETUP_OP_CACHE: ${{ inputs.op-cache }}
+        SETUP_YOLO: ${{ inputs.yolo }}
+      run: node "$GITHUB_ACTION_PATH/scripts/lib/action-inputs.mjs"
+
     - id: debug
       name: Resolve debug mode
       shell: bash
@@ -144,3 +231,95 @@ runs:
         echo "executable-path=$executable_path" >> "$GITHUB_OUTPUT"
         echo "helper-path=$helper_path" >> "$GITHUB_OUTPUT"
         echo "Installed OpenClaw $installed_version"
+
+    - id: context
+      name: Establish isolated helper context
+      shell: bash
+      env:
+        PROFILE_INPUT: ${{ inputs.profile }}
+        WORKSPACE_INPUT: ${{ inputs.workspace }}
+        STATE_INPUT: ${{ inputs.state-dir }}
+      run: |
+        set -euo pipefail
+        context_root="$(mktemp -d "$RUNNER_TEMP/openclaw-context.XXXXXX")"
+        context_id="$(basename "$context_root" | tr . -)"
+        profile="${PROFILE_INPUT:-ci-$context_id}"
+        state_dir="${STATE_INPUT:-$context_root}"
+        workspace="${WORKSPACE_INPUT:-$state_dir/workspace}"
+        {
+          echo "OPENCLAW_PROFILE=$profile"
+          echo "OPENCLAW_WORKSPACE=$workspace"
+          echo "SETUP_OPENCLAW_STATE_DIR=$state_dir"
+          echo "OPENCLAW_STATE_DIR=$state_dir/openclaw"
+          echo "OPENCLAW_CONFIG_PATH=$state_dir/openclaw/openclaw.json"
+          echo "DBUS_SESSION_BUS_ADDRESS=${DBUS_SESSION_BUS_ADDRESS:-unix:path=$state_dir/secret-service-bus}"
+          echo "SSH_PRIVATE_KEY_PATH=$HOME/.ssh/big-test-bucket-ssh"
+          echo "SSH_PUBLIC_KEY_PATH=$HOME/.ssh/big-test-bucket-ssh.pub"
+        } >> "$GITHUB_ENV"
+        {
+          echo "profile=$profile"
+          echo "workspace=$workspace"
+          echo "state-dir=$state_dir"
+          echo "config-path=$state_dir/openclaw/openclaw.json"
+        } >> "$GITHUB_OUTPUT"
+
+    - id: agent-system
+      name: Resolve Agent System source
+      if: inputs.agent-system != ''
+      shell: bash
+      env:
+        AGENT_SYSTEM: ${{ inputs.agent-system }}
+      run: |
+        selection_file="$(mktemp "$RUNNER_TEMP/openclaw-selection.XXXXXX")"
+        node "$GITHUB_ACTION_PATH/scripts/lib/agent-system.mjs" prepare "$AGENT_SYSTEM" "$selection_file"
+
+    - name: Set up source-selected Bun
+      if: steps.agent-system.outputs.bun-version != ''
+      uses: $/setup-bun
+      with:
+        debug: ${{ inputs.debug }}
+        bun-version: ${{ steps.agent-system.outputs.bun-version }}
+
+    - id: orchestrate
+      name: Run selected harness mode
+      shell: bash
+      env:
+        HARNESS_MODE: ${{ steps.inputs.outputs.mode }}
+        SETUP_OPENCLAW_SELECTION: ${{ steps.agent-system.outputs.selection-file }}
+        SETUP_RUN: ${{ inputs.run }}
+        SETUP_PROFILE: ${{ inputs.profile }}
+        SETUP_WORKSPACE: ${{ inputs.workspace }}
+        SETUP_STATE_DIR: ${{ inputs.state-dir }}
+        SETUP_MODEL: ${{ inputs.model }}
+        SETUP_AGENT_SYSTEM: ${{ inputs.agent-system }}
+        SETUP_NEEDS_SECRET_SERVICE: ${{ inputs.needs-secret-service }}
+        SETUP_NEEDS_SSH_KEY: ${{ inputs.needs-ssh-key }}
+        SETUP_OP_CACHE: ${{ inputs.op-cache }}
+        SETUP_YOLO: ${{ inputs.yolo }}
+      run: |
+        set -euo pipefail
+        if [[ "$HARNESS_MODE" == setup ]]; then
+          args=()
+          for option in model agent-system needs-secret-service needs-ssh-key op-cache yolo; do
+            variable="SETUP_$(printf '%s' "$option" | tr '[:lower:]-' '[:upper:]_')"
+            value="${!variable}"
+            [[ -z "$value" ]] || args+=("--$option" "$value")
+          done
+          openclaw-setup "${args[@]}"
+        elif [[ "$HARNESS_MODE" == run ]]; then
+          script="$(mktemp "$RUNNER_TEMP/openclaw-run.XXXXXX")"
+          trap 'rm -f "$script"' EXIT
+          printf '%s\n' "$SETUP_RUN" > "$script"
+          bash --noprofile --norc -eo pipefail "$script"
+        fi
+
+    - name: Clean Agent System selection
+      if: always() && steps.agent-system.outputs.selection-file != ''
+      shell: bash
+      env:
+        SELECTION_FILE: ${{ steps.agent-system.outputs.selection-file }}
+        AGENT_SYSTEM: ${{ inputs.agent-system }}
+      run: |
+        if [[ -f "$SELECTION_FILE" ]]; then
+          node "$GITHUB_ACTION_PATH/scripts/lib/agent-system.mjs" cleanup "$AGENT_SYSTEM" "$SELECTION_FILE"
+        fi

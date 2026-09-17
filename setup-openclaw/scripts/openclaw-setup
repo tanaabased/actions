@@ -6,84 +6,200 @@ command_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=setup-openclaw/scripts/lib/openclaw-common.sh
 source "$command_dir/lib/openclaw-common.sh"
 
-profile=''
-workspace=''
-state_dir=''
+profile="${OPENCLAW_PROFILE:-}"
+workspace="${OPENCLAW_WORKSPACE:-}"
+state_dir="${SETUP_OPENCLAW_STATE_DIR:-}"
+model=''
+agent_system=''
+needs_secret_service=false
+needs_ssh_key=false
+yolo=false
+op_cache=''
 debug_setting="${SETUP_OPENCLAW_DEBUG:-auto}"
+selection_file="${SETUP_OPENCLAW_SELECTION:-}"
 
 usage() {
-  cat <<'EOF'
-Usage: openclaw-setup --profile <name> --workspace <path> --state-dir <path> [--debug <auto|true|false>]
+  cat <<'HELP'
+Usage: openclaw-setup [options]
 
 Options:
-  --profile <name>                 names the isolated non-default OpenClaw profile
-  --workspace <path>               sets the absolute isolated agent workspace
-  --state-dir <path>               stores isolated OpenClaw configuration and helper state
-  --debug <auto|true|false>        controls helper and OpenClaw verbosity [default: action setting or auto]
-  -h, --help                       displays this help message
-EOF
+  --profile <name>                 isolated non-default profile; defaults to action context
+  --workspace <path>               absolute agent workspace; defaults to action context
+  --state-dir <path>               absolute helper state; defaults to action context
+  --agent-system <selector>        exact version, local .tgz/directory, or github:owner/repo#ref
+  --model <openai/model>           authenticate with OPENAI_API_KEY and select a model
+  --needs-secret-service [boolean] prepare the Linux Secret Service fixture [default: false]
+  --needs-ssh-key [boolean]        create ~/.ssh/big-test-bucket-ssh [default: false]
+  --op-cache <json>                Agent System cache policy [default: process-lifetime, 128 entries]
+  --yolo [boolean]                 allow unattended execution in this profile [default: false]
+  --debug <auto|true|false>         verbosity [default: action setting or auto]
+  -h, --help                       display help
+
+Environment Variables:
+  OPENCLAW_PROFILE                 same as --profile
+  OPENCLAW_WORKSPACE               same as --workspace
+  SETUP_OPENCLAW_STATE_DIR         same as --state-dir
+  SETUP_OPENCLAW_DEBUG             same as --debug
+  OPENAI_API_KEY                   required for --model; never exported by this helper
+  DBUS_SESSION_BUS_ADDRESS        optional unix:path= address for Linux Secret Service
+HELP
 }
 
+seen_options=' '
 while (($# > 0)); do
+  [[ "$seen_options" != *" $1 "* ]] || error 'setup options must not be repeated' 2
+  seen_options+="$1 "
   case "$1" in
-    --profile | --workspace | --state-dir | --debug)
+    --profile | --workspace | --state-dir | --model | --agent-system | --op-cache | --debug)
       (($# >= 2)) || error "$1 requires a value" 2
+      [[ -n "$2" && "$2" != --* ]] || error "$1 requires a nonempty value" 2
       case "$1" in
         --profile) profile="$2" ;;
         --workspace) workspace="$2" ;;
         --state-dir) state_dir="$2" ;;
+        --model) model="$2" ;;
+        --agent-system) agent_system="$2" ;;
+        --op-cache) op_cache="$2" ;;
         --debug) debug_setting="$2" ;;
       esac
-      shift 2
-      ;;
-    -h | --help)
-      usage
-      exit 0
-      ;;
-    *)
-      usage >&2
-      error "unrecognized option: $1" 2
-      ;;
+      shift 2 ;;
+    --needs-secret-service | --needs-ssh-key | --yolo)
+      flag="$1"
+      value=true
+      if (($# > 1)) && [[ "$2" != --* ]]; then value="$2"; shift; fi
+      case "$flag" in
+        --needs-secret-service) needs_secret_service="$value" ;;
+        --needs-ssh-key) needs_ssh_key="$value" ;;
+        --yolo) yolo="$value" ;;
+      esac
+      shift ;;
+    -h | --help) usage; exit 0 ;;
+    *) usage >&2; error "unrecognized option: $1" 2 ;;
   esac
 done
 
 require_github_actions
 configure_debug "$debug_setting"
+# Validate every selector and flag before creating fixtures or onboarding.
+SETUP_PROFILE="$profile" SETUP_WORKSPACE="$workspace" SETUP_STATE_DIR="$state_dir" \
+  SETUP_MODEL="$model" SETUP_AGENT_SYSTEM="$agent_system" SETUP_OP_CACHE="$op_cache" \
+  SETUP_NEEDS_SECRET_SERVICE="$needs_secret_service" SETUP_NEEDS_SSH_KEY="$needs_ssh_key" \
+  SETUP_YOLO="$yolo" SETUP_RUN='' GITHUB_OUTPUT=/dev/null \
+  node "$command_dir/lib/action-inputs.mjs"
+[[ -n "$profile" && -n "$workspace" && -n "$state_dir" ]] || error 'run setup-openclaw first or supply profile, workspace, and state-dir together' 2
+umask 077
 configure_context "$profile" "$workspace" "$state_dir" true
-debug "onboarding profile=$profile workspace=$workspace state-dir=$state_dir"
+export OPENCLAW_PROFILE="$profile" OPENCLAW_CONFIG_PATH="$openclaw_config_path" OPENCLAW_STATE_DIR="$openclaw_state_dir"
+export SETUP_OPENCLAW_DEBUG="$debug_enabled" SETUP_OP_CACHE="$op_cache"
 
-run_openclaw onboard \
-  --non-interactive \
-  --accept-risk \
-  --mode local \
-  --workspace "$workspace" \
-  --gateway-bind loopback \
-  --auth-choice skip \
-  --skip-daemon \
-  --skip-health \
-  --skip-bootstrap \
-  --skip-channels \
-  --skip-hooks \
-  --skip-search \
-  --skip-skills \
-  --skip-ui \
-  --suppress-gateway-token-output
-
-set +e
-validation_report="$(run_openclaw config validate --json 2>&1)"
-validation_status=$?
-set -e
-if ((validation_status != 0)); then
-  error_message 'OpenClaw configuration validation failed'
-  if [[ "$debug_enabled" == 'true' ]]; then
-    printf '%s\n' "$validation_report" | tail -n 20 | redact_stream >&2
+fixture_pids=()
+fixture_starts=()
+created_key=''
+cleanup_setup() {
+  local status=$? index
+  trap - EXIT
+  if [[ -n "$selection_file" && -f "$selection_file" ]]; then
+    node "$command_dir/lib/agent-system.mjs" cleanup "$agent_system" "$selection_file" || true
   fi
-  exit "$validation_status"
-fi
-if ! printf '%s' "$validation_report" | node -e \
-  "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{const r=JSON.parse(d);process.exit(r.valid===true?0:1)})"; then
-  error 'OpenClaw setup produced an invalid configuration'
+  if ((status != 0)); then
+    for ((index=0; index<${#fixture_pids[@]}; index++)); do
+      if [[ "$(gateway_process_start "${fixture_pids[$index]}")" == "${fixture_starts[$index]}" ]]; then
+        kill -TERM "${fixture_pids[$index]}" 2>/dev/null || true
+      fi
+    done
+    if [[ -n "$created_key" ]]; then rm -f "$created_key" "$created_key.pub"; fi
+  fi
+  exit "$status"
+}
+trap cleanup_setup EXIT
+
+if [[ "$needs_ssh_key" == true ]]; then
+  [[ -n "${HOME:-}" && ! -L "$HOME/.ssh" ]] || error 'SSH home is missing or .ssh is a symbolic link'
+  key_path="$HOME/.ssh/big-test-bucket-ssh"
+  for path in "$key_path" "$key_path.pub"; do
+    [[ ! -e "$path" && ! -L "$path" ]] || error 'SSH fixture already exists'
+  done
+  mkdir -p "$HOME/.ssh"
+  chmod 700 "$HOME/.ssh"
+  created_key="$key_path"
+  run_setup_command ssh-keygen -q -t ed25519 -N '' -C agent-system-leia -f "$key_path"
+  chmod 600 "$key_path"
+  chmod 644 "$key_path.pub"
 fi
 
+if [[ "$needs_secret_service" == true && "$(uname -s)" == Linux ]]; then
+  export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=$state_dir/secret-service-bus}"
+  [[ "$DBUS_SESSION_BUS_ADDRESS" == unix:path=/* && "$DBUS_SESSION_BUS_ADDRESS" != *$'\n'* && "$DBUS_SESSION_BUS_ADDRESS" != *,* ]] || error 'D-Bus address must name one absolute unix:path socket'
+  socket_path="${DBUS_SESSION_BUS_ADDRESS#unix:path=}"
+  [[ ! -e "$socket_path" && ! -L "$socket_path" ]] || error 'Secret Service socket already exists'
+  run_setup_command sudo apt-get update
+  run_setup_command sudo apt-get install --no-install-recommends --yes dbus-x11 gnome-keyring libsecret-tools
+  secret_home="$state_dir/secret-service-home"
+  mkdir -p "$secret_home"
+  dbus_pid="$(dbus-daemon --session --fork --address="$DBUS_SESSION_BUS_ADDRESS" --print-pid=1)"
+  [[ "$dbus_pid" =~ ^[1-9][0-9]*$ ]] || error 'D-Bus did not report a process ID'
+  fixture_pids+=("$dbus_pid")
+  fixture_starts+=("$(gateway_process_start "$dbus_pid")")
+  HOME="$secret_home" gnome-keyring-daemon --foreground --unlock --components=secrets \
+    > "$state_dir/secret-service.log" 2>&1 <<< 'test-keyring-password' &
+  keyring_pid=$!
+  fixture_pids+=("$keyring_pid")
+  fixture_starts+=("$(gateway_process_start "$keyring_pid")")
+  ready=false
+  for ((attempt=0; attempt<30; attempt++)); do
+    if printf fixture | timeout 3 secret-tool store --label=setup-openclaw fixture setup-openclaw >/dev/null 2>&1; then
+      [[ "$(timeout 3 secret-tool lookup fixture setup-openclaw)" == fixture ]] || error 'Secret Service readback failed'
+      timeout 3 secret-tool clear fixture setup-openclaw
+      ready=true
+      break
+    fi
+    kill -0 "$keyring_pid" 2>/dev/null || error 'Secret Service exited before readiness'
+    sleep 1
+  done
+  [[ "$ready" == true ]] || error 'Secret Service did not become ready'
+fi
+
+onboard_args=(--non-interactive --accept-risk --mode local --workspace "$workspace"
+  --gateway-bind loopback --skip-daemon --skip-health --skip-bootstrap --skip-channels
+  --skip-hooks --skip-search --skip-skills --skip-ui --suppress-gateway-token-output)
+if [[ -n "$model" ]]; then
+  onboard_args+=(--auth-choice openai-api-key --openai-api-key "$OPENAI_API_KEY" --secret-input-mode plaintext)
+else
+  onboard_args+=(--auth-choice skip)
+fi
+run_setup_command run_openclaw onboard "${onboard_args[@]}"
+if [[ -n "$model" ]]; then run_setup_command run_openclaw models set "$model"; fi
+case "$model" in
+  openai/gpt-5.4 | openai/gpt-5.4-*)
+    run_setup_command run_openclaw config set plugins.entries.codex.config.codexDynamicToolsLoading direct ;;
+esac
+
+if [[ -n "$agent_system" ]]; then
+  if [[ -z "$selection_file" ]]; then
+    selection_file="$(mktemp "$RUNNER_TEMP/openclaw-selection.XXXXXX")"
+    GITHUB_OUTPUT=/dev/null node "$command_dir/lib/agent-system.mjs" prepare "$agent_system" "$selection_file"
+  fi
+  node "$command_dir/lib/agent-system.mjs" install "$agent_system" "$selection_file"
+fi
+if [[ "$yolo" == true ]]; then run_setup_command run_openclaw exec-policy preset yolo; fi
+validation_file="$(mktemp "$state_dir/validation.XXXXXX")"
+if run_openclaw config validate --json > "$validation_file" 2>&1; then
+  validation_status=0
+else
+  validation_status=$?
+  tail -n 20 "$validation_file" | redact_stream >&2
+  rm -f "$validation_file"
+  error 'OpenClaw configuration validation failed' "$validation_status"
+fi
+node "$command_dir/lib/verify-runtime.mjs" config < "$validation_file"
+rm -f "$validation_file"
 write_context
+if [[ "$needs_ssh_key" == true ]]; then
+  printf 'SSH_PRIVATE_KEY_PATH=%s\nSSH_PUBLIC_KEY_PATH=%s.pub\n' "$key_path" "$key_path" >> "$GITHUB_ENV"
+  printf 'private-key-path=%s\npublic-key-path=%s.pub\n' "$key_path" "$key_path" >> "$GITHUB_OUTPUT"
+fi
+if [[ -n "${secret_home:-}" ]]; then
+  printf 'DBUS_SESSION_BUS_ADDRESS=%s\nSECRET_SERVICE_HOME=%s\n' "$DBUS_SESSION_BUS_ADDRESS" "$secret_home" >> "$GITHUB_ENV"
+  printf 'dbus-address=%s\nsecret-service-home=%s\n' "$DBUS_SESSION_BUS_ADDRESS" "$secret_home" >> "$GITHUB_OUTPUT"
+fi
 printf 'OpenClaw profile %s is ready in %s\n' "$profile" "$workspace"
