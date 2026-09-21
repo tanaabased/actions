@@ -1,5 +1,39 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+### Action catalog
+
+- Added [`npm-pack`](https://github.com/tanaabased/actions/tree/main/npm-pack) to pack a package and expose its exact tarball and metadata.
+- Added [`prepare-release`](https://github.com/tanaabased/actions/tree/main/prepare-release) to prepare release files without pushing Git changes.
+- Added [`publish-clawhub`](https://github.com/tanaabased/actions/tree/main/publish-clawhub) to publish a tested code-plugin tarball and wait for ClawHub's result.
+- Added [`publish-codex-plugin`](https://github.com/tanaabased/actions/tree/main/publish-codex-plugin) to prepare and optionally upload a Codex plugin release archive.
+- Added [`publish-npm`](https://github.com/tanaabased/actions/tree/main/publish-npm) to publish a tested tarball using trusted publishing or tokens, with stable and prerelease channels.
+- Added [`publish-repo`](https://github.com/tanaabased/actions/tree/main/publish-repo) to synchronize prepared release changes, branches, and tags.
+- Added [`run-leia`](https://github.com/tanaabased/actions/tree/main/run-leia) to run Leia scenarios with isolated cross-platform temporary state.
+- Added [`setup-bun`](https://github.com/tanaabased/actions/tree/main/setup-bun) to discover and install the caller's Bun version.
+- Added [`setup-node`](https://github.com/tanaabased/actions/tree/main/setup-node) to discover and install the caller's Node.js version.
+- Added [`setup-openclaw`](https://github.com/tanaabased/actions/tree/main/setup-openclaw) to install OpenClaw and prepare isolated Agent System tests on Linux and macOS.
+- Added [`ssh-test-key`](https://github.com/tanaabased/actions/tree/main/ssh-test-key) to generate local Ed25519 SSH keys for test fixtures.
+- Added [`validate-codex-plugin`](https://github.com/tanaabased/actions/tree/main/validate-codex-plugin) to validate Codex plugins against a pinned OpenAI validator.
+- Added [`vitepress-build-check`](https://github.com/tanaabased/actions/tree/main/vitepress-build-check) to run optional preparation and a required VitePress build.
+
+### OpenClaw and Agent System
+
+- Added Agent System installation from exact versions, local tarballs or source directories, and explicit GitHub refs. [#37](https://github.com/tanaabased/actions/pull/37)
+- Added inferred install, setup, and run modes with optional Secret Service, SSH, model, opCache, and YOLO configuration. [#37](https://github.com/tanaabased/actions/pull/37)
+- Added setup, gateway, and diagnostics CLI commands with saved context, readiness checks, bare `--debug` switches, and gateway log paths. [#37](https://github.com/tanaabased/actions/pull/37) [#39](https://github.com/tanaabased/actions/pull/39)
+
+### Shared behavior and release reliability
+
+- Added `debug: auto|true|false` across the catalog; `auto` follows `RUNNER_DEBUG=1`.
+- Added credential-free publisher dry runs that validate local artifacts without external publication or mutation. [#35](https://github.com/tanaabased/actions/pull/35)
+- Fixed parallel release checkout failures by pinning each publication job to the triggering commit, preserving independent publishers. [#41](https://github.com/tanaabased/actions/pull/41)
+- Removed registry visibility polling and redundant Git readbacks; successful publication commands determine success. [#40](https://github.com/tanaabased/actions/pull/40)
+
+### Upgrading from early betas
+
+- Removed `setup-agent-system`; use `setup-openclaw` with `agent-system` or the `openclaw-setup --agent-system` helper. [#37](https://github.com/tanaabased/actions/pull/37)
+- Removed `test-mode` from non-mutating actions and renamed it to `dry-run` on publishers; update existing workflows accordingly. [#35](https://github.com/tanaabased/actions/pull/35)
+
 ## v1.0.0-beta.5 - [September 17, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.0-beta.5)
 
 - Fixed parallel release checkout failures by pinning each job to the triggering commit. [#41](https://github.com/tanaabased/actions/pull/41)
