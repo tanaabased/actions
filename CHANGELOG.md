@@ -1,5 +1,8 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+- Fixed catalog releases to supply credentials for updating the npm `edge` tag after stable publication.
+- Updated `publish-npm` to advance `edge` on stable releases by default; supply a channel token or explicitly disable the update.
+
 ## v1.0.0 - [September 21, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.0)
 
 ### Action catalog

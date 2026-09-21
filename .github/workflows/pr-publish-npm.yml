@@ -48,7 +48,6 @@ jobs:
           dry-run: true
           debug: true
           tarball: ${{ steps.pack.outputs.tarball-path }}
-          update-prerelease-tag-on-stable: true
       - name: Verify publication metadata
         env:
           EXPECTED_CHANNEL: ${{ matrix.expected-channel }}

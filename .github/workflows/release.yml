@@ -43,6 +43,7 @@ jobs:
         uses: ./publish-npm
         with:
           tarball: ${{ steps.pack.outputs.tarball-path }}
+          channel-token: ${{ secrets.TANAAB_NPM_DEPLOY }}
 
   publish-repo:
     name: Publish repository
