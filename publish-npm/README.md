@@ -1,8 +1,8 @@
 # `publish-npm`
 
 Publishes one supplied, tested npm tarball without repacking the checkout. The
-action selects `latest` for stable versions and `edge` for prereleases by
-default. Existing registry versions cannot be republished.
+action publishes stable versions to `latest`, then moves `edge` to that version.
+Prereleases update only `edge`. Existing registry versions cannot be republished.
 
 Use [`npm-pack`](../npm-pack/README.md) to produce the artifact.
 
@@ -13,9 +13,9 @@ Supported runner: Linux (`ubuntu-24.04`).
 Configure npm's trusted publisher for the calling repository and workflow. The
 action selects the project's Node version and installs npm 11 at or above
 `11.5.1`. Leave `registry-token` unset so npm can exchange GitHub's OIDC identity.
-Trusted publishing authorizes publication but not `npm dist-tag`; the optional
-stable-to-`edge` update needs a separate granular token through
-`channel-token`.
+Trusted publishing authorizes publication but not `npm dist-tag`; the default
+stable-to-`edge` update needs a granular token through `channel-token`.
+Token-authenticated publication can reuse `registry-token` for the tag update.
 
 ```yaml
 permissions:
@@ -31,7 +31,6 @@ steps:
   - uses: tanaabased/actions/publish-npm@v1
     with:
       tarball: ${{ steps.pack.outputs.tarball-path }}
-      update-prerelease-tag-on-stable: true
       channel-token: ${{ secrets.NPM_CHANNEL_TOKEN }}
 ```
 
@@ -47,7 +46,7 @@ steps:
 | `channel-token` | No | — | Token used only to move the prerelease tag after a stable publication. |
 | `stable-tag` | No | `latest` | Distribution tag for stable versions. |
 | `prerelease-tag` | No | `edge` | Distribution tag for prerelease versions. |
-| `update-prerelease-tag-on-stable` | No | `false` | Move `prerelease-tag` to a published stable version. |
+| `update-prerelease-tag-on-stable` | No | `true` | Move `prerelease-tag` to a published stable version; requires `channel-token` or `registry-token`. |
 | `access` | No | `public` | Access passed to `npm publish`; leave empty for registry defaults. |
 | `working-directory` | No | `${{ github.workspace }}` | Project directory for runtime discovery. |
 | `node-version` | No | `auto` | [Project discovery](../setup-node/README.md) or explicit Node version. |
@@ -107,9 +106,11 @@ The action inspects the tarball offline and makes one live
 reports publication errors. Successful publication is sufficient; the action
 never polls registry visibility or retries publication.
 
-A stable publication updates the prerelease tag only when
-`update-prerelease-tag-on-stable` is `true`. The action checks the required token
-before publishing and preserves any `npm dist-tag add` failure.
+A stable publication updates the prerelease tag by default. Set
+`update-prerelease-tag-on-stable: false` to keep the channels separate; this also
+allows token-free trusted publishing. Otherwise, the action checks for
+`channel-token` or `registry-token` before publishing and preserves any
+`npm dist-tag add` failure. Dry runs need neither token and never update tags.
 
 After an interrupted publication or a failed tag update, inspect the version
 and tags before retrying. If the version exists, repair only the tag:

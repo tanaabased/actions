@@ -32,9 +32,9 @@ inputs:
     required: false
     default: edge
   update-prerelease-tag-on-stable:
-    description: Move the prerelease tag to a successfully published stable version.
+    description: Move the prerelease tag to a successfully published stable version; requires channel-token or registry-token.
     required: false
-    default: 'false'
+    default: 'true'
   access:
     description: npm package access passed to npm publish; leave empty to use registry defaults.
     required: false
