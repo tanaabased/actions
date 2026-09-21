@@ -1,5 +1,7 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+## v1.0.0 - [September 21, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.0)
+
 ### Action catalog
 
 - Added [`npm-pack`](https://github.com/tanaabased/actions/tree/main/npm-pack) to pack a package and expose its exact tarball and metadata.
