@@ -107,23 +107,6 @@ asset replacement, and download require a live consumer release.
 
 ## Notes
 
-### Remaining callers (2026-09-26 audit)
-
-GitHub code search of indexed default branches across the 17 visible,
-non-archived `tanaabased` repositories found these active external v1 callers,
-both in `agentbox`:
-
-- [Release workflow](https://github.com/tanaabased/agentbox/blob/6476a313337caba101067f45e5d00138cfbedd5b/.github/workflows/release.yml) uploads the archive.
-- [PR release test](https://github.com/tanaabased/agentbox/blob/6476a313337caba101067f45e5d00138cfbedd5b/.github/workflows/release-tests.yml) builds and verifies it in dry run.
-
-No reusable-workflow reference to this action surfaced. The other matches are
-this repository's [catalog](../README.md),
-[changelog](../CHANGELOG.md), [action test](../.github/workflows/pr-publish-codex-plugin.yml),
-and [test helper](../.github/scripts/check-debug-contract.sh),
-plus Canon [guidance](https://github.com/tanaabased/canon/blob/34365bbc37e23c90638e369efb3463cb26be894b/skills/github-workflow-author/SKILL.md)
-and a [contract test](https://github.com/tanaabased/canon/blob/34365bbc37e23c90638e369efb3463cb26be894b/test/workflow-catalog-contract.spec.js);
-these are not external publication callers. Recheck consumers before any removal.
-
 ### Upload replacement and retries
 
 Live mode calls `gh release upload` once with `--clobber`. An existing asset
