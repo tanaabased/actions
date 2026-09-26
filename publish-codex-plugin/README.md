@@ -1,14 +1,46 @@
 # `publish-codex-plugin`
 
-Prepares one Codex plugin archive and optionally uploads it to an existing
-GitHub Release with an explicit dependency policy.
+**Deprecated for new Codex plugin releases.** Use [`npm-pack`](../npm-pack/README.md)
+→ [`publish-npm`](../publish-npm/README.md) for npm distribution. This v1 action
+still prepares and optionally uploads a release archive for existing callers.
+Removing it requires a breaking release after known callers have migrated or
+have an explicit supported archive alternative.
 
 Supported runner: Linux (`ubuntu-24.04`).
 
 ## Usage
 
-Live upload requires job-level `contents: write` permission and a token with
-access to the target repository.
+For npm distribution, build all required runtime files before packing:
+`npm-pack` disables package scripts, and Codex does not run install-time
+lifecycle scripts. Inspect and test the **extracted npm tarball**, including
+the plugin manifest, every required resource it references, and packaged runtime
+code. Exercise runtime entry points from the extracted package, not the source
+checkout. Only then pass the **same tarball** to `publish-npm`:
+
+```yaml
+- id: pack
+  uses: tanaabased/actions/npm-pack@v1
+- name: Verify extracted plugin package
+  env:
+    TARBALL: ${{ steps.pack.outputs.tarball-path }}
+  run: |
+    package_root="$(mktemp -d)"
+    tar -xzf "$TARBALL" -C "$package_root"
+    test -f "$package_root/package/.codex-plugin/plugin.json"
+    ./scripts/check-plugin-package.sh "$package_root/package"
+- uses: tanaabased/actions/publish-npm@v1
+  with:
+    tarball: ${{ steps.pack.outputs.tarball-path }}
+```
+
+The caller-owned `check-plugin-package.sh` must check the plugin's actual
+required resources and execute a smoke test of its packaged runtime code; the
+paths and commands depend on that plugin. See each action's README for setup,
+credentials, and release behavior. [`validate-codex-plugin`](../validate-codex-plugin/README.md)
+remains supported for plugin validation.
+
+For existing archive consumers, live upload requires job-level `contents: write`
+permission and a token with access to the target repository:
 
 ```yaml
 permissions:
@@ -74,6 +106,23 @@ PR tests compare unpacked contents for both dependency policies. Release access,
 asset replacement, and download require a live consumer release.
 
 ## Notes
+
+### Remaining callers (2026-09-26 audit)
+
+GitHub code search of indexed default branches across the 17 visible,
+non-archived `tanaabased` repositories found these active external v1 callers,
+both in `agentbox`:
+
+- [Release workflow](https://github.com/tanaabased/agentbox/blob/6476a313337caba101067f45e5d00138cfbedd5b/.github/workflows/release.yml) uploads the archive.
+- [PR release test](https://github.com/tanaabased/agentbox/blob/6476a313337caba101067f45e5d00138cfbedd5b/.github/workflows/release-tests.yml) builds and verifies it in dry run.
+
+No reusable-workflow reference to this action surfaced. The other matches are
+this repository's [catalog](../README.md),
+[changelog](../CHANGELOG.md), [action test](../.github/workflows/pr-publish-codex-plugin.yml),
+and [test helper](../.github/scripts/check-debug-contract.sh),
+plus Canon [guidance](https://github.com/tanaabased/canon/blob/34365bbc37e23c90638e369efb3463cb26be894b/skills/github-workflow-author/SKILL.md)
+and a [contract test](https://github.com/tanaabased/canon/blob/34365bbc37e23c90638e369efb3463cb26be894b/test/workflow-catalog-contract.spec.js);
+these are not external publication callers. Recheck consumers before any removal.
 
 ### Upload replacement and retries
 
