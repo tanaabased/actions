@@ -62,16 +62,26 @@ steps:
 | `node-version` | No | `auto` | [Project discovery](../setup-node/README.md) or explicit Node version. |
 | `npm-version` | No | `^11.5.1` | npm version range installed for publication. |
 
-`stable-tag`, `prerelease-tag`, and `update-prerelease-tag-on-stable` remain
-supported as deprecated aliases for `latest-tag`, `edge-tag`, and
-`sync-edge-tag`, respectively. If both names for one setting are supplied,
-their values must match. Otherwise, the action fails before publication.
-
 For a consumer pull-request dry run, set `dry-run: true`. It inspects and
 validates the supplied tarball through npm's native dry-run path without
 publication or channel updates. Its local artifact outputs remain meaningful.
 
 Debug enables verbose npm output.
+
+### Deprecated inputs
+
+These aliases still work for existing `@v1` callers but will be removed in a
+future breaking release. New workflows should use the replacement names.
+
+| Input | Required | Effective default | Description |
+| --- | --- | --- | --- |
+| `stable-tag` | No | `latest` | Deprecated alias for `latest-tag`. |
+| `prerelease-tag` | No | `edge` | Deprecated alias for `edge-tag`. |
+| `update-prerelease-tag-on-stable` | No | `true` | Deprecated alias for `sync-edge-tag`. |
+
+To migrate, replace each old input name with its alias target; values need no
+change. If both names for one setting are supplied, their values must match or
+the action fails before publication.
 
 ## Outputs
 

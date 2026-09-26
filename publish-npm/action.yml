@@ -32,15 +32,6 @@ inputs:
   sync-edge-tag:
     description: Move the edge tag after a latest-tag publication; requires channel-token or registry-token.
     required: false
-  stable-tag:
-    description: Deprecated alias for latest-tag.
-    required: false
-  prerelease-tag:
-    description: Deprecated alias for edge-tag.
-    required: false
-  update-prerelease-tag-on-stable:
-    description: Deprecated alias for sync-edge-tag.
-    required: false
   access:
     description: npm package access passed to npm publish; leave empty to use registry defaults.
     required: false
@@ -58,6 +49,17 @@ inputs:
     required: false
     default: '^11.5.1'
 
+  # Deprecated aliases kept for v1 callers; remove only in a breaking release.
+  stable-tag:
+    description: Deprecated alias for latest-tag.
+    required: false
+  prerelease-tag:
+    description: Deprecated alias for edge-tag.
+    required: false
+  update-prerelease-tag-on-stable:
+    description: Deprecated alias for sync-edge-tag.
+    required: false
+
 outputs:
   tarball-path:
     description: Absolute path to the supplied tarball.
@@ -71,6 +73,7 @@ outputs:
   channel:
     description: Distribution tag selected for the publication.
     value: ${{ steps.package.outputs.channel }}
+  # Deprecated output kept for v1 callers; remove only in a breaking release.
   release-type:
     description: Deprecated SemVer syntax label; not GitHub release status or the selected npm tag.
     value: ${{ steps.package.outputs.release-type }}
