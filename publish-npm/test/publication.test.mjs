@@ -7,7 +7,6 @@ import { test } from 'node:test';
 
 const action = readFileSync(new URL('../action.yml', import.meta.url), 'utf8');
 const steps = action.split(/^    - /m);
-const updateDefault = action.match(/  update-prerelease-tag-on-stable:\n(?:    .*\n)*?    default: '(true|false)'/)[1];
 
 function runStep(name, environment = {}) {
   const directory = mkdtempSync(join(tmpdir(), 'npm-publication-'));
@@ -41,7 +40,9 @@ process.exitCode = Number(process.env.GH_STATUS || 0);
       env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, CALLS: join(directory, 'calls'),
         ACCESS: 'public', CHANNEL: 'edge', REGISTRY_URL: 'https://registry.example.invalid',
         TARBALL_PATH: '/fixture/package.tgz', PACKAGE_NAME: '@fixture/package',
-        PACKAGE_VERSION: '1.2.3', PRERELEASE_TAG: 'edge', STABLE_TAG: 'latest',
+        PACKAGE_VERSION: '1.2.3', EDGE_TAG: '', LATEST_TAG: '',
+        LEGACY_PRERELEASE_TAG: '', LEGACY_STABLE_TAG: '',
+        LEGACY_SYNC_EDGE_TAG: '', SYNC_EDGE_TAG: '',
         TARBALL: join(directory, 'package.tgz'), GITHUB_OUTPUT: join(directory, 'output'),
         GITHUB_EVENT_NAME: 'push', GITHUB_SERVER_URL: 'https://github.com',
         RELEASE_NODE_ID: '', ...environment },
@@ -59,7 +60,7 @@ process.exitCode = Number(process.env.GH_STATUS || 0);
 
 // Exercise the checked-in publication conditions and shell steps with fake GitHub and npm commands.
 // This covers command selection and ordering, not live registry authentication.
-function runPublication({ version = '1.2.3', release, update = updateDefault,
+function runPublication({ version = '1.2.3', release, inputs = {},
   dryRun = 'false', token = 'fixture-token' } = {}) {
   const inspected = runStep('Inspect tarball', {
     PACKED_VERSION: version,
@@ -68,17 +69,23 @@ function runPublication({ version = '1.2.3', release, update = updateDefault,
     GH_RESPONSE: release ? JSON.stringify({ data: { node: {
       __typename: 'Release', ...release,
     } } }) : '',
+    LATEST_TAG: inputs['latest-tag'] || '',
+    EDGE_TAG: inputs['edge-tag'] || '',
+    SYNC_EDGE_TAG: inputs['sync-edge-tag'] || '',
+    LEGACY_STABLE_TAG: inputs['stable-tag'] || '',
+    LEGACY_PRERELEASE_TAG: inputs['prerelease-tag'] || '',
+    LEGACY_SYNC_EDGE_TAG: inputs['update-prerelease-tag-on-stable'] || '',
   });
   if (inspected.status !== 0) return inspected;
   const values = {
     'inputs.dry-run': dryRun,
-    'inputs.update-prerelease-tag-on-stable': update,
+    'steps.package.outputs.sync-edge-tag': inspected.output['sync-edge-tag'],
     'steps.package.outputs.promote-both': inspected.output['promote-both'],
   };
   const calls = [];
   for (const step of steps) {
     const name = step.split('\n')[0].replace('name: ', '');
-    if (!['Validate channel update authentication', 'Dry-run publication', 'Publish tarball', 'Update prerelease channel'].includes(name)) continue;
+    if (!['Validate channel update authentication', 'Dry-run publication', 'Publish tarball', 'Sync edge tag'].includes(name)) continue;
     const expression = step.match(/      if: \$\{\{ (.*) \}\}/)[1];
     const selected = expression.split(' && ').every(term => {
       const match = term.match(/^([\w.-]+) (==|!=) '([^']*)'$/);
@@ -90,6 +97,7 @@ function runPublication({ version = '1.2.3', release, update = updateDefault,
     if (!selected) continue;
     const result = runStep(name, {
       CHANNEL: inspected.output.channel,
+      EDGE_TAG: inspected.output['edge-tag'],
       PACKAGE_VERSION: version,
       CHANNEL_TOKEN: token,
       NODE_AUTH_TOKEN: token,
@@ -103,7 +111,6 @@ function runPublication({ version = '1.2.3', release, update = updateDefault,
 test('without release context, a stable version updates latest and then edge', () => {
   const result = runPublication();
   assert.equal(result.status, 0, result.stderr);
-  assert.equal(result.output['release-type'], 'stable');
   assert.deepEqual(result.calls, [
     ['publish', '/fixture/package.tgz', '--ignore-scripts', '--tag', 'latest',
       '--registry', 'https://registry.example.invalid', '--access', 'public'],
@@ -111,8 +118,8 @@ test('without release context, a stable version updates latest and then edge', (
   ]);
 });
 
-test('stable publication can explicitly leave edge unchanged without a channel token', () => {
-  const result = runPublication({ update: 'false', token: '' });
+test('latest publication can explicitly leave edge unchanged without a channel token', () => {
+  const result = runPublication({ inputs: { 'sync-edge-tag': 'false' }, token: '' });
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.calls.length, 1);
   assert.equal(result.calls[0][0], 'publish');
@@ -122,7 +129,6 @@ test('stable publication can explicitly leave edge unchanged without a channel t
 test('without release context, a prerelease version only updates edge', () => {
   const result = runPublication({ version: '1.2.3-next.1', token: '' });
   assert.equal(result.status, 0, result.stderr);
-  assert.equal(result.output['release-type'], 'prerelease');
   assert.equal(result.calls.length, 1);
   assert.equal(result.calls[0][0], 'publish');
   assert.equal(result.calls[0][4], 'edge');
@@ -132,7 +138,7 @@ test('GitHub Latest release promotes a SemVer prerelease to latest and edge', ()
   const result = runPublication({ version: '1.2.3-beta.12',
     release: { isLatest: true, isPrerelease: false } });
   assert.equal(result.status, 0, result.stderr);
-  assert.equal(result.output['release-type'], 'prerelease');
+  assert.equal(result.output['release-type'], 'prerelease'); // Deprecated output remains SemVer-only.
   assert.equal(result.output.channel, 'latest');
   assert.deepEqual(result.calls, [
     ['publish', '/fixture/package.tgz', '--ignore-scripts', '--tag', 'latest',
@@ -145,10 +151,54 @@ test('GitHub Latest release promotes a SemVer prerelease to latest and edge', ()
 test('GitHub prerelease publishes only to edge despite a stable SemVer version', () => {
   const result = runPublication({ release: { isLatest: false, isPrerelease: true }, token: '' });
   assert.equal(result.status, 0, result.stderr);
-  assert.equal(result.output['release-type'], 'stable');
   assert.equal(result.output.channel, 'edge');
   assert.equal(result.calls.length, 1);
   assert.equal(result.calls[0][4], 'edge');
+});
+
+test('preferred tag inputs customize latest and edge without changing publication policy', () => {
+  const result = runPublication({ inputs: { 'latest-tag': 'recommended', 'edge-tag': 'next' } });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.output.channel, 'recommended');
+  assert.deepEqual(result.calls, [
+    ['publish', '/fixture/package.tgz', '--ignore-scripts', '--tag', 'recommended',
+      '--registry', 'https://registry.example.invalid', '--access', 'public'],
+    ['dist-tag', 'add', '@fixture/package@1.2.3', 'next',
+      '--registry', 'https://registry.example.invalid'],
+  ]);
+});
+
+test('legacy tag inputs and sync opt-out still work', () => {
+  const latest = runPublication({ inputs: { 'stable-tag': 'recommended',
+    'prerelease-tag': 'next', 'update-prerelease-tag-on-stable': 'false' }, token: '' });
+  assert.equal(latest.status, 0, latest.stderr);
+  assert.equal(latest.output.channel, 'recommended');
+  assert.equal(latest.calls.length, 1);
+  const edge = runPublication({ release: { isLatest: false, isPrerelease: true },
+    inputs: { 'prerelease-tag': 'next' }, token: '' });
+  assert.equal(edge.status, 0, edge.stderr);
+  assert.equal(edge.output.channel, 'next');
+  assert.equal(edge.calls.length, 1);
+});
+
+test('conflicting preferred and legacy inputs fail before publication', () => {
+  for (const inputs of [
+    { 'latest-tag': 'recommended', 'stable-tag': 'stable' },
+    { 'edge-tag': 'next', 'prerelease-tag': 'preview' },
+    { 'sync-edge-tag': 'true', 'update-prerelease-tag-on-stable': 'false' },
+  ]) {
+    const result = runPublication({ inputs });
+    assert.notEqual(result.status, 0);
+    assert.deepEqual(result.calls, []);
+    assert.match(result.stderr, /conflicting values/);
+  }
+});
+
+test('invalid sync-edge-tag fails before publication', () => {
+  const result = runPublication({ inputs: { 'sync-edge-tag': 'sometimes' } });
+  assert.notEqual(result.status, 0);
+  assert.deepEqual(result.calls, []);
+  assert.match(result.stderr, /sync-edge-tag must be true or false/);
 });
 
 test('regular non-Latest GitHub release preserves npm latest', () => {
@@ -202,8 +252,8 @@ test('dry run stays offline and credential-free', () => {
     '--ignore-scripts', '--tag', 'edge', '--registry', 'https://registry.example.invalid']]);
 });
 
-test('channel update preserves npm failure status', () => {
-  const result = runStep('Update prerelease channel', { NPM_STATUS: '23' });
+test('edge sync preserves npm failure status', () => {
+  const result = runStep('Sync edge tag', { NPM_STATUS: '23', EDGE_TAG: 'edge' });
   assert.equal(result.status, 23, result.stderr);
   assert.deepEqual(result.calls, [['dist-tag', 'add', '@fixture/package@1.2.3', 'edge',
     '--registry', 'https://registry.example.invalid']]);
