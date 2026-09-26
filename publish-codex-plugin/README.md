@@ -1,14 +1,46 @@
 # `publish-codex-plugin`
 
-Prepares one Codex plugin archive and optionally uploads it to an existing
-GitHub Release with an explicit dependency policy.
+**Deprecated for new Codex plugin releases.** Use [`npm-pack`](../npm-pack/README.md)
+→ [`publish-npm`](../publish-npm/README.md) for npm distribution. This v1 action
+still prepares and optionally uploads a release archive for existing callers.
+Removing it requires a breaking release after known callers have migrated or
+have an explicit supported archive alternative.
 
 Supported runner: Linux (`ubuntu-24.04`).
 
 ## Usage
 
-Live upload requires job-level `contents: write` permission and a token with
-access to the target repository.
+For npm distribution, build all required runtime files before packing:
+`npm-pack` disables package scripts, and Codex does not run install-time
+lifecycle scripts. Inspect and test the **extracted npm tarball**, including
+the plugin manifest, every required resource it references, and packaged runtime
+code. Exercise runtime entry points from the extracted package, not the source
+checkout. Only then pass the **same tarball** to `publish-npm`:
+
+```yaml
+- id: pack
+  uses: tanaabased/actions/npm-pack@v1
+- name: Verify extracted plugin package
+  env:
+    TARBALL: ${{ steps.pack.outputs.tarball-path }}
+  run: |
+    package_root="$(mktemp -d)"
+    tar -xzf "$TARBALL" -C "$package_root"
+    test -f "$package_root/package/.codex-plugin/plugin.json"
+    ./scripts/check-plugin-package.sh "$package_root/package"
+- uses: tanaabased/actions/publish-npm@v1
+  with:
+    tarball: ${{ steps.pack.outputs.tarball-path }}
+```
+
+The caller-owned `check-plugin-package.sh` must check the plugin's actual
+required resources and execute a smoke test of its packaged runtime code; the
+paths and commands depend on that plugin. See each action's README for setup,
+credentials, and release behavior. [`validate-codex-plugin`](../validate-codex-plugin/README.md)
+remains supported for plugin validation.
+
+For existing archive consumers, live upload requires job-level `contents: write`
+permission and a token with access to the target repository:
 
 ```yaml
 permissions:
