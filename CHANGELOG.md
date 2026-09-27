@@ -1,5 +1,7 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+## v1.0.2 - [September 27, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.2)
+
 - Added preferred `publish-npm` inputs `latest-tag`, `edge-tag`, and `sync-edge-tag`, retaining old aliases. [#44](https://github.com/tanaabased/actions/issues/44) [#46](https://github.com/tanaabased/actions/pull/46)
 - Deprecated `publish-codex-plugin`; use `npm-pack` and `publish-npm` for new Codex plugin releases. [#43](https://github.com/tanaabased/actions/issues/43) [#45](https://github.com/tanaabased/actions/pull/45)
 - Deprecated the redundant `publish-npm` `release-type` output; it remains available in v1. [#44](https://github.com/tanaabased/actions/issues/44) [#46](https://github.com/tanaabased/actions/pull/46)
