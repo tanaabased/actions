@@ -91,7 +91,18 @@ the action fails before publication.
 | `package-name` | Package name read from the tarball. |
 | `package-version` | Package version read from the tarball. |
 | `channel` | Selected distribution tag. |
-| `release-type` | Deprecated. Package version's SemVer syntax: `stable` or `prerelease`. It is neither GitHub release status nor the selected npm tag; use `package-version` if the distinction matters. |
+
+### Deprecated outputs
+
+This output remains available to existing `@v1` callers but will be removed in
+a future breaking release.
+
+| Output | Description |
+| --- | --- |
+| `release-type` | Package version's SemVer syntax: `stable` or `prerelease`; neither GitHub release status nor the selected npm tag. |
+
+To migrate, use `channel` for the selected npm tag. If version syntax matters,
+derive it from `package-version` rather than relying on `release-type`.
 
 ## Examples
 

@@ -41,7 +41,7 @@ Server does not support.
 
 | Action | Purpose | Migration |
 | --- | --- | --- |
-| [publish-codex-plugin](publish-codex-plugin/README.md) | Prepare and optionally upload a Codex plugin release archive. | For new releases, test the extracted package from [npm-pack](npm-pack/README.md), then publish that same tarball with [publish-npm](publish-npm/README.md). |
+| [publish-codex-plugin](publish-codex-plugin/README.md) | Prepare and optionally upload a Codex plugin release archive. | For new releases, pack with [npm-pack](npm-pack/README.md) and publish with [publish-npm](publish-npm/README.md). |
 
 `publish-codex-plugin@v1` remains functional for existing callers. Removing it
 requires a breaking release after known callers migrate or have a supported
