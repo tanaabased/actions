@@ -1,5 +1,10 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+- Added preferred `publish-npm` inputs `latest-tag`, `edge-tag`, and `sync-edge-tag`, retaining old aliases. [#44](https://github.com/tanaabased/actions/issues/44) [#46](https://github.com/tanaabased/actions/pull/46)
+- Deprecated `publish-codex-plugin`; use `npm-pack` and `publish-npm` for new Codex plugin releases. [#43](https://github.com/tanaabased/actions/issues/43) [#45](https://github.com/tanaabased/actions/pull/45)
+- Deprecated the redundant `publish-npm` `release-type` output; it remains available in v1. [#44](https://github.com/tanaabased/actions/issues/44) [#46](https://github.com/tanaabased/actions/pull/46)
+- Fixed `publish-npm` tag selection to follow GitHub Latest status for release events. [#44](https://github.com/tanaabased/actions/issues/44) [#46](https://github.com/tanaabased/actions/pull/46)
+
 ## v1.0.1 - [September 21, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.1)
 
 - Fixed catalog releases to supply credentials for updating the npm `edge` tag after stable publication.

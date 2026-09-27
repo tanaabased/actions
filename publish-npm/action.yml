@@ -21,20 +21,17 @@ inputs:
     description: Token used for publication; omit for npm trusted publishing.
     required: false
   channel-token:
-    description: Token used only to update the prerelease channel after a stable publication.
+    description: Token used only to sync the edge tag after a latest-tag publication.
     required: false
-  stable-tag:
-    description: Distribution tag used for stable versions.
+  latest-tag:
+    description: Distribution tag used for GitHub Latest releases or stable SemVer fallback.
     required: false
-    default: latest
-  prerelease-tag:
-    description: Distribution tag used for prerelease versions.
+  edge-tag:
+    description: Distribution tag used for other releases or prerelease SemVer fallback.
     required: false
-    default: edge
-  update-prerelease-tag-on-stable:
-    description: Move the prerelease tag to a successfully published stable version; requires channel-token or registry-token.
+  sync-edge-tag:
+    description: Move the edge tag after a latest-tag publication; requires channel-token or registry-token.
     required: false
-    default: 'true'
   access:
     description: npm package access passed to npm publish; leave empty to use registry defaults.
     required: false
@@ -52,6 +49,17 @@ inputs:
     required: false
     default: '^11.5.1'
 
+  # Deprecated aliases kept for v1 callers; remove only in a breaking release.
+  stable-tag:
+    description: Deprecated alias for latest-tag.
+    required: false
+  prerelease-tag:
+    description: Deprecated alias for edge-tag.
+    required: false
+  update-prerelease-tag-on-stable:
+    description: Deprecated alias for sync-edge-tag.
+    required: false
+
 outputs:
   tarball-path:
     description: Absolute path to the supplied tarball.
@@ -63,10 +71,11 @@ outputs:
     description: Package version read from the supplied tarball.
     value: ${{ steps.package.outputs.package-version }}
   channel:
-    description: Distribution tag selected for the package version.
+    description: Distribution tag selected for the publication.
     value: ${{ steps.package.outputs.channel }}
+  # Deprecated output kept for v1 callers; remove only in a breaking release.
   release-type:
-    description: Whether the package version is stable or prerelease.
+    description: Deprecated SemVer syntax label; not GitHub release status or the selected npm tag.
     value: ${{ steps.package.outputs.release-type }}
 
 runs:
@@ -111,8 +120,17 @@ runs:
       shell: bash
       env:
         NPM_CONFIG_LOGLEVEL: ${{ steps.debug.outputs.enabled == 'true' && 'verbose' || 'error' }}
-        PRERELEASE_TAG: ${{ inputs.prerelease-tag }}
-        STABLE_TAG: ${{ inputs.stable-tag }}
+        GH_ENTERPRISE_TOKEN: ${{ github.token }}
+        GH_TOKEN: ${{ github.token }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        GITHUB_SERVER_URL: ${{ github.server_url }}
+        EDGE_TAG: ${{ inputs.edge-tag }}
+        LATEST_TAG: ${{ inputs.latest-tag }}
+        LEGACY_PRERELEASE_TAG: ${{ inputs.prerelease-tag }}
+        LEGACY_STABLE_TAG: ${{ inputs.stable-tag }}
+        LEGACY_SYNC_EDGE_TAG: ${{ inputs.update-prerelease-tag-on-stable }}
+        RELEASE_NODE_ID: ${{ github.event.release.node_id }}
+        SYNC_EDGE_TAG: ${{ inputs.sync-edge-tag }}
         TARBALL: ${{ inputs.tarball }}
       run: |
         set -euo pipefail
@@ -132,8 +150,29 @@ runs:
           npm pack "$tarball_path" --dry-run --ignore-scripts --json --offline > "$metadata_json"
         )
 
-        METADATA_JSON="$metadata_json" PRERELEASE_TAG="$PRERELEASE_TAG" STABLE_TAG="$STABLE_TAG" TARBALL_PATH="$tarball_path" node <<'NODE' >> "$GITHUB_OUTPUT"
+        METADATA_JSON="$metadata_json" TARBALL_PATH="$tarball_path" node <<'NODE' >> "$GITHUB_OUTPUT"
+        const { execFileSync } = require('node:child_process');
         const fs = require('node:fs');
+
+        function resolveInput(preferredName, legacyName, preferredEnv, legacyEnv, fallback) {
+          const current = process.env[preferredEnv] || '';
+          const previous = process.env[legacyEnv] || '';
+          if (current && previous && current !== previous) {
+            throw new Error(`conflicting values for ${preferredName} and deprecated ${legacyName}`);
+          }
+          return current || previous || fallback;
+        }
+
+        const latestTag = resolveInput(
+          'latest-tag', 'stable-tag', 'LATEST_TAG', 'LEGACY_STABLE_TAG', 'latest');
+        const edgeTag = resolveInput(
+          'edge-tag', 'prerelease-tag', 'EDGE_TAG', 'LEGACY_PRERELEASE_TAG', 'edge');
+        const syncEdgeTag = resolveInput(
+          'sync-edge-tag', 'update-prerelease-tag-on-stable',
+          'SYNC_EDGE_TAG', 'LEGACY_SYNC_EDGE_TAG', 'true');
+        if (!['true', 'false'].includes(syncEdgeTag)) {
+          throw new Error('sync-edge-tag must be true or false');
+        }
 
         const result = JSON.parse(fs.readFileSync(process.env.METADATA_JSON, 'utf8'));
         if (!Array.isArray(result) || result.length !== 1) {
@@ -146,9 +185,26 @@ runs:
         }
 
         const releaseType = version.split('+', 1)[0].includes('-') ? 'prerelease' : 'stable';
-        const channel = releaseType === 'prerelease' ? process.env.PRERELEASE_TAG : process.env.STABLE_TAG;
+        let promoteBoth = releaseType === 'stable';
+        if (process.env.GITHUB_EVENT_NAME === 'release') {
+          if (!process.env.RELEASE_NODE_ID) {
+            throw new Error('release event is missing its GitHub node ID');
+          }
+          const query = 'query($id: ID!) { node(id: $id) { __typename ... on Release { isLatest isPrerelease } } }';
+          const response = JSON.parse(execFileSync('gh', [
+            'api', 'graphql', '--hostname', new URL(process.env.GITHUB_SERVER_URL).host,
+            '-f', `query=${query}`, '-F', `id=${process.env.RELEASE_NODE_ID}`,
+          ], { encoding: 'utf8' }));
+          const release = response.data?.node;
+          if (response.errors?.length || release?.__typename !== 'Release' ||
+              typeof release.isLatest !== 'boolean' || typeof release.isPrerelease !== 'boolean') {
+            throw new Error('GitHub did not return a valid release status');
+          }
+          promoteBoth = release.isLatest && !release.isPrerelease;
+        }
+        const channel = promoteBoth ? latestTag : edgeTag;
         if (!channel) {
-          throw new Error(`${releaseType} channel must not be empty`);
+          throw new Error('npm distribution tag must not be empty');
         }
 
         process.stdout.write(`tarball-path=${process.env.TARBALL_PATH}\n`);
@@ -156,6 +212,9 @@ runs:
         process.stdout.write(`package-version=${version}\n`);
         process.stdout.write(`channel=${channel}\n`);
         process.stdout.write(`release-type=${releaseType}\n`);
+        process.stdout.write(`promote-both=${promoteBoth}\n`);
+        process.stdout.write(`edge-tag=${edgeTag}\n`);
+        process.stdout.write(`sync-edge-tag=${syncEdgeTag}\n`);
         NODE
 
     - id: npm-config
@@ -190,13 +249,13 @@ runs:
         echo "channel-config=$channel_config" >> "$GITHUB_OUTPUT"
 
     - name: Validate channel update authentication
-      if: ${{ inputs.dry-run != 'true' && inputs.update-prerelease-tag-on-stable == 'true' && steps.package.outputs.release-type == 'stable' }}
+      if: ${{ inputs.dry-run != 'true' && steps.package.outputs.sync-edge-tag == 'true' && steps.package.outputs.promote-both == 'true' }}
       shell: bash
       env:
         CHANNEL_TOKEN: ${{ inputs.channel-token || inputs.registry-token }}
       run: |
         if [[ -z "$CHANNEL_TOKEN" ]]; then
-          echo "::error::Updating the prerelease tag after a stable publication requires channel-token or registry-token; npm trusted publishing does not authorize dist-tag changes."
+          echo "::error::Syncing the edge tag after a latest publication requires channel-token or registry-token; npm trusted publishing does not authorize dist-tag changes."
           exit 1
         fi
 
@@ -241,8 +300,8 @@ runs:
 
         npm "${publish_args[@]}"
 
-    - name: Update prerelease channel
-      if: ${{ inputs.dry-run != 'true' && inputs.update-prerelease-tag-on-stable == 'true' && steps.package.outputs.release-type == 'stable' }}
+    - name: Sync edge tag
+      if: ${{ inputs.dry-run != 'true' && steps.package.outputs.sync-edge-tag == 'true' && steps.package.outputs.promote-both == 'true' }}
       shell: bash
       env:
         NODE_AUTH_TOKEN: ${{ inputs.channel-token || inputs.registry-token }}
@@ -250,9 +309,9 @@ runs:
         NPM_CONFIG_LOGLEVEL: ${{ steps.debug.outputs.enabled == 'true' && 'verbose' || 'error' }}
         PACKAGE_NAME: ${{ steps.package.outputs.package-name }}
         PACKAGE_VERSION: ${{ steps.package.outputs.package-version }}
-        PRERELEASE_TAG: ${{ inputs.prerelease-tag }}
+        EDGE_TAG: ${{ steps.package.outputs.edge-tag }}
         REGISTRY_URL: ${{ inputs.registry-url }}
-      run: npm dist-tag add "$PACKAGE_NAME@$PACKAGE_VERSION" "$PRERELEASE_TAG" --registry "$REGISTRY_URL"
+      run: npm dist-tag add "$PACKAGE_NAME@$PACKAGE_VERSION" "$EDGE_TAG" --registry "$REGISTRY_URL"
 
     - name: Remove temporary npm configuration
       if: always()

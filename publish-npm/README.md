@@ -1,8 +1,17 @@
 # `publish-npm`
 
-Publishes one supplied, tested npm tarball without repacking the checkout. The
-action publishes stable versions to `latest`, then moves `edge` to that version.
-Prereleases update only `edge`. Existing registry versions cannot be republished.
+Publishes one supplied, tested npm tarball without repacking the checkout. For
+GitHub release events, a Latest non-prerelease release publishes to `latest-tag`
+(default `latest`), then optionally syncs `edge-tag` (default `edge`) to that
+version. GitHub prereleases and regular releases that are not Latest update only
+`edge-tag`. Without release context, the package version's SemVer prerelease
+suffix selects the channel. These are
+separate concepts: npm `latest` is the default install tag, not a SemVer stability
+guarantee, and `edge` is the project's moving iterative tag. A first published
+GitHub release follows its reported status; no bootstrap exception is needed.
+A first GitHub prerelease updates only `edge-tag` and does not establish npm
+`latest`.
+Existing registry versions cannot be republished.
 
 Use [`npm-pack`](../npm-pack/README.md) to produce the artifact.
 
@@ -14,8 +23,9 @@ Configure npm's trusted publisher for the calling repository and workflow. The
 action selects the project's Node version and installs npm 11 at or above
 `11.5.1`. Leave `registry-token` unset so npm can exchange GitHub's OIDC identity.
 Trusted publishing authorizes publication but not `npm dist-tag`; the default
-stable-to-`edge` update needs a granular token through `channel-token`.
+Latest-to-`edge` update needs a granular token through `channel-token`.
 Token-authenticated publication can reuse `registry-token` for the tag update.
+Release events also require `contents: read` to query GitHub's Latest status.
 
 ```yaml
 permissions:
@@ -36,17 +46,17 @@ steps:
 
 ## Inputs
 
-| Input | Required | Default | Description |
+| Input | Required | Effective default | Description |
 | --- | --- | --- | --- |
 | `dry-run` | No | `false` | Use npm's native dry run without registry mutation or publication credentials. |
 | `debug` | No | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
 | `tarball` | Yes | — | Tested npm tarball, relative to the workspace or absolute. |
 | `registry-url` | No | `https://registry.npmjs.org` | npm-compatible registry URL. |
 | `registry-token` | No | — | Token for publication; omit for npm trusted publishing. |
-| `channel-token` | No | — | Token used only to move the prerelease tag after a stable publication. |
-| `stable-tag` | No | `latest` | Distribution tag for stable versions. |
-| `prerelease-tag` | No | `edge` | Distribution tag for prerelease versions. |
-| `update-prerelease-tag-on-stable` | No | `true` | Move `prerelease-tag` to a published stable version; requires `channel-token` or `registry-token`. |
+| `channel-token` | No | — | Token used only to sync `edge-tag` after a `latest-tag` publication. |
+| `latest-tag` | No | `latest` | Distribution tag for GitHub Latest releases or stable SemVer fallback. |
+| `edge-tag` | No | `edge` | Distribution tag for other releases or prerelease SemVer fallback. |
+| `sync-edge-tag` | No | `true` | Also move `edge-tag` after a `latest-tag` publication; requires `channel-token` or `registry-token`. |
 | `access` | No | `public` | Access passed to `npm publish`; leave empty for registry defaults. |
 | `working-directory` | No | `${{ github.workspace }}` | Project directory for runtime discovery. |
 | `node-version` | No | `auto` | [Project discovery](../setup-node/README.md) or explicit Node version. |
@@ -58,6 +68,21 @@ publication or channel updates. Its local artifact outputs remain meaningful.
 
 Debug enables verbose npm output.
 
+### Deprecated inputs
+
+These aliases still work for existing `@v1` callers but will be removed in a
+future breaking release. New workflows should use the replacement names.
+
+| Input | Required | Effective default | Description |
+| --- | --- | --- | --- |
+| `stable-tag` | No | `latest` | Deprecated alias for `latest-tag`. |
+| `prerelease-tag` | No | `edge` | Deprecated alias for `edge-tag`. |
+| `update-prerelease-tag-on-stable` | No | `true` | Deprecated alias for `sync-edge-tag`. |
+
+To migrate, replace each old input name with its alias target; values need no
+change. If both names for one setting are supplied, their values must match or
+the action fails before publication.
+
 ## Outputs
 
 | Output | Description |
@@ -66,7 +91,18 @@ Debug enables verbose npm output.
 | `package-name` | Package name read from the tarball. |
 | `package-version` | Package version read from the tarball. |
 | `channel` | Selected distribution tag. |
-| `release-type` | `stable` or `prerelease`. |
+
+### Deprecated outputs
+
+This output remains available to existing `@v1` callers but will be removed in
+a future breaking release.
+
+| Output | Description |
+| --- | --- |
+| `release-type` | Package version's SemVer syntax: `stable` or `prerelease`; neither GitHub release status nor the selected npm tag. |
+
+To migrate, use `channel` for the selected npm tag. If version syntax matters,
+derive it from `package-version` rather than relying on `release-type`.
 
 ## Examples
 
@@ -93,8 +129,9 @@ is published. Adapt its preparation commands and moving tag to the consumer.
 ## Test behavior
 
 Dry run inspects the tarball, selects its channel, and runs npm's native dry
-run without registry or channel credentials. PR tests cover stable and prerelease
-artifacts and command failure propagation. Live releases exercise authentication,
+run without registry or channel credentials. PR tests cover all release-status
+decisions with fake GitHub and npm commands, stable and prerelease artifacts,
+and command failure propagation. Live releases exercise authentication,
 publication, and channel mutation.
 
 ## Notes
@@ -106,8 +143,8 @@ The action inspects the tarball offline and makes one live
 reports publication errors. Successful publication is sufficient; the action
 never polls registry visibility or retries publication.
 
-A stable publication updates the prerelease tag by default. Set
-`update-prerelease-tag-on-stable: false` to keep the channels separate; this also
+A `latest-tag` publication syncs `edge-tag` by default. Set
+`sync-edge-tag: false` to keep the tags separate; this also
 allows token-free trusted publishing. Otherwise, the action checks for
 `channel-token` or `registry-token` before publishing and preserves any
 `npm dist-tag add` failure. Dry runs need neither token and never update tags.

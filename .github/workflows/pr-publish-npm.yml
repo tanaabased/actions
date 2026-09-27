@@ -17,11 +17,19 @@ jobs:
           - case: stable
             version: 1.2.3
             expected-channel: latest
-            expected-release-type: stable
           - case: prerelease
             version: 1.2.3-next.1
             expected-channel: edge
-            expected-release-type: prerelease
+          - case: preferred-inputs
+            version: 1.2.3
+            latest_tag: recommended
+            edge_tag: next
+            expected-channel: recommended
+          - case: legacy-inputs
+            version: 1.2.3-next.1
+            stable_tag: recommended
+            prerelease_tag: next
+            expected-channel: next
     env:
       PACKAGE_NAME: '@tanaabased/actions-publish-npm-fixture'
       PACKAGE_VERSION: ${{ matrix.version }}
@@ -48,14 +56,16 @@ jobs:
           dry-run: true
           debug: true
           tarball: ${{ steps.pack.outputs.tarball-path }}
+          latest-tag: ${{ matrix.latest_tag }}
+          edge-tag: ${{ matrix.edge_tag }}
+          stable-tag: ${{ matrix.stable_tag }}
+          prerelease-tag: ${{ matrix.prerelease_tag }}
       - name: Verify publication metadata
         env:
           EXPECTED_CHANNEL: ${{ matrix.expected-channel }}
-          EXPECTED_RELEASE_TYPE: ${{ matrix.expected-release-type }}
           PACKED_TARBALL: ${{ steps.pack.outputs.tarball-path }}
           PUBLISHED_CHANNEL: ${{ steps.publish.outputs.channel }}
           PUBLISHED_NAME: ${{ steps.publish.outputs.package-name }}
-          PUBLISHED_RELEASE_TYPE: ${{ steps.publish.outputs.release-type }}
           PUBLISHED_TARBALL: ${{ steps.publish.outputs.tarball-path }}
           PUBLISHED_VERSION: ${{ steps.publish.outputs.package-version }}
         run: |
@@ -63,4 +73,3 @@ jobs:
           test "$PUBLISHED_NAME" = "$PACKAGE_NAME"
           test "$PUBLISHED_VERSION" = "$PACKAGE_VERSION"
           test "$PUBLISHED_CHANNEL" = "$EXPECTED_CHANNEL"
-          test "$PUBLISHED_RELEASE_TYPE" = "$EXPECTED_RELEASE_TYPE"
