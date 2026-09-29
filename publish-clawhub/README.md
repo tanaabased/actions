@@ -15,6 +15,15 @@ uses the token only for `clawhub login`, stores the resulting CLI state in an
 isolated temporary configuration, and removes that configuration afterward.
 The token's ClawHub actor must have publisher access to `owner`.
 
+When `tags` is omitted, a GitHub release event uses the release's authoritative
+GitHub `isLatest` and `isPrerelease` status: only a regular Latest release gets
+`latest,edge`; all other releases get `edge`. Outside a release event, stable
+package SemVer selects `latest,edge` and a prerelease selects `edge`. Release
+workflows need `contents: read` so the action can verify GitHub release status.
+An explicit `tags` value overrides this policy. To migrate, remove expressions
+such as `${{ github.event.release.prerelease && 'edge' || 'latest,edge' }}` and
+omit `tags`; retain the input only when a deliberate custom override is wanted.
+
 ```yaml
 - uses: actions/checkout@v7
   with:
@@ -29,7 +38,6 @@ The token's ClawHub actor must have publisher access to `owner`.
   with:
     tarball: ${{ steps.pack.outputs.tarball-path }}
     owner: tanaab
-    tags: ${{ github.event.release.prerelease && 'edge' || 'latest,edge' }}
     source-repo: ${{ github.repository }}
     source-commit: ${{ github.sha }}
     clawhub-token: ${{ secrets.CLAWHUB_TOKEN }}
@@ -46,7 +54,7 @@ For parallel release jobs, follow the [shared checkout guidance](../publish-repo
 | `tarball` | Yes | — | Code-plugin tarball, relative to the workspace or absolute. |
 | `owner` | Yes | — | ClawHub user or organization publisher handle. |
 | `clawhub-token` | Live publication | — | ClawHub API token; omit in dry runs. |
-| `tags` | No | `latest` | Comma-separated release channels. |
+| `tags` | No | Automatic | Comma-separated release channels; when omitted, selects from GitHub release status or package SemVer. |
 | `source-repo` | No | `${{ github.repository }}` | Source repository recorded by ClawHub. |
 | `source-commit` | No | `${{ github.sha }}` | Source commit recorded by ClawHub. |
 | `wait-timeout` | No | `1800` | Maximum seconds to wait for definitive live publication. |
