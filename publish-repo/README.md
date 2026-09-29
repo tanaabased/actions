@@ -1,7 +1,7 @@
 <h1 align="center">publish-repo</h1>
 
 <p align="center">
-  <img src="../.github/assets/actions/publish-repo.svg" alt="Publish release commits and Git tags" width="180" />
+  <img src="icon.svg" alt="Publish release commits and Git tags" width="180" />
 </p>
 
 <p align="center">

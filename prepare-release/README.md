@@ -1,7 +1,7 @@
 <h1 align="center">prepare-release</h1>
 
 <p align="center">
-  <img src="../.github/assets/actions/prepare-release.svg" alt="Prepare release files and metadata" width="180" />
+  <img src="icon.svg" alt="Prepare release files and metadata" width="180" />
 </p>
 
 <p align="center">

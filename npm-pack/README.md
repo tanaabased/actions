@@ -1,7 +1,7 @@
 <h1 align="center">npm-pack</h1>
 
 <p align="center">
-  <img src="../.github/assets/actions/npm-pack.svg" alt="Pack a package for testing and release" width="180" />
+  <img src="icon.svg" alt="Pack a package for testing and release" width="180" />
 </p>
 
 <p align="center">

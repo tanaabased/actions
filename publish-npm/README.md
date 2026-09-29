@@ -1,7 +1,7 @@
 <h1 align="center">publish-npm</h1>
 
 <p align="center">
-  <img src="../.github/assets/actions/publish-npm.svg" alt="Publish a tested npm package" width="180" />
+  <img src="icon.svg" alt="Publish a tested npm package" width="180" />
 </p>
 
 <p align="center">

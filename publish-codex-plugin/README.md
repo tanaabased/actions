@@ -1,7 +1,7 @@
 <h1 align="center">publish-codex-plugin</h1>
 
 <p align="center">
-  <img src="../.github/assets/actions/publish-codex-plugin.svg" alt="Prepare a Codex plugin release archive" width="180" />
+  <img src="icon.svg" alt="Prepare a Codex plugin release archive" width="180" />
 </p>
 
 <p align="center">

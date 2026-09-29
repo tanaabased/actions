@@ -1,7 +1,7 @@
 <h1 align="center">validate-codex-plugin</h1>
 
 <p align="center">
-  <img src="../.github/assets/actions/validate-codex-plugin.svg" alt="Validate a Codex plugin package" width="180" />
+  <img src="icon.svg" alt="Validate a Codex plugin package" width="180" />
 </p>
 
 <p align="center">

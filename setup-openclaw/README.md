@@ -1,7 +1,7 @@
 <h1 align="center">setup-openclaw</h1>
 
 <p align="center">
-  <img src="../.github/assets/actions/setup-openclaw.svg" alt="OpenClaw setup and test helpers" width="180" />
+  <img src="icon.svg" alt="OpenClaw setup and test helpers" width="180" />
 </p>
 
 <p align="center">

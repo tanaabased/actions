@@ -1,7 +1,7 @@
 <h1 align="center">run-leia</h1>
 
 <p align="center">
-  <img src="../.github/assets/actions/run-leia.svg" alt="Run isolated Leia test scenarios" width="180" />
+  <img src="icon.svg" alt="Run isolated Leia test scenarios" width="180" />
 </p>
 
 <p align="center">
