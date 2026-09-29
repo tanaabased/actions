@@ -1,5 +1,7 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+## v1.0.3 - [September 29, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.3)
+
 - Fixed `publish-clawhub` tag selection to follow GitHub release status and package SemVer. [#47](https://github.com/tanaabased/actions/issues/47) [#48](https://github.com/tanaabased/actions/pull/48)
 
 ## v1.0.2 - [September 27, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.2)
