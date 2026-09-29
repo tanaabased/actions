@@ -15,6 +15,14 @@ uses the token only for `clawhub login`, stores the resulting CLI state in an
 isolated temporary configuration, and removes that configuration afterward.
 The token's ClawHub actor must have publisher access to `owner`.
 
+When `tags` is omitted, the action applies the shared
+[package publishing release-channel policy](https://github.com/tanaabased/canon/blob/4514ec5ee40bf7f83c1fe299467b21f0921cbef2/references/coding-stack-preferences.md#npm-package-publishing)
+to ClawHub's `latest` and `edge` channels. Release workflows need
+`contents: read` so the action can verify GitHub release status. An explicit
+`tags` value overrides automatic selection. To migrate, remove expressions
+such as `${{ github.event.release.prerelease && 'edge' || 'latest,edge' }}` and
+omit `tags`; retain the input only for a deliberate custom override.
+
 ```yaml
 - uses: actions/checkout@v7
   with:
@@ -29,7 +37,6 @@ The token's ClawHub actor must have publisher access to `owner`.
   with:
     tarball: ${{ steps.pack.outputs.tarball-path }}
     owner: tanaab
-    tags: ${{ github.event.release.prerelease && 'edge' || 'latest,edge' }}
     source-repo: ${{ github.repository }}
     source-commit: ${{ github.sha }}
     clawhub-token: ${{ secrets.CLAWHUB_TOKEN }}
@@ -46,7 +53,7 @@ For parallel release jobs, follow the [shared checkout guidance](../publish-repo
 | `tarball` | Yes | — | Code-plugin tarball, relative to the workspace or absolute. |
 | `owner` | Yes | — | ClawHub user or organization publisher handle. |
 | `clawhub-token` | Live publication | — | ClawHub API token; omit in dry runs. |
-| `tags` | No | `latest` | Comma-separated release channels. |
+| `tags` | No | Automatic | Comma-separated release channels; when omitted, follows the shared release-channel policy. |
 | `source-repo` | No | `${{ github.repository }}` | Source repository recorded by ClawHub. |
 | `source-commit` | No | `${{ github.sha }}` | Source commit recorded by ClawHub. |
 | `wait-timeout` | No | `1800` | Maximum seconds to wait for definitive live publication. |

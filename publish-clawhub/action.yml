@@ -20,9 +20,9 @@ inputs:
     description: ClawHub API token used for live publication; omit in dry runs.
     required: false
   tags:
-    description: Comma-separated release channels applied to the publication.
+    description: Comma-separated release channels; omit to select automatically from GitHub release status or package SemVer.
     required: false
-    default: latest
+    default: ''
   source-repo:
     description: Source repository recorded by ClawHub.
     required: false
@@ -91,7 +91,6 @@ runs:
         TARBALL: ${{ inputs.tarball }}
         DRY_RUN: ${{ inputs.dry-run }}
         WAIT_TIMEOUT: ${{ inputs.wait-timeout }}
-        ACTION_DEBUG: ${{ steps.debug.outputs.enabled }}
       run: |
         set -euo pipefail
 
@@ -101,7 +100,7 @@ runs:
           exit 1
         fi
 
-        for input_name in OWNER TAGS SOURCE_REPO SOURCE_COMMIT; do
+        for input_name in OWNER SOURCE_REPO SOURCE_COMMIT; do
           if [[ -z "${!input_name}" ]]; then
             echo "::error::${input_name,,} must not be empty"
             exit 1
@@ -118,9 +117,55 @@ runs:
         fi
 
         echo "tarball-path=$tarball_path" >> "$GITHUB_OUTPUT"
-        if [[ "$ACTION_DEBUG" == 'true' ]]; then
-          echo "Validated ClawHub package for $OWNER with $(tr ',' '\n' <<< "$TAGS" | wc -l | tr -d ' ') tag selection(s)."
+        echo "explicit-tags=$TAGS" >> "$GITHUB_OUTPUT"
+
+    - id: tags
+      name: Resolve publication tags
+      shell: bash
+      env:
+        ACTION_DEBUG: ${{ steps.debug.outputs.enabled }}
+        GH_ENTERPRISE_TOKEN: ${{ github.token }}
+        GH_TOKEN: ${{ github.token }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        GITHUB_SERVER_URL: ${{ github.server_url }}
+        RELEASE_NODE_ID: ${{ github.event.release.node_id }}
+        EXPLICIT_TAGS: ${{ steps.inputs.outputs.explicit-tags }}
+        WORKING_DIRECTORY: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+
+        if [[ -n "$EXPLICIT_TAGS" ]]; then
+          tags="$EXPLICIT_TAGS"
+        else
+          promote_both=true
+          if [[ "$GITHUB_EVENT_NAME" == 'release' ]]; then
+            if [[ -z "$RELEASE_NODE_ID" ]]; then
+              echo "::error::release event is missing its GitHub node ID"
+              exit 1
+            fi
+            query='query($id: ID!) { node(id: $id) { __typename ... on Release { isLatest isPrerelease } } }'
+            if ! response="$(gh api graphql --hostname "$(node -p 'new URL(process.argv[1]).host' "$GITHUB_SERVER_URL")" -f "query=$query" -F "id=$RELEASE_NODE_ID")"; then
+              echo "::error::Unable to resolve authoritative GitHub release status"
+              exit 1
+            fi
+            if ! promote_both="$(RESPONSE="$response" node -e 'const r=JSON.parse(process.env.RESPONSE);const s=r.data?.node;if(r.errors?.length||s?.__typename!=="Release"||typeof s.isLatest!=="boolean"||typeof s.isPrerelease!=="boolean")process.exit(1);process.stdout.write(String(s.isLatest&&!s.isPrerelease))')"; then
+              echo "::error::GitHub did not return a valid release status"
+              exit 1
+            fi
+          else
+            version="$(node -p 'require(require("node:path").resolve(process.argv[1], "package.json")).version' "$WORKING_DIRECTORY")"
+            version_without_build="${version%%+*}"
+            if [[ "$version_without_build" == *-* ]]; then promote_both=false; fi
+          fi
+          if [[ "$promote_both" == true ]]; then tags='latest,edge'; else tags='edge'; fi
         fi
+
+        if [[ -z "$tags" ]]; then
+          echo '::error::tags must not be empty'
+          exit 1
+        fi
+        echo "tags=$tags" >> "$GITHUB_OUTPUT"
+        if [[ "$ACTION_DEBUG" == 'true' ]]; then echo "Resolved ClawHub tags: $tags"; fi
 
     - id: config
       name: Prepare isolated ClawHub configuration
@@ -155,7 +200,7 @@ runs:
         OWNER: ${{ inputs.owner }}
         SOURCE_COMMIT: ${{ inputs.source-commit }}
         SOURCE_REPO: ${{ inputs.source-repo }}
-        TAGS: ${{ inputs.tags }}
+        TAGS: ${{ steps.tags.outputs.tags }}
         TARBALL_PATH: ${{ steps.inputs.outputs.tarball-path }}
         DRY_RUN: ${{ inputs.dry-run }}
         WAIT_TIMEOUT: ${{ inputs.wait-timeout }}
