@@ -1,4 +1,16 @@
-# `ssh-test-key`
+<h1 align="center">ssh-test-key</h1>
+
+<p align="center">
+  <img src="../.github/assets/actions/ssh-test-key.svg" alt="Generate a local Ed25519 test key" width="180" />
+</p>
+
+<p align="center">
+  Generate a local Ed25519 test key.
+</p>
+
+<p align="center">
+  <a href="https://github.com/tanaabased/actions/actions/workflows/pr-ssh-test-key.yml"><img src="https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-ssh-test-key.yml?event=pull_request&amp;label=PR%20tests" alt="PR tests" /></a>
+</p>
 
 Generates one local Ed25519 SSH key pair for a test fixture.
 

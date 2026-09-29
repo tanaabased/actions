@@ -1,4 +1,16 @@
-# `vitepress-build-check`
+<h1 align="center">vitepress-build-check</h1>
+
+<p align="center">
+  <img src="../.github/assets/actions/vitepress-build-check.svg" alt="Build and verify VitePress documentation" width="180" />
+</p>
+
+<p align="center">
+  Build and verify VitePress documentation.
+</p>
+
+<p align="center">
+  <a href="https://github.com/tanaabased/actions/actions/workflows/pr-vitepress-build-check.yml"><img src="https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-vitepress-build-check.yml?event=pull_request&amp;label=PR%20tests" alt="PR tests" /></a>
+</p>
 
 Runs an optional VitePress preparation command followed by the required build
 command. Callers retain their runner, caches, runtime setup, dependency

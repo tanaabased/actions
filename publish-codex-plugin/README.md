@@ -1,4 +1,16 @@
-# `publish-codex-plugin`
+<h1 align="center">publish-codex-plugin</h1>
+
+<p align="center">
+  <img src="../.github/assets/actions/publish-codex-plugin.svg" alt="Prepare a Codex plugin release archive" width="180" />
+</p>
+
+<p align="center">
+  Prepare a Codex plugin release archive.
+</p>
+
+<p align="center">
+  <a href="https://github.com/tanaabased/actions/actions/workflows/pr-publish-codex-plugin.yml"><img src="https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-publish-codex-plugin.yml?event=pull_request&amp;label=PR%20tests" alt="PR tests" /></a>
+</p>
 
 **Deprecated for new Codex plugin releases.** Use [`npm-pack`](../npm-pack/README.md)
 → [`publish-npm`](../publish-npm/README.md) for npm distribution. This v1 action
