@@ -31,7 +31,7 @@ jobs:
             prerelease_tag: next
             expected-channel: next
     env:
-      PACKAGE_NAME: '@tanaabased/actions-publish-npm-fixture'
+      PACKAGE_NAME: '@tanaab/actions-publish-npm-fixture'
       PACKAGE_VERSION: ${{ matrix.version }}
     steps:
       - name: Checkout code

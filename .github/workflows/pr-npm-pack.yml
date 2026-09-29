@@ -11,7 +11,7 @@ jobs:
     name: ubuntu-24.04
     runs-on: ubuntu-24.04
     env:
-      PACKAGE_NAME: '@tanaabased/actions-npm-fixture'
+      PACKAGE_NAME: '@tanaab/actions-npm-fixture'
       PACKAGE_VERSION: 0.${{ github.run_id }}.${{ github.run_attempt }}-pack
     steps:
       - name: Checkout code
