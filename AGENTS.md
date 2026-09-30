@@ -54,10 +54,11 @@
   | Testing | Validation/test support | `#c7a0ff` | `#eeecfa` | `#6f42c1` |
   | Publishing | Publication/release delivery | `#5ab0ff` | `#ddeffa` | `#0069b8` |
 
-  Keep icons as simple, centered Lucide line glyphs in roughly 180px artwork,
-  with consistent rounded strokes, transparent space outside the circle, and no
-  gradients or shadows. Give each README image meaningful alt text. Future role
-  groups may include security/credential operations, deployment/operations, or
+  Use recognizable project marks or simple action symbols in roughly 180px
+  artwork, centered in the category circle. Adapt glyphs to the category palette,
+  preserve transparent space outside the circle, and use no gradients or shadows.
+  Retain artwork sources and applicable third-party notices in `LICENSE`. Give
+  each README image meaningful alt text. Future role groups may include security/credential operations, deployment/operations, or
   monitoring, but add a category only when an action's primary job does not fit
   an existing group; choose and document its palette mapping from the canonical
   palette before using it.

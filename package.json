@@ -37,6 +37,7 @@
     ".lib/resolve-runtime.mjs",
     "[!.]*/action.yml",
     "[!.]*/README.md",
+    "[!.]*/icon.svg",
     "[!.]*/scripts/**",
     "[!.]*/examples/**",
     "[!.]*/LICENSE*",

@@ -1,7 +1,7 @@
 <h1 align="center">vitepress-build-check</h1>
 
 <p align="center">
-  <img src="icon.svg" alt="Build and verify VitePress documentation" width="180" />
+  <img src="icon.svg" alt="VitePress book logo" width="180" />
 </p>
 
 <p align="center">

@@ -1,7 +1,7 @@
 <h1 align="center">publish-clawhub</h1>
 
 <p align="center">
-  <img src="icon.svg" alt="Publish a plugin package to ClawHub" width="180" />
+  <img src="icon.svg" alt="Claw symbol with a publish arrow" width="180" />
 </p>
 
 <p align="center">

@@ -29,7 +29,7 @@ const expected = [
   '.lib/resolve-runtime.mjs',
 ];
 for (const action of actions) {
-  expected.push(`${action}/action.yml`, `${action}/README.md`);
+  expected.push(`${action}/action.yml`, `${action}/README.md`, `${action}/icon.svg`);
   for (const directory of ['scripts', 'examples']) {
     const path = join(root, action, directory);
     if (existsSync(path)) expected.push(...files(path, `${action}/${directory}`));

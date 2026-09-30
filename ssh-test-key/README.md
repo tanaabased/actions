@@ -1,7 +1,7 @@
 <h1 align="center">ssh-test-key</h1>
 
 <p align="center">
-  <img src="icon.svg" alt="Generate a local Ed25519 test key" width="180" />
+  <img src="icon.svg" alt="SSH terminal symbol" width="180" />
 </p>
 
 <p align="center">

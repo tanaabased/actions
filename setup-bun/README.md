@@ -1,7 +1,7 @@
 <h1 align="center">setup-bun</h1>
 
 <p align="center">
-  <img src="icon.svg" alt="Bun runtime setup" width="180" />
+  <img src="icon.svg" alt="Bun mascot outline" width="180" />
 </p>
 
 <p align="center">

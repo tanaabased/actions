@@ -1,7 +1,7 @@
 <h1 align="center">setup-node</h1>
 
 <p align="center">
-  <img src="icon.svg" alt="Node.js runtime setup" width="180" />
+  <img src="icon.svg" alt="Node.js JS logo" width="180" />
 </p>
 
 <p align="center">
