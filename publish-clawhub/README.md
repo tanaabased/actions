@@ -1,4 +1,16 @@
-# `publish-clawhub`
+<h1 align="center">publish-clawhub</h1>
+
+<p align="center">
+  <img src="icon.svg" alt="Claw symbol with a publish arrow" width="180" />
+</p>
+
+<p align="center">
+  Publish a plugin package to ClawHub.
+</p>
+
+<p align="center">
+  <a href="https://github.com/tanaabased/actions/actions/workflows/pr-publish-clawhub.yml"><img src="https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-publish-clawhub.yml?event=pull_request&amp;label=PR%20tests" alt="PR tests" /></a>
+</p>
 
 Publishes one supplied code-plugin tarball to ClawHub with explicit owner,
 source, and release-channel metadata. Live publication waits for security checks

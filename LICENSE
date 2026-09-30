@@ -19,3 +19,121 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+Third-party artwork
+-------------------
+
+The action icons adapt the following project marks to the Tanaab category
+palette. Product names and marks belong to their respective owners; their use
+identifies the tools these actions work with and does not imply endorsement.
+Software and artwork licenses do not grant trademark rights.
+
+- setup-node/icon.svg: Node.js JS mark, from
+  https://nodejs.org/static/logos/jsIconGreen.svg
+  Branding and trademark guidance: https://nodejs.org/en/about/branding
+- setup-bun/icon.svg: Bun mascot linework, derived from
+  https://github.com/oven-sh/bun/blob/main/docs/logo/logo.svg
+  Shading and blush removed; silhouette and facial details retained.
+  The upstream license states "Bun itself is MIT-licensed":
+  https://github.com/oven-sh/bun/blob/main/LICENSE.md
+- setup-openclaw/icon.svg: OpenClaw favicon silhouette, from
+  https://github.com/openclaw/openclaw/blob/main/ui/public/favicon.svg
+  Animation and gradients removed. MIT notice reproduced below.
+- npm-pack/icon.svg and publish-npm/icon.svg: npm wordmark, from
+  https://github.com/npm/logos/blob/master/npm%20logo/npm-logo-black.svg
+  Recolored; npm-pack adds a separate package symbol.
+  Trademark guidance: https://www.npmjs.com/policies/trademark
+- run-leia/icon.svg: planet portion of the Lando logo, from
+  https://docs.lando.dev/images/logo.svg
+  Isolated from the wordmark and recolored. MIT notice reproduced below.
+- vitepress-build-check/icon.svg: VitePress logo paths, from
+  https://vitepress.dev/vitepress-logo-large.svg
+  Converted to flat outlines. MIT notice reproduced below.
+- validate-codex-plugin/icon.svg and publish-codex-plugin/icon.svg: OpenAI
+  mark from Simple Icons v14, recolored; publication adds a deprecated ribbon.
+  https://github.com/simple-icons/simple-icons/blob/14.0.0/icons/openai.svg
+  Brand guidance: https://openai.com/brand/
+- publish-repo/icon.svg: Git mark from Simple Icons v14, recolored.
+  https://github.com/simple-icons/simple-icons/blob/14.0.0/icons/git.svg
+  Simple Icons paths are distributed under CC0 1.0 Universal:
+  https://creativecommons.org/publicdomain/zero/1.0/
+  https://github.com/simple-icons/simple-icons/blob/14.0.0/LICENSE.md
+
+The category circles, release tag/check, SSH terminal, package and publication
+symbols, and publish-clawhub pincer drawing are covered by this repository's
+MIT license. The pincer drawing is not an official ClawHub logo.
+
+OPENCLAW
+--------
+
+MIT License
+
+Copyright (c) 2026 OpenClaw Foundation
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+LANDO
+-----
+
+MIT License
+
+Copyright (c) 2025 Lando Alliance
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
+VITEPRESS
+---------
+
+MIT License
+
+Copyright (c) 2019-present, Yuxi (Evan) You
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

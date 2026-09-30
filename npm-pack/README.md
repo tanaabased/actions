@@ -1,4 +1,16 @@
-# `npm-pack`
+<h1 align="center">npm-pack</h1>
+
+<p align="center">
+  <img src="icon.svg" alt="npm wordmark with a package symbol" width="180" />
+</p>
+
+<p align="center">
+  Pack a package for testing and release.
+</p>
+
+<p align="center">
+  <a href="https://github.com/tanaabased/actions/actions/workflows/pr-npm-pack.yml"><img src="https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-npm-pack.yml?event=pull_request&amp;label=PR%20tests" alt="PR tests" /></a>
+</p>
 
 Packs one npm package and exposes its exact tarball for tests and publication.
 Package scripts are disabled; prepare release files before packing.

@@ -1,4 +1,16 @@
-# `publish-npm`
+<h1 align="center">publish-npm</h1>
+
+<p align="center">
+  <img src="icon.svg" alt="npm wordmark" width="180" />
+</p>
+
+<p align="center">
+  Publish a tested npm package.
+</p>
+
+<p align="center">
+  <a href="https://github.com/tanaabased/actions/actions/workflows/pr-publish-npm.yml"><img src="https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-publish-npm.yml?event=pull_request&amp;label=PR%20tests" alt="PR tests" /></a>
+</p>
 
 Publishes one supplied, tested npm tarball without repacking the checkout. For
 GitHub release events, a Latest non-prerelease release publishes to `latest-tag`

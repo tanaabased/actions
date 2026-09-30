@@ -1,4 +1,16 @@
-# `publish-repo`
+<h1 align="center">publish-repo</h1>
+
+<p align="center">
+  <img src="icon.svg" alt="Git logo" width="180" />
+</p>
+
+<p align="center">
+  Publish release commits and Git tags.
+</p>
+
+<p align="center">
+  <a href="https://github.com/tanaabased/actions/actions/workflows/pr-publish-repo.yml"><img src="https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-publish-repo.yml?event=pull_request&amp;label=PR%20tests" alt="PR tests" /></a>
+</p>
 
 Prepares release files, creates a verified commit on the target branch, and
 forces the exact release tag plus any requested moving tags to that commit. It

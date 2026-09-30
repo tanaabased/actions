@@ -1,4 +1,16 @@
-# `setup-openclaw`
+<h1 align="center">setup-openclaw</h1>
+
+<p align="center">
+  <img src="icon.svg" alt="OpenClaw lobster silhouette" width="180" />
+</p>
+
+<p align="center">
+  OpenClaw setup and test helpers.
+</p>
+
+<p align="center">
+  <a href="https://github.com/tanaabased/actions/actions/workflows/pr-setup-openclaw.yml"><img src="https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-setup-openclaw.yml?event=pull_request&amp;label=PR%20tests" alt="PR tests" /></a>
+</p>
 
 Installs OpenClaw with a compatible Node.js runtime and provides helpers for
 isolated OpenClaw and Agent System tests. Supports Linux (`ubuntu-24.04`) and

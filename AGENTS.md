@@ -33,6 +33,35 @@
 - Keep the root README to the catalog and common behavior. Action READMEs own
   usage, inputs, outputs, distinct examples, test behavior, and operational notes,
   in that order. Omit empty sections and duplicated explanations.
+- Keep each action self-contained: store its README artwork as
+  `<name>/icon.svg` and link it from that action's README.
+- Use a consistent README header: action name, centered artwork, concise
+  centered purpose, and one live PR-test badge linked to that action's PR
+  workflow. Keep explanatory usage and contract details in their existing
+  sections. Do not add category text inside artwork when the README already
+  communicates the action's purpose.
+- Group artwork by action role: setup/runtime installation is **Setup**;
+  packaging and release preparation are **Preparation**; validation and test
+  support are **Testing**; publication and release delivery are **Publishing**.
+  Use [Tanaab's canonical palette](https://github.com/tanaabased/theme/blob/main/styles/colors.json):
+  mix each category base at 16% with the `#f6fbf9` light surface for the flat
+  circle, and use the category's existing darker value for the glyph.
+
+  | Category | Action role | Base | Circle | Glyph |
+  | --- | --- | --- | --- | --- |
+  | Setup | Runtime/tool installation | `#00c88a` | `#cff3e7` | `#008f64` |
+  | Preparation | Packaging/release preparation | `#db2777` | `#f2d9e4` | `#9c1c55` |
+  | Testing | Validation/test support | `#c7a0ff` | `#eeecfa` | `#6f42c1` |
+  | Publishing | Publication/release delivery | `#5ab0ff` | `#ddeffa` | `#0069b8` |
+
+  Use recognizable project marks or simple action symbols in roughly 180px
+  artwork, centered in the category circle. Adapt glyphs to the category palette,
+  preserve transparent space outside the circle, and use no gradients or shadows.
+  Retain artwork sources and applicable third-party notices in `LICENSE`. Give
+  each README image meaningful alt text. Future role groups may include security/credential operations, deployment/operations, or
+  monitoring, but add a category only when an action's primary job does not fit
+  an existing group; choose and document its palette mapping from the canonical
+  palette before using it.
 - Keep permissions and credentials beside usage. State supported operating
   systems and cover them in the action's PR matrix; add platforms for consumer needs.
 - Put standalone examples in `<name>/examples/` only when they add to the README.

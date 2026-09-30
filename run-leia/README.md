@@ -1,4 +1,16 @@
-# `run-leia`
+<h1 align="center">run-leia</h1>
+
+<p align="center">
+  <img src="icon.svg" alt="Lando planet logo" width="180" />
+</p>
+
+<p align="center">
+  Run isolated Leia test scenarios.
+</p>
+
+<p align="center">
+  <a href="https://github.com/tanaabased/actions/actions/workflows/pr-run-leia.yml"><img src="https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-run-leia.yml?event=pull_request&amp;label=PR%20tests" alt="PR tests" /></a>
+</p>
 
 Runs caller-provided Leia scenarios with explicit shell, retry, standard-input,
 cleanup-header, and temporary-directory behavior. The action consumes an

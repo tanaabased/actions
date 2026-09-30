@@ -1,4 +1,16 @@
-# `prepare-release`
+<h1 align="center">prepare-release</h1>
+
+<p align="center">
+  <img src="icon.svg" alt="Release tag with a check mark" width="180" />
+</p>
+
+<p align="center">
+  Prepare release files and metadata.
+</p>
+
+<p align="center">
+  <a href="https://github.com/tanaabased/actions/actions/workflows/pr-prepare-release.yml"><img src="https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-prepare-release.yml?event=pull_request&amp;label=PR%20tests" alt="PR tests" /></a>
+</p>
 
 Prepares a release in the caller's checkout without pushing changes. It wraps
 [`tanaabased/prepare-release-action@v1`](https://github.com/tanaabased/prepare-release-action)

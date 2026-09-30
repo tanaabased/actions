@@ -1,4 +1,16 @@
-# `setup-bun`
+<h1 align="center">setup-bun</h1>
+
+<p align="center">
+  <img src="icon.svg" alt="Bun mascot outline" width="180" />
+</p>
+
+<p align="center">
+  Bun runtime setup.
+</p>
+
+<p align="center">
+  <a href="https://github.com/tanaabased/actions/actions/workflows/pr-setup-bun.yml"><img src="https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-setup-bun.yml?event=pull_request&amp;label=PR%20tests" alt="PR tests" /></a>
+</p>
 
 Selects the caller's Bun version and installs it with
 [`oven-sh/setup-bun@v2`](https://github.com/oven-sh/setup-bun).

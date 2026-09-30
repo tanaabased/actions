@@ -1,4 +1,16 @@
-# `setup-node`
+<h1 align="center">setup-node</h1>
+
+<p align="center">
+  <img src="icon.svg" alt="Node.js JS logo" width="180" />
+</p>
+
+<p align="center">
+  Node.js runtime setup.
+</p>
+
+<p align="center">
+  <a href="https://github.com/tanaabased/actions/actions/workflows/pr-setup-node.yml"><img src="https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-setup-node.yml?event=pull_request&amp;label=PR%20tests" alt="PR tests" /></a>
+</p>
 
 Selects the caller's Node.js version and installs it with
 [`actions/setup-node@v7`](https://github.com/actions/setup-node).
