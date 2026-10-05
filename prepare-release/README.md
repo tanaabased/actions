@@ -32,14 +32,16 @@ Supported runner: Linux (`ubuntu-24.04`).
 ```
 
 Outside a `release` event, provide `version`, `release-date`, and `release-url`
-explicitly.
+for a release. Use `version: dev` for a development build; the upstream action
+resolves its version, and release date and URL are not required. Development
+preparation does not update `CHANGELOG.md`.
 
 ## Inputs
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `debug` | No | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
-| `version` | No | Release tag | Semver-valid release version. |
+| `version` | No | Release tag | Semver-valid release version, or `dev` for an upstream-resolved development version. |
 | `release-date` | No | Release publication timestamp | Date or timestamp formatted as `Month D, YYYY` for the changelog. |
 | `release-url` | No | Release URL | Link recorded in the changelog. |
 | `commands` | No | — | Project-specific preparation commands. |
@@ -47,6 +49,8 @@ explicitly.
 | `bun-version` | No | `auto` | [Project discovery](../setup-bun/README.md) or explicit Bun version. |
 
 Runtime discovery uses `root`; the resolved version is passed upstream.
+Release date and URL are required only when preparing a release; `dev` skips
+release metadata and changelog updates.
 The upstream preparation action has no debug input.
 
 ## Outputs

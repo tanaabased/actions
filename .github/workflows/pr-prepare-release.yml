@@ -42,3 +42,25 @@ jobs:
           test "$(grep --count --fixed-strings '## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})' CHANGELOG.md)" = 1
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           ! git ls-remote --exit-code origin "refs/tags/$RELEASE_VERSION"
+      - name: Prepare development fixture
+        run: |
+          cp -R prepare-release/test/fixture prepare-release/test/dev-fixture
+          cp prepare-release/test/dev-fixture/CHANGELOG.md "$RUNNER_TEMP/dev-changelog.before"
+      - name: Prepare development build
+        id: prepare-dev
+        uses: ./prepare-release
+        with:
+          commands: bun -e "await Bun.write('command-output.txt', process.env.PREPARE_RELEASE_VERSION)"
+          root: ${{ github.workspace }}/prepare-release/test/dev-fixture
+          version: dev
+      - name: Verify development files without a push
+        env:
+          RESOLVED_VERSION: ${{ steps.prepare-dev.outputs.resolved-version }}
+        working-directory: prepare-release/test/dev-fixture
+        run: |
+          test -n "$RESOLVED_VERSION"
+          test "$(node --print "require('./package.json').version")" = "${RESOLVED_VERSION#v}"
+          test "$(cat command-output.txt)" = "$RESOLVED_VERSION"
+          cmp CHANGELOG.md "$RUNNER_TEMP/dev-changelog.before"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          ! git ls-remote --exit-code origin "refs/tags/$RESOLVED_VERSION"
