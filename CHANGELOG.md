@@ -1,5 +1,7 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+## v1.0.4 - [October 6, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.4)
+
 - Added `version: dev` support to `prepare-release` without release metadata or changelog substitution. [#57](https://github.com/tanaabased/actions/issues/57) [#58](https://github.com/tanaabased/actions/pull/58)
 
 ## v1.0.3 - [September 29, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.3)
