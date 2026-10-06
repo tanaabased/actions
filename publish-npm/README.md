@@ -31,12 +31,12 @@ Supported runner: Linux (`ubuntu-24.04`).
 
 ## Usage
 
-Configure npm's trusted publisher for the calling repository and workflow. The
-action selects the project's Node version and installs npm 11 at or above
-`11.5.1`. Leave `registry-token` unset so npm can exchange GitHub's OIDC identity.
-Trusted publishing authorizes publication but not `npm dist-tag`; the default
-Latest-to-`edge` update needs a granular token through `channel-token`.
-Token-authenticated publication can reuse `registry-token` for the tag update.
+For supported npm trusted-publishing workflows, omit both token inputs; npm
+uses the workflow's OIDC identity for publication and channel syncing. The
+action selects the project's Node version and installs a compatible npm 11
+release by default. Token inputs remain available for registries and
+environments that require them; `registry-token` can also authenticate the tag
+update when `channel-token` is omitted.
 Release events also require `contents: read` to query GitHub's Latest status.
 
 ```yaml
@@ -53,7 +53,6 @@ steps:
   - uses: tanaabased/actions/publish-npm@v1
     with:
       tarball: ${{ steps.pack.outputs.tarball-path }}
-      channel-token: ${{ secrets.NPM_CHANNEL_TOKEN }}
 ```
 
 ## Inputs
@@ -64,15 +63,17 @@ steps:
 | `debug` | No | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
 | `tarball` | Yes | — | Tested npm tarball, relative to the workspace or absolute. |
 | `registry-url` | No | `https://registry.npmjs.org` | npm-compatible registry URL. |
-| `registry-token` | No | — | Token for publication; omit for npm trusted publishing. |
-| `channel-token` | No | — | Token used only to sync `edge-tag` after a `latest-tag` publication. |
+| `registry-token` | No | — | Optional publication token for registries without trusted publishing; omit for supported npm trusted publishing. |
+| `channel-token` | No | — | Optional `edge-tag` sync token; omit for supported npm trusted publishing. |
 | `latest-tag` | No | `latest` | Distribution tag for GitHub Latest releases or stable SemVer fallback. |
 | `edge-tag` | No | `edge` | Distribution tag for other releases or prerelease SemVer fallback. |
-| `sync-edge-tag` | No | `true` | Also move `edge-tag` after a `latest-tag` publication; requires `channel-token` or `registry-token`. |
+| `sync-edge-tag` | No | `true` | Also move `edge-tag` after a `latest-tag` publication. |
 | `access` | No | `public` | Access passed to `npm publish`; leave empty for registry defaults. |
 | `working-directory` | No | `${{ github.workspace }}` | Project directory for runtime discovery. |
 | `node-version` | No | `auto` | [Project discovery](../setup-node/README.md) or explicit Node version. |
-| `npm-version` | No | `^11.5.1` | npm version range installed for publication. |
+| `npm-version` | No | `^11.21.0` | npm version range installed for publication and OIDC dist-tag support; incompatible installed versions fail before publication. |
+
+For [trusted publishing](https://docs.npmjs.com/trusted-publishers/), enable `npm publish` for publication and `npm dist-tag` for channel syncing.
 
 For a consumer pull-request dry run, set `dry-run: true`. It inspects and
 validates the supplied tarball through npm's native dry-run path without
@@ -156,10 +157,9 @@ reports publication errors. Successful publication is sufficient; the action
 never polls registry visibility or retries publication.
 
 A `latest-tag` publication syncs `edge-tag` by default. Set
-`sync-edge-tag: false` to keep the tags separate; this also
-allows token-free trusted publishing. Otherwise, the action checks for
-`channel-token` or `registry-token` before publishing and preserves any
-`npm dist-tag add` failure. Dry runs need neither token and never update tags.
+`sync-edge-tag: false` to keep the tags separate. The action preserves any
+`npm dist-tag add` failure; it does not silently switch authentication or skip
+the update. Dry runs need neither token and never update tags.
 
 After an interrupted publication or a failed tag update, inspect the version
 and tags before retrying. If the version exists, repair only the tag:

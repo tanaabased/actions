@@ -18,10 +18,10 @@ inputs:
     required: false
     default: https://registry.npmjs.org
   registry-token:
-    description: Token used for publication; omit for npm trusted publishing.
+    description: Optional publication token for registries without trusted publishing; omit for supported npm trusted publishing.
     required: false
   channel-token:
-    description: Token used only to sync the edge tag after a latest-tag publication.
+    description: Optional edge-tag sync token; omit for supported npm trusted publishing.
     required: false
   latest-tag:
     description: Distribution tag used for GitHub Latest releases or stable SemVer fallback.
@@ -30,7 +30,7 @@ inputs:
     description: Distribution tag used for other releases or prerelease SemVer fallback.
     required: false
   sync-edge-tag:
-    description: Move the edge tag after a latest-tag publication; requires channel-token or registry-token.
+    description: Move the edge tag after a latest-tag publication.
     required: false
   access:
     description: npm package access passed to npm publish; leave empty to use registry defaults.
@@ -45,9 +45,9 @@ inputs:
     required: false
     default: auto
   npm-version:
-    description: npm version range installed for publication and trusted-publishing support.
+    description: npm version range installed for publication and OIDC dist-tag support.
     required: false
-    default: '^11.5.1'
+    default: '^11.21.0'
 
   # Deprecated aliases kept for v1 callers; remove only in a breaking release.
   stable-tag:
@@ -114,6 +114,23 @@ runs:
         NPM_VERSION: ${{ inputs.npm-version }}
         NPM_CONFIG_LOGLEVEL: ${{ steps.debug.outputs.enabled == 'true' && 'verbose' || 'error' }}
       run: npm install --global "npm@$NPM_VERSION"
+
+    - name: Validate supported npm
+      shell: bash
+      run: |
+        installed_version="$(npm --version)"
+        node - "$installed_version" <<'NODE'
+        const version = process.argv[2];
+        const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
+        const supported = match && (
+          (Number(match[1]) === 11 && Number(match[2]) >= 21) ||
+          (Number(match[1]) === 12 && Number(match[2]) >= 2)
+        );
+        if (!supported) {
+          console.error(`::error::Installed npm ${version} cannot use OIDC dist-tags; use npm 11.21.0+ in 11.x or 12.2.0+ in 12.x.`);
+          process.exitCode = 1;
+        }
+        NODE
 
     - id: package
       name: Inspect tarball
@@ -247,17 +264,6 @@ runs:
 
         echo "publish-config=$publish_config" >> "$GITHUB_OUTPUT"
         echo "channel-config=$channel_config" >> "$GITHUB_OUTPUT"
-
-    - name: Validate channel update authentication
-      if: ${{ inputs.dry-run != 'true' && steps.package.outputs.sync-edge-tag == 'true' && steps.package.outputs.promote-both == 'true' }}
-      shell: bash
-      env:
-        CHANNEL_TOKEN: ${{ inputs.channel-token || inputs.registry-token }}
-      run: |
-        if [[ -z "$CHANNEL_TOKEN" ]]; then
-          echo "::error::Syncing the edge tag after a latest publication requires channel-token or registry-token; npm trusted publishing does not authorize dist-tag changes."
-          exit 1
-        fi
 
     - name: Dry-run publication
       if: ${{ inputs.dry-run == 'true' }}
