@@ -1,5 +1,9 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+- Fixed `publish-npm` to synchronize `edge` through trusted publishing without npm tokens. [#59](https://github.com/tanaabased/actions/issues/59) [#60](https://github.com/tanaabased/actions/pull/60)
+- Updated `publish-npm` to install npm `^11.21.0` by default and reject incompatible versions before publication. [#59](https://github.com/tanaabased/actions/issues/59) [#60](https://github.com/tanaabased/actions/pull/60)
+- Updated the catalog release workflow to publish and sync npm tags without `TANAAB_NPM_DEPLOY`. [#59](https://github.com/tanaabased/actions/issues/59) [#60](https://github.com/tanaabased/actions/pull/60)
+
 ## v1.0.4 - [October 6, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.4)
 
 - Added `version: dev` support to `prepare-release` without release metadata or changelog substitution. [#57](https://github.com/tanaabased/actions/issues/57) [#58](https://github.com/tanaabased/actions/pull/58)

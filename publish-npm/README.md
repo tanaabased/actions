@@ -71,7 +71,7 @@ steps:
 | `access` | No | `public` | Access passed to `npm publish`; leave empty for registry defaults. |
 | `working-directory` | No | `${{ github.workspace }}` | Project directory for runtime discovery. |
 | `node-version` | No | `auto` | [Project discovery](../setup-node/README.md) or explicit Node version. |
-| `npm-version` | No | `^11.21.0` | npm version range installed for publication and OIDC dist-tag support; incompatible installed versions fail before publication. |
+| `npm-version` | No | `^11.21.0` | npm version range installed for publication. |
 
 For [trusted publishing](https://docs.npmjs.com/trusted-publishers/), enable `npm publish` for publication and `npm dist-tag` for channel syncing.
 

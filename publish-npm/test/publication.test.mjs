@@ -286,7 +286,7 @@ test('incompatible npm versions fail before publication', () => {
     assert.deepEqual(result.calls, []);
     assert.match(result.stderr, /cannot use OIDC dist-tags/);
   }
-  for (const npmVersion of ['11.21.0', '12.2.0']) {
+  for (const npmVersion of ['11.21.0', '12.2.0', '13.0.0', '14.0.0']) {
     assert.equal(runPublication({ npmVersion }).status, 0, npmVersion);
   }
 });

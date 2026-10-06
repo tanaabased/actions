@@ -45,7 +45,7 @@ inputs:
     required: false
     default: auto
   npm-version:
-    description: npm version range installed for publication and OIDC dist-tag support.
+    description: npm version range for publication.
     required: false
     default: '^11.21.0'
 
@@ -124,10 +124,11 @@ runs:
         const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
         const supported = match && (
           (Number(match[1]) === 11 && Number(match[2]) >= 21) ||
-          (Number(match[1]) === 12 && Number(match[2]) >= 2)
+          (Number(match[1]) === 12 && Number(match[2]) >= 2) ||
+          Number(match[1]) >= 13
         );
         if (!supported) {
-          console.error(`::error::Installed npm ${version} cannot use OIDC dist-tags; use npm 11.21.0+ in 11.x or 12.2.0+ in 12.x.`);
+          console.error(`::error::Installed npm ${version} cannot use OIDC dist-tags; use npm 11.21.0+ in 11.x, 12.2.0+ in 12.x, or npm 13+.`);
           process.exitCode = 1;
         }
         NODE
