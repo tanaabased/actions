@@ -7,7 +7,7 @@ inputs:
     required: false
     default: auto
   version:
-    description: Semver-valid release version.
+    description: Semver-valid release version, or dev for an upstream-resolved development version.
     required: false
     default: ${{ github.event.release.tag_name }}
   release-date:
@@ -50,6 +50,7 @@ runs:
 
     - id: release-date
       name: Format release date
+      if: inputs.version != 'dev'
       shell: bash
       env:
         RELEASE_DATE: ${{ inputs.release-date }}
@@ -77,7 +78,8 @@ runs:
         working-directory: ${{ inputs.root }}
         debug: ${{ inputs.debug }}
 
-    - id: prepare
+    - id: prepare-release
+      if: inputs.version != 'dev'
       name: Prepare release
       uses: tanaabased/prepare-release-action@v1
       with:
@@ -93,3 +95,22 @@ runs:
           UNRELEASED_LINK=${{ inputs.release-url }}
           UNRELEASED_VERSION=${{ inputs.version }}
         version: ${{ inputs.version }}
+
+    - id: prepare-dev
+      if: inputs.version == 'dev'
+      name: Prepare development build
+      uses: tanaabased/prepare-release-action@v1
+      with:
+        bun-version: ${{ steps.runtime.outputs.bun-version }}
+        commands: ${{ inputs.commands }}
+        root: ${{ inputs.root }}
+        sync: false
+        version: dev
+
+    - id: prepare
+      name: Expose resolved version
+      shell: bash
+      env:
+        RELEASE_VERSION: ${{ steps.prepare-release.outputs.resolved-version }}
+        DEVELOPMENT_VERSION: ${{ steps.prepare-dev.outputs.resolved-version }}
+      run: echo "resolved-version=${RELEASE_VERSION:-$DEVELOPMENT_VERSION}" >> "$GITHUB_OUTPUT"
