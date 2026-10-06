@@ -16,12 +16,17 @@ function runStep(name, environment = {}) {
     writeFileSync(join(bin, 'npm'), `#!${process.execPath}
 const fs = require('node:fs');
 const args = process.argv.slice(2);
-if (args[0] === 'pack') {
+if (args[0] === '--version') {
+  process.stdout.write(process.env.FAKE_NPM_VERSION || '11.21.0');
+} else if (args[0] === 'pack') {
   process.stdout.write(JSON.stringify([{ name: '@fixture/package', version: process.env.PACKED_VERSION || '1.2.3' }]));
 } else {
   fs.appendFileSync(process.env.CALLS, JSON.stringify(args) + '\\n');
+  fs.appendFileSync(process.env.AUTH_CALLS, JSON.stringify(process.env.NODE_AUTH_TOKEN || '') + '\\n');
   process.exitCode = ['publish', 'dist-tag'].includes(args[0])
-    ? Number(process.env.NPM_STATUS || 0) : 99;
+    ? Number(args[0] === 'dist-tag'
+      ? process.env.NPM_DIST_TAG_STATUS || process.env.NPM_STATUS || 0
+      : process.env.NPM_STATUS || 0) : 99;
 }
 `, { mode: 0o755 });
     writeFileSync(join(bin, 'gh'), `#!${process.execPath}
@@ -38,6 +43,7 @@ process.exitCode = Number(process.env.GH_STATUS || 0);
     const result = spawnSync('bash', ['-eo', 'pipefail', '-c', script], {
       encoding: 'utf8',
       env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, CALLS: join(directory, 'calls'),
+        AUTH_CALLS: join(directory, 'auth-calls'), RUNNER_TEMP: directory,
         ACCESS: 'public', CHANNEL: 'edge', REGISTRY_URL: 'https://registry.example.invalid',
         TARBALL_PATH: '/fixture/package.tgz', PACKAGE_NAME: '@fixture/package',
         PACKAGE_VERSION: '1.2.3', EDGE_TAG: '', LATEST_TAG: '',
@@ -49,10 +55,15 @@ process.exitCode = Number(process.env.GH_STATUS || 0);
     });
     const calls = existsSync(join(directory, 'calls'))
       ? readFileSync(join(directory, 'calls'), 'utf8').trim().split('\n').map(JSON.parse) : [];
+    const auth = existsSync(join(directory, 'auth-calls'))
+      ? readFileSync(join(directory, 'auth-calls'), 'utf8').trim().split('\n').map(JSON.parse) : [];
     const output = existsSync(join(directory, 'output'))
       ? Object.fromEntries(readFileSync(join(directory, 'output'), 'utf8').trim().split('\n')
         .map(line => line.split('=', 2))) : {};
-    return { ...result, calls, output };
+    const configs = Object.fromEntries(['publish-config', 'channel-config']
+      .filter(key => output[key] && existsSync(output[key]))
+      .map(key => [key, readFileSync(output[key], 'utf8')]));
+    return { ...result, calls, auth, output, configs };
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
@@ -61,7 +72,10 @@ process.exitCode = Number(process.env.GH_STATUS || 0);
 // Exercise the checked-in publication conditions and shell steps with fake GitHub and npm commands.
 // This covers command selection and ordering, not live registry authentication.
 function runPublication({ version = '1.2.3', release, inputs = {},
-  dryRun = 'false', token = 'fixture-token' } = {}) {
+  dryRun = 'false', token = 'fixture-token', channelToken = '',
+  npmVersion = '11.21.0', distTagStatus = '0' } = {}) {
+  const validated = runStep('Validate supported npm', { FAKE_NPM_VERSION: npmVersion });
+  if (validated.status !== 0) return validated;
   const inspected = runStep('Inspect tarball', {
     PACKED_VERSION: version,
     GITHUB_EVENT_NAME: release ? 'release' : 'push',
@@ -83,9 +97,10 @@ function runPublication({ version = '1.2.3', release, inputs = {},
     'steps.package.outputs.promote-both': inspected.output['promote-both'],
   };
   const calls = [];
+  const auth = [];
   for (const step of steps) {
     const name = step.split('\n')[0].replace('name: ', '');
-    if (!['Validate channel update authentication', 'Dry-run publication', 'Publish tarball', 'Sync edge tag'].includes(name)) continue;
+    if (!['Dry-run publication', 'Publish tarball', 'Sync edge tag'].includes(name)) continue;
     const expression = step.match(/      if: \$\{\{ (.*) \}\}/)[1];
     const selected = expression.split(' && ').every(term => {
       const match = term.match(/^([\w.-]+) (==|!=) '([^']*)'$/);
@@ -99,13 +114,14 @@ function runPublication({ version = '1.2.3', release, inputs = {},
       CHANNEL: inspected.output.channel,
       EDGE_TAG: inspected.output['edge-tag'],
       PACKAGE_VERSION: version,
-      CHANNEL_TOKEN: token,
-      NODE_AUTH_TOKEN: token,
+      NODE_AUTH_TOKEN: name === 'Sync edge tag' ? channelToken || token : token,
+      NPM_DIST_TAG_STATUS: distTagStatus,
     });
     calls.push(...result.calls);
-    if (result.status !== 0) return { ...result, calls, output: inspected.output };
+    auth.push(...result.auth);
+    if (result.status !== 0) return { ...result, calls, auth, output: inspected.output };
   }
-  return { status: 0, calls, output: inspected.output };
+  return { status: 0, calls, auth, output: inspected.output };
 }
 
 test('without release context, a stable version updates latest and then edge', () => {
@@ -225,11 +241,54 @@ test('default stable dry run requires no token and never updates channels', () =
   assert.ok(result.calls[0].includes('--offline'));
 });
 
-test('missing channel credentials fail before any stable publication', () => {
+test('tokenless latest publication still syncs edge with no token in either command', () => {
   const result = runPublication({ token: '' });
-  assert.equal(result.status, 1);
-  assert.deepEqual(result.calls, []);
-  assert.match(result.stdout, /requires channel-token or registry-token/);
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(result.calls.map(call => call[0]), ['publish', 'dist-tag']);
+  assert.deepEqual(result.auth, ['', '']);
+});
+
+test('registry and channel tokens remain independently scoped', () => {
+  const result = runPublication({ token: 'publish-token', channelToken: 'tag-token' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(result.auth, ['publish-token', 'tag-token']);
+  const fallback = runPublication({ token: 'shared-token' });
+  assert.deepEqual(fallback.auth, ['shared-token', 'shared-token']);
+  const channelOnly = runPublication({ token: '', channelToken: 'tag-token' });
+  assert.deepEqual(channelOnly.auth, ['', 'tag-token']);
+});
+
+test('temporary registry configurations contain token placeholders only when supplied', () => {
+  const oidc = runStep('Configure registry access', {
+    REGISTRY_TOKEN: '', CHANNEL_TOKEN: '',
+  });
+  assert.equal(oidc.status, 0, oidc.stderr);
+  assert.ok(!oidc.configs['publish-config'].includes('_authToken'));
+  assert.ok(!oidc.configs['channel-config'].includes('_authToken'));
+  const channel = runStep('Configure registry access', {
+    REGISTRY_TOKEN: '', CHANNEL_TOKEN: 'tag-token',
+  });
+  assert.equal(channel.status, 0, channel.stderr);
+  assert.ok(!channel.configs['publish-config'].includes('_authToken'));
+  assert.match(channel.configs['channel-config'], /:_authToken=\$\{NODE_AUTH_TOKEN\}/);
+  const registry = runStep('Configure registry access', {
+    REGISTRY_TOKEN: 'publish-token', CHANNEL_TOKEN: '',
+  });
+  assert.equal(registry.status, 0, registry.stderr);
+  assert.match(registry.configs['publish-config'], /:_authToken=\$\{NODE_AUTH_TOKEN\}/);
+  assert.match(registry.configs['channel-config'], /:_authToken=\$\{NODE_AUTH_TOKEN\}/);
+});
+
+test('incompatible npm versions fail before publication', () => {
+  for (const npmVersion of ['11.20.9', '12.1.9', '11.21.0-beta.1', '10.9.0']) {
+    const result = runPublication({ npmVersion });
+    assert.notEqual(result.status, 0, npmVersion);
+    assert.deepEqual(result.calls, []);
+    assert.match(result.stderr, /cannot use OIDC dist-tags/);
+  }
+  for (const npmVersion of ['11.21.0', '12.2.0', '13.0.0', '14.0.0']) {
+    assert.equal(runPublication({ npmVersion }).status, 0, npmVersion);
+  }
 });
 
 test('successful publication makes one upload without registry lookups', () => {
@@ -257,4 +316,11 @@ test('edge sync preserves npm failure status', () => {
   assert.equal(result.status, 23, result.stderr);
   assert.deepEqual(result.calls, [['dist-tag', 'add', '@fixture/package@1.2.3', 'edge',
     '--registry', 'https://registry.example.invalid']]);
+});
+
+test('tokenless edge sync failure remains visible after successful publication', () => {
+  const result = runPublication({ token: '', distTagStatus: '23' });
+  assert.equal(result.status, 23, result.stderr);
+  assert.deepEqual(result.calls.map(call => call[0]), ['publish', 'dist-tag']);
+  assert.deepEqual(result.auth, ['', '']);
 });
