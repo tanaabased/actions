@@ -182,7 +182,7 @@ test('invalid helper flags fail before onboarding; failure diagnostics redact ra
 test('diagnostics read missing setup without creating directories and preserve failure on context mismatch', () => fixture(directory => {
   const env = environment(directory);
   mockOpenclaw(directory, env);
-  const run = () => spawnSync('bash', [join(root, 'scripts/openclaw-diagnostics'), '--exit-code', '23'], { env, encoding:'utf8' });
+  const run = () => spawnSync('bash', [join(root, 'scripts/openclaw-diagnostics'), '--profile', 'contract', '--exit-code', '23'], { env, encoding:'utf8' });
   const missing = run();
   assert.equal(missing.status, 23, missing.stderr);
   assert.match(missing.stderr, /configuration: unavailable/);

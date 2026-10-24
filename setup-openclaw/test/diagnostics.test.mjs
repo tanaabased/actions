@@ -59,17 +59,19 @@ test('report redacts before clipping, bounds one huge line, and fails closed', (
 test('pack results distinguish malformed JSON, shape, count and unsafe paths', () => {
   for (const filename of ['tanaab-openclaw-agent-system-9.8.7.tgz', 'another-safe-artifact.tgz']) {
     assert.equal(packFilename(JSON.stringify([{ filename }])), filename);
+    assert.equal(packFilename(JSON.stringify({'@example/plugin': {name:'@example/plugin', filename}})), filename);
   }
   const oldError = console.error;
   const reports = [];
   console.error = text => reports.push(text);
   try {
     assert.throws(() => packFilename('token=pack-secret'), /invalid JSON/);
-    for (const value of [null, {}, 'text', 3]) assert.throws(() => packFilename(JSON.stringify(value)), /result shape/);
-    for (const value of [[], [{}, {}]]) assert.throws(() => packFilename(JSON.stringify(value)), /archive count/);
+    for (const value of [null, 'text', 3, {filename:'flat.tgz'}, {one: {name:'different', filename:'one.tgz'}}]) assert.throws(() => packFilename(JSON.stringify(value)), /result shape/);
+    for (const value of [[], {}, [{}, {}], {one:{name:'one',filename:'one.tgz'},two:{name:'two',filename:'two.tgz'}}]) assert.throws(() => packFilename(JSON.stringify(value)), /archive count/);
     for (const value of [null, [], {}, {filename: 7}, {filename: ''}]) assert.throws(() => packFilename(JSON.stringify([value])), /archive shape/);
     for (const filename of ['/tmp/escape.tgz', '../escape.tgz', 'sub/file.tgz', 'sub\\file.tgz', '..', '.', 'bad\nname.tgz']) {
       assert.throws(() => packFilename(JSON.stringify([{ filename }])), /unsafe archive filename/);
+      assert.throws(() => packFilename(JSON.stringify({'@example/plugin':{name:'@example/plugin',filename}})), /unsafe archive filename/);
     }
     assert.ok(!reports.join('\n').includes('pack-secret'));
     assert.match(reports.join('\n'), /REDACTED/);
