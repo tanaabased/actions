@@ -113,6 +113,10 @@ with lifecycle scripts disabled, then builds, checks, and packs the package.
 Action setup installs the required Bun version; later helper calls require it
 already on `PATH`.
 
+Setup reports the requested source and resolved repository commit before building.
+These selection diagnostics do not mean the plugin is installed; Agent System
+outputs are available only after installation and runtime verification succeed.
+
 Installation authorizes capabilities and conversation hooks, applies `op-cache`,
 and checks that the requested plugin version loads. Configuration is validated once
 after setup completes.
@@ -240,7 +244,11 @@ resolves saved or explicit helper context and prints the path, never log content
 ### `openclaw-diagnostics`
 
 Report the OpenClaw version, configuration validity, and bounded, redacted gateway
-evidence. Use `--exit-code` to retain the failure that prompted diagnostics.
+evidence, plus the last completed setup stage and selected source when available.
+It also works after incomplete setup: absent configuration and logs are reported
+as unavailable. Use `--exit-code` to retain the failure that prompted diagnostics,
+including when a secondary diagnostic fails. Supply the isolated context through
+the action environment or explicit options; diagnostics never repair setup.
 
 ```sh
 openclaw-diagnostics [options]

@@ -261,6 +261,7 @@ runs:
       env:
         AGENT_SYSTEM: ${{ inputs.agent-system }}
       run: |
+        node "$GITHUB_ACTION_PATH/scripts/lib/setup-progress.mjs" reset source-resolution
         selection_file="$(mktemp "$RUNNER_TEMP/openclaw-selection.XXXXXX")"
         node "$GITHUB_ACTION_PATH/scripts/lib/agent-system.mjs" prepare "$AGENT_SYSTEM" "$selection_file"
 
