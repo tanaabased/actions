@@ -1,5 +1,7 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+## v1.0.6 - [October 25, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.6)
+
 - Fixed `setup-openclaw` Agent System setup failures from large command output and npm pack JSON changes. [#62](https://github.com/tanaabased/actions/pull/62)
 - Fixed `setup-openclaw` diagnostics after incomplete setup to retain the original failure, source, and last completed stage. [#62](https://github.com/tanaabased/actions/pull/62)
 
