@@ -5,26 +5,6 @@ import { command, report } from '../scripts/lib/command.mjs';
 import { packFilename } from '../scripts/lib/pack-result.mjs';
 import { redact } from '../scripts/lib/redact.mjs';
 
-test('large command diagnostics preserve data, status, redaction and byte bounds', async () => {
-  const secret = 'sentinel-credential-never-print';
-  const script = `const fs=require('node:fs');fs.writeSync(2,('x'.repeat(1023)+'\\n').repeat(2400)+'\\ntoken=${secret}\\nlast evidence\\n');fs.writeSync(1,'machine data');process.exit(Number(process.argv[1]));`;
-  for (const verbose of [false, true]) {
-    for (const code of [0, 23]) {
-      const reports = [];
-      const diagnostics = input => report(input, { write: text => reports.push(text) });
-      if (code) await assert.rejects(() => command(process.execPath, ['-e', script, String(code)], { verbose, diagnostics }), error => error.exitCode === code);
-      else assert.equal(await command(process.execPath, ['-e', script, '0'], { verbose, diagnostics, capture: true }), 'machine data');
-      const output = reports.join('\n');
-      if (!verbose) assert.ok(Buffer.byteLength(output) <= 16400);
-      assert.ok(!output.includes(secret));
-      if (code || verbose) {
-        assert.match(output, /last evidence/);
-        assert.match(output, /REDACTED/);
-      } else assert.equal(output, '');
-    }
-  }
-});
-
 test('stdout-only failure and a broken diagnostic renderer cannot mask command status', async () => {
   const script = "require('node:fs').writeSync(1,('x'.repeat(1023)+'\\n').repeat(2400)+'\\npassword=hidden-value\\nlast stdout evidence');process.exit(37)";
   const reports = [];

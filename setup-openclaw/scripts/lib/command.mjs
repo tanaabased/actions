@@ -28,12 +28,14 @@ export async function command(program, args, { verbose = false, capture = false,
   const tails = [];
   const emit = async text => { try { await diagnostics(text); } catch { /* Optional diagnostics preserve status. */ } };
   const consume = async stream => {
-    const index = tails.push(Buffer.alloc(0)) - 1;
+    const index = verbose ? undefined : tails.push(Buffer.alloc(0)) - 1;
     try {
       for await (const line of redactedLines(stream, options.env ?? process.env)) {
-        const bytes = Buffer.concat([tails[index], Buffer.from(`${line}\n`)]);
-        tails[index] = bytes.subarray(Math.max(0, bytes.length - 8192));
         if (verbose) await emit(line);
+        else {
+          const bytes = Buffer.concat([tails[index], Buffer.from(`${line}\n`)]);
+          tails[index] = bytes.subarray(Math.max(0, bytes.length - 8192));
+        }
       }
     } catch { await emit('diagnostic output unavailable'); }
   };

@@ -19,18 +19,27 @@ test('both log streams exceed 16 mib without capture failure; quiet errors retai
   for (const verbose of [false, true]) {
     for (const status of [0, 23]) {
       let bytes = 0;
-      let last = '';
+      let evidence = false;
       let leaked = false;
+      let redacted = false;
       const run = () => command(process.execPath, ['-e', outputScript, String(status)], {
         verbose,
-        diagnostics: text => { bytes += Buffer.byteLength(text); last = text; leaked ||= text.includes('private-value'); },
+        diagnostics: text => {
+          bytes += Buffer.byteLength(text);
+          evidence ||= text.includes('last evidence');
+          leaked ||= text.includes('private-value');
+          redacted ||= text.includes('[REDACTED]');
+        },
       });
       if (status) await assert.rejects(run, error => error.exitCode === status);
       else assert.equal(await run(), '');
       assert.equal(leaked, false);
       if (verbose) assert.ok(bytes > 32 * 1024 * 1024);
       else assert.ok(bytes <= 16384);
-      if (status && !verbose) assert.match(last, /last evidence/);
+      if (status || verbose) {
+        assert.equal(evidence, true);
+        assert.equal(redacted, true);
+      } else assert.equal(bytes, 0);
     }
   }
 });
@@ -55,13 +64,17 @@ fs.writeFileSync(process.argv[2],'done');clearInterval(poll);clearTimeout(timeou
 });
 
 test('machine output larger than 16 mib stays separate from logs and is returned completely', async () => {
-  let reports = '';
-  const result = await command(process.execPath, ['-e', `require('node:fs').writeSync(1,JSON.stringify({data:'z'.repeat(18*1024*1024)}));console.error('token=structured-secret');`], {
-    capture: true, verbose: true, diagnostics: text => { reports += text; },
-  });
-  assert.equal(JSON.parse(result).data.length, 18 * 1024 * 1024);
-  assert.ok(!reports.includes('structured-secret'));
-  assert.ok(!reports.includes('zzzz'));
+  for (const verbose of [false, true]) {
+    let reports = '';
+    const result = await command(process.execPath, ['-e', `require('node:fs').writeSync(1,JSON.stringify({data:'z'.repeat(18*1024*1024)}));console.error('token=structured-secret');`], {
+      capture: true, verbose, diagnostics: text => { reports += text; },
+    });
+    assert.equal(JSON.parse(result).data.length, 18 * 1024 * 1024);
+    assert.ok(!reports.includes('structured-secret'));
+    assert.ok(!reports.includes('zzzz'));
+    if (verbose) assert.match(reports, /REDACTED/);
+    else assert.equal(reports, '');
+  }
   await assert.rejects(() => command('/nonexistent/command', [], { capture: true, diagnostics: () => {} }), error => error.exitCode === 1);
 });
 

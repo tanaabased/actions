@@ -124,6 +124,7 @@ test('action setup emits boolean inputs as bare helper switches', () => fixture(
 test('action setup and direct helper use the same model, plugin, cache, SSH and policy contract', () => fixture(directory => {
   const env = environment(directory);
   mockOpenclaw(directory, env);
+  writeFileSync(join(directory, 'bin/npm'), '#!/usr/bin/env node\nconsole.error("token=npm-probe-sentinel");process.exit(41);\n', { mode: 0o755 });
   mkdirSync(join(directory, 'package'));
   writeFileSync(join(directory, 'package/package.json'), JSON.stringify({name:'@tanaab/openclaw-agent-system',version:'0.6.0'}));
   const artifact = join(directory, 'plugin.tgz');
@@ -135,6 +136,8 @@ test('action setup and direct helper use the same model, plugin, cache, SSH and 
   const result = spawnSync('bash', ['-eo', 'pipefail', '-c', shellBlock('orchestrate')], { env, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   const calls = readFileSync(env.CALLS, 'utf8');
+  assert.match(result.stderr, /npm unavailable/);
+  assert.ok(!result.stderr.includes('npm-probe-sentinel'));
   assert.equal(calls.split('\n').filter(line => line.includes('"validate"')).length, 1);
   for (const expected of ['openai-api-key', 'openai/gpt-5.4-nano', 'codexDynamicToolsLoading', 'npm-pack:', '--accept-capabilities', 'allowConversationAccess', 'opCache', 'process-lifetime', 'exec-policy', 'yolo']) assert.ok(calls.includes(expected), expected);
   assert.ok(!result.stdout.includes(env.OPENAI_API_KEY) && !result.stderr.includes(env.OPENAI_API_KEY));
@@ -211,7 +214,7 @@ if(args.includes('rev-parse')) console.log('abcdefabcdefabcdefabcdefabcdefabcdef
 if(process.argv.includes('--version')) console.log('1.4.2');
 else { console.error('token=dependency-sentinel');process.exit(29); }
 `, {mode:0o755});
-  writeFileSync(join(directory, 'bin/npm'), '#!/usr/bin/env node\nconsole.log("99.1.0");\n', {mode:0o755});
+  writeFileSync(join(directory, 'bin/npm'), '#!/usr/bin/env node\nprocess.exit(41);\n', {mode:0o755});
   env.PATH = `${join(directory, 'bin')}:${env.PATH}`;
   const selection = join(directory, 'selection');
   const selector = 'github:example/plugin#main';
@@ -219,6 +222,7 @@ else { console.error('token=dependency-sentinel');process.exit(29); }
   assert.equal(helper('prepare').status, 0);
   const failed = helper('install');
   assert.equal(failed.status, 29, failed.stderr);
+  assert.match(failed.stderr, /npm unavailable/);
   assert.ok(!failed.stderr.includes('dependency-sentinel'));
   assert.equal(helper('cleanup').status, 0);
   const saved = JSON.parse(readFileSync(join(env.SETUP_OPENCLAW_STATE_DIR, 'setup-progress.json')));

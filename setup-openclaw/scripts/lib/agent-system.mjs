@@ -51,7 +51,8 @@ async function install() {
   if (selection.selector !== selector || selection.mode === 'none') throw new Error('Agent System selection does not match the requested selector');
   if (selection.checkout) temporary.push(selection.checkout);
   progress('start', 'artifact-preparation');
-  report(`toolchain: Node ${process.version}; npm ${await command('npm', ['--version'], { capture: true })}`);
+  const npmVersion = await command('npm', ['--version'], { capture: true }).catch(() => 'unavailable');
+  report(`toolchain: Node ${process.version}; npm ${npmVersion}`);
   let artifact = selection.path;
   if (selection.mode !== 'tarball') {
     artifactDirectory = mkdtempSync(join(process.env.RUNNER_TEMP, 'openclaw-artifact.'));
