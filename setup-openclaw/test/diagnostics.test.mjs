@@ -5,17 +5,17 @@ import { command, report } from '../scripts/lib/command.mjs';
 import { packFilename } from '../scripts/lib/pack-result.mjs';
 import { redact } from '../scripts/lib/redact.mjs';
 
-test('large command diagnostics preserve data, status, redaction and byte bounds', () => {
+test('large command diagnostics preserve data, status, redaction and byte bounds', async () => {
   const secret = 'sentinel-credential-never-print';
-  const script = `const fs=require('node:fs');fs.writeSync(2,'x'.repeat(2400000)+'\\ntoken=${secret}\\nlast evidence\\n');fs.writeSync(1,'machine data');process.exit(Number(process.argv[1]));`;
+  const script = `const fs=require('node:fs');fs.writeSync(2,('x'.repeat(1023)+'\\n').repeat(2400)+'\\ntoken=${secret}\\nlast evidence\\n');fs.writeSync(1,'machine data');process.exit(Number(process.argv[1]));`;
   for (const verbose of [false, true]) {
     for (const code of [0, 23]) {
       const reports = [];
       const diagnostics = input => report(input, { write: text => reports.push(text) });
-      if (code) assert.throws(() => command(process.execPath, ['-e', script, String(code)], { verbose, diagnostics }), error => error.exitCode === code);
-      else assert.equal(command(process.execPath, ['-e', script, '0'], { verbose, diagnostics }), 'machine data');
+      if (code) await assert.rejects(() => command(process.execPath, ['-e', script, String(code)], { verbose, diagnostics }), error => error.exitCode === code);
+      else assert.equal(await command(process.execPath, ['-e', script, '0'], { verbose, diagnostics, capture: true }), 'machine data');
       const output = reports.join('\n');
-      assert.ok(Buffer.byteLength(output) <= 16400);
+      if (!verbose) assert.ok(Buffer.byteLength(output) <= 16400);
       assert.ok(!output.includes(secret));
       if (code || verbose) {
         assert.match(output, /last evidence/);
@@ -25,20 +25,20 @@ test('large command diagnostics preserve data, status, redaction and byte bounds
   }
 });
 
-test('stdout-only failure and a broken diagnostic renderer cannot mask command status', () => {
-  const script = "require('node:fs').writeSync(1,'x'.repeat(2400000)+'\\npassword=hidden-value\\nlast stdout evidence');process.exit(37)";
+test('stdout-only failure and a broken diagnostic renderer cannot mask command status', async () => {
+  const script = "require('node:fs').writeSync(1,('x'.repeat(1023)+'\\n').repeat(2400)+'\\npassword=hidden-value\\nlast stdout evidence');process.exit(37)";
   const reports = [];
-  assert.throws(() => command(process.execPath, ['-e', script], {
+  await assert.rejects(() => command(process.execPath, ['-e', script], {
     diagnostics: input => report(input, { write: text => reports.push(text) }),
   }), error => error.exitCode === 37);
   assert.match(reports.join('\n'), /last stdout evidence/);
   assert.ok(!reports.join('\n').includes('hidden-value'));
   for (const code of [0, 37]) {
     const run = () => command(process.execPath, ['-e', `console.error('token=never-print');console.log('data');process.exit(${code})`], {
-      verbose: true, diagnostics: () => { throw new Error('renderer broken'); },
+      capture: true, verbose: true, diagnostics: () => { throw new Error('renderer broken'); },
     });
-    if (code) assert.throws(run, error => error.exitCode === code);
-    else assert.equal(run(), 'data');
+    if (code) await assert.rejects(run, error => error.exitCode === code);
+    else assert.equal(await run(), 'data');
   }
 });
 

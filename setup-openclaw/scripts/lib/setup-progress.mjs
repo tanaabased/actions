@@ -18,9 +18,9 @@ export function progress(operation, stage, details = {}) {
   } catch { report('setup progress unavailable'); }
 }
 
-export function stage(name, run) {
+export async function stage(name, run) {
   progress('start', name);
-  const result = run();
+  const result = await run();
   progress('complete', name);
   return result;
 }

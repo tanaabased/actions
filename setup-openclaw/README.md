@@ -116,6 +116,12 @@ already on `PATH`.
 Setup reports the requested source and resolved repository commit before building.
 These selection diagnostics do not mean the plugin is installed; Agent System
 outputs are available only after installation and runtime verification succeed.
+With debug enabled, source build and plugin installation logs stream through
+credential redaction. Otherwise, failures show a bounded tail from each log stream.
+Command output has no aggregate capture limit; structured results such as pack JSON
+are kept separate from logs. A diagnostic line over 64 KiB suppresses the rest of
+that log stream to bound redaction memory without exposing credential fragments;
+it does not stop the command or truncate its structured result.
 
 Installation authorizes capabilities and conversation hooks, applies `op-cache`,
 and checks that the requested plugin version loads. Configuration is validated once

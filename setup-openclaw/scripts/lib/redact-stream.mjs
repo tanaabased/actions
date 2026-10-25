@@ -1,5 +1,5 @@
-import { redact } from './redact.mjs';
+import { redactedLines } from './redact.mjs';
 
-let input = '';
-for await (const chunk of process.stdin) input += chunk;
-process.stdout.write(redact(input));
+for await (const line of redactedLines(process.stdin)) {
+  await new Promise(resolve => process.stdout.write(`${line}\n`, () => resolve()));
+}

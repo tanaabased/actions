@@ -19,17 +19,17 @@ function command(program, args, options = {}) {
   return runCommand(program, args, { verbose, ...options });
 }
 
-function prepare() {
+async function prepare() {
   progress('start', 'source-resolution', { requested: selector });
   report(`Agent System requested: ${selector}`);
   let selection = selectAgentSystem(selector);
   if (selection.mode === 'repository') {
     const checkout = mkdtempSync(join(process.env.RUNNER_TEMP, 'openclaw-source.'));
     temporary.push(checkout);
-    command('git', ['init', '--quiet', checkout]);
-    command('git', ['-C', checkout, 'fetch', '--quiet', '--depth=1', `https://github.com/${selection.repository}.git`, selection.ref]);
-    command('git', ['-C', checkout, 'checkout', '--quiet', '--detach', 'FETCH_HEAD']);
-    const commit = command('git', ['-C', checkout, 'rev-parse', 'HEAD']);
+    await command('git', ['init', '--quiet', checkout]);
+    await command('git', ['-C', checkout, 'fetch', '--quiet', '--depth=1', `https://github.com/${selection.repository}.git`, selection.ref]);
+    await command('git', ['-C', checkout, 'checkout', '--quiet', '--detach', 'FETCH_HEAD']);
+    const commit = await command('git', ['-C', checkout, 'rev-parse', 'HEAD'], { capture: true });
     const provenance = `github:${selection.repository}#${commit}`;
     progress('start', 'source-resolution', { resolved: provenance });
     report(`Agent System resolved: ${provenance}`);
@@ -46,19 +46,19 @@ function prepare() {
   temporary.length = 0;
 }
 
-function install() {
+async function install() {
   const selection = JSON.parse(readFileSync(selectionFile, 'utf8'));
   if (selection.selector !== selector || selection.mode === 'none') throw new Error('Agent System selection does not match the requested selector');
   if (selection.checkout) temporary.push(selection.checkout);
   progress('start', 'artifact-preparation');
-  report(`toolchain: Node ${process.version}; npm ${command('npm', ['--version'])}`);
+  report(`toolchain: Node ${process.version}; npm ${await command('npm', ['--version'], { capture: true })}`);
   let artifact = selection.path;
   if (selection.mode !== 'tarball') {
     artifactDirectory = mkdtempSync(join(process.env.RUNNER_TEMP, 'openclaw-artifact.'));
     let packageSource = `@tanaab/openclaw-agent-system@${selection.version}`;
     let cwd;
     if (selection.mode === 'source') {
-      const bunVersion = command('bun', ['--version']);
+      const bunVersion = await command('bun', ['--version'], { capture: true });
       report(`source Bun: ${bunVersion}`);
       if (bunVersion !== selection.bunVersion) throw new Error(`source requires Bun ${selection.bunVersion}; use setup-bun with that version before invoking the helper`);
       cwd = mkdtempSync(join(process.env.RUNNER_TEMP, 'openclaw-build.'));
@@ -67,32 +67,33 @@ function install() {
         recursive: true,
         filter: path => !['.git', 'node_modules', 'dist'].includes(basename(path)),
       });
-      stage('dependencies', () => command('bun', ['install', '--frozen-lockfile', '--ignore-scripts', ...(verbose ? ['--verbose'] : [])], { cwd }));
-      stage('build', () => command('bun', ['run', 'build'], { cwd }));
-      stage('plugin-check', () => command('bun', ['run', 'plugin:check'], { cwd }));
+      await stage('dependencies', () => command('bun', ['install', '--frozen-lockfile', '--ignore-scripts', ...(verbose ? ['--verbose'] : [])], { cwd }));
+      await stage('build', () => command('bun', ['run', 'build'], { cwd }));
+      await stage('plugin-check', () => command('bun', ['run', 'plugin:check'], { cwd }));
       packageSource = '.';
     }
-    artifact = stage('pack', () => {
-      const archive = command('npm', ['pack', '--json', '--loglevel', loglevel, '--pack-destination', artifactDirectory, packageSource], { cwd });
+    artifact = await stage('pack', async () => {
+      const archive = await command('npm', ['pack', '--json', '--loglevel', loglevel, '--pack-destination', artifactDirectory, packageSource], { cwd, capture: true });
       return join(artifactDirectory, packFilename(archive));
     });
   }
   progress('start', 'artifact-verification');
-  const manifest = JSON.parse(command('tar', ['-xOf', artifact, 'package/package.json']));
+  const manifest = JSON.parse(await command('tar', ['-xOf', artifact, 'package/package.json'], { capture: true }));
   if (manifest.name !== '@tanaab/openclaw-agent-system' || !exactVersion.test(manifest.version || '') ||
       (selection.version && selection.version !== manifest.version)) throw new Error('packed Agent System identity or version does not match the selection');
   progress('complete', 'artifact-verification');
   const openclaw = (...args) => command('openclaw', ['--profile', process.env.OPENCLAW_PROFILE, ...args]);
-  stage('plugin-installation', () => openclaw('plugins', 'install', `npm-pack:${artifact}`, '--force', '--accept-capabilities'));
+  await stage('plugin-installation', () => openclaw('plugins', 'install', `npm-pack:${artifact}`, '--force', '--accept-capabilities'));
   progress('start', 'plugin-configuration');
-  openclaw('plugins', 'enable', 'agent-system');
-  openclaw('config', 'set', 'plugins.entries.agent-system.hooks.allowConversationAccess', 'true');
-  openclaw('config', 'set', 'plugins.entries.agent-system.config.opCache',
+  await openclaw('plugins', 'enable', 'agent-system');
+  await openclaw('config', 'set', 'plugins.entries.agent-system.hooks.allowConversationAccess', 'true');
+  await openclaw('config', 'set', 'plugins.entries.agent-system.config.opCache',
     process.env.SETUP_OP_CACHE || '{"mode":"process-lifetime","maxEntries":128}', '--strict-json');
   progress('complete', 'plugin-configuration');
   // Installation does not establish runtime loading; inspect it and obtain the output path.
-  const pluginPath = stage('runtime-verification', () => command(process.execPath, [join(library, 'verify-runtime.mjs'), manifest.version], {
-    input: openclaw('plugins', 'inspect', 'agent-system', '--runtime', '--json'),
+  const pluginPath = await stage('runtime-verification', async () => command(process.execPath, [join(library, 'verify-runtime.mjs'), manifest.version], {
+    capture: true,
+    input: await command('openclaw', ['--profile', process.env.OPENCLAW_PROFILE, 'plugins', 'inspect', 'agent-system', '--runtime', '--json'], { capture: true }),
   }));
   const outputs = { 'agent-system-version': manifest.version, 'agent-system-source': selection.source,
     'agent-system-artifact-path': artifact, 'agent-system-plugin-path': pluginPath };
@@ -105,8 +106,8 @@ function install() {
 }
 
 try {
-  if (operation === 'prepare') prepare();
-  else if (operation === 'install') install();
+  if (operation === 'prepare') await prepare();
+  else if (operation === 'install') await install();
   else if (operation === 'cleanup') {
     const contents = readFileSync(selectionFile, 'utf8');
     const selection = contents ? JSON.parse(contents) : {};
