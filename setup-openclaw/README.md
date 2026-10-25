@@ -39,8 +39,8 @@ selects this mode.
 - uses: tanaabased/actions/setup-openclaw@v1
   id: openclaw
   with:
-    version: 2026.9.3
-    agent-system: 0.6.0
+    version: 2026.9.6
+    agent-system: 0.8.0
     needs-secret-service: true
     needs-ssh-key: true
     yolo: true
@@ -101,7 +101,7 @@ Node.js to satisfy the resolved OpenClaw package's requirement.
 
 | Selector | Source |
 | --- | --- |
-| `0.6.0` | Exact published `@tanaab/openclaw-agent-system` version; ranges and dist-tags are rejected. |
+| `0.8.0` | Exact published `@tanaab/openclaw-agent-system` version; ranges and dist-tags are rejected. |
 | `/absolute/plugin.tgz`, `./plugin.tgz`, `file:plugin.tgz` | Existing npm tarball, installed without rebuilding. |
 | `.`, `./checkout`, `/absolute/checkout`, `file:checkout` | Existing source directory, staged without changing the checkout. |
 | `github:tanaabased/openclaw-agent-system#<ref>` | Repository source; the ref resolves to a recorded commit. |
@@ -240,7 +240,8 @@ resolves saved or explicit helper context and prints the path, never log content
 ### `openclaw-diagnostics`
 
 Report the OpenClaw version, configuration validity, and bounded, redacted gateway
-evidence. Use `--exit-code` to retain the failure that prompted diagnostics.
+evidence, including the last completed stage and selected source after incomplete
+setup. Use `--exit-code` to retain the failure that prompted diagnostics.
 
 ```sh
 openclaw-diagnostics [options]

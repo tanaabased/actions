@@ -20,6 +20,7 @@ trap cleanup EXIT
 
 mkdir -p "$test_root/bin" "$test_root/workspace" "$test_root/state/openclaw" "$test_root/state/gateway"
 printf 'profile=fixture\nworkspace=%s\n' "$test_root/workspace" > "$test_root/state/context"
+printf '{}\n' > "$test_root/state/openclaw/openclaw.json"
 cat > "$test_root/bin/openclaw" <<'SH'
 #!/usr/bin/env bash
 case "$*" in
@@ -147,4 +148,19 @@ for helper in openclaw-setup openclaw-gateway openclaw-diagnostics; do
   if bash "$command_dir/$helper" "${args[@]}" > "$test_root/output" 2>&1; then exit 1; fi
   if grep -Fq diagnostic-sentinel-secret "$test_root/output"; then exit 1; fi
 done
+real_node="$(command -v node)"
+export TEST_REAL_NODE="$real_node"
+cat > "$test_root/bin/node" <<'SH'
+#!/usr/bin/env bash
+if [[ "$1" == */redact-stream.mjs ]]; then exit 62; fi
+exec "$TEST_REAL_NODE" "$@"
+SH
+chmod +x "$test_root/bin/node"
+set +e
+bash "$command_dir/openclaw-diagnostics" "${context[@]}" --exit-code 23 > "$test_root/output" 2>&1
+status=$?
+set -e
+test "$status" = 23
+if grep -Fq diagnostic-sentinel-secret "$test_root/output"; then exit 1; fi
+rm "$test_root/bin/node"
 echo 'Verified gateway process ownership, debug precedence, redaction, and failure status.'

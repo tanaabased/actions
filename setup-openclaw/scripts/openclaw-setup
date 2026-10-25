@@ -94,6 +94,8 @@ umask 077
 configure_context "$profile" "$workspace" "$state_dir" true
 export OPENCLAW_PROFILE="$profile" OPENCLAW_CONFIG_PATH="$openclaw_config_path" OPENCLAW_STATE_DIR="$openclaw_state_dir"
 export SETUP_OPENCLAW_DEBUG="$debug_enabled" SETUP_OP_CACHE="$op_cache"
+export SETUP_OPENCLAW_STATE_DIR="$state_dir"
+if [[ -z "$selection_file" ]]; then node "$command_dir/lib/setup-progress.mjs" reset context; fi
 
 fixture_pids=()
 fixture_starts=()
@@ -170,7 +172,7 @@ if [[ -n "$model" ]]; then
 else
   onboard_args+=(--auth-choice skip)
 fi
-run_setup_command run_openclaw onboard "${onboard_args[@]}"
+run_setup_stage onboarding run_openclaw onboard "${onboard_args[@]}"
 if [[ -n "$model" ]]; then run_setup_command run_openclaw models set "$model"; fi
 case "$model" in
   openai/gpt-5.4 | openai/gpt-5.4-*)
@@ -186,7 +188,7 @@ if [[ -n "$agent_system" ]]; then
 fi
 if [[ "$yolo" == true ]]; then run_setup_command run_openclaw exec-policy preset yolo; fi
 # Validate the final combined configuration after all setup operations.
-run_setup_command run_openclaw config validate --json
+run_setup_stage configuration-validation run_openclaw config validate --json
 write_context
 if [[ "$needs_ssh_key" == true ]]; then
   printf 'SSH_PRIVATE_KEY_PATH=%s\nSSH_PUBLIC_KEY_PATH=%s.pub\n' "$key_path" "$key_path" >> "$GITHUB_ENV"

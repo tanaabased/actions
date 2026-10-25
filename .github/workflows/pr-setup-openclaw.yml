@@ -25,7 +25,7 @@ jobs:
       - name: Verify debug contract
         run: bash .github/scripts/check-debug-contract.sh setup-openclaw
       - name: Verify harness contracts
-        run: node --test setup-openclaw/test/contracts.test.mjs
+        run: node --test setup-openclaw/test/*.test.mjs
       - name: Verify helper ownership and diagnostics
         run: bash setup-openclaw/test/helpers.sh
       - name: Install OpenClaw
@@ -229,9 +229,14 @@ jobs:
       matrix:
         os: [ubuntu-24.04, macos-26]
         selection: [published, source, tarball]
+        openclaw: [2026.9.6]
         include:
           - os: ubuntu-24.04
             selection: repository
+            openclaw: 2026.10.6
+          - os: macos-26
+            selection: repository
+            openclaw: 2026.10.6
     steps:
       - uses: actions/checkout@v7
       - name: Checkout pinned Agent System source
@@ -239,7 +244,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: tanaabased/openclaw-agent-system
-          ref: 4fc7dd6abab9d511d4a6a899b65305b74e4eec7b
+          ref: c68b66da803554bf38a6fdbebc1a3daad0713568
           path: agent-system-source
       - name: Preserve source changes
         if: matrix.selection == 'source'
@@ -266,9 +271,9 @@ jobs:
         id: setup
         uses: ./setup-openclaw
         with:
-          version: 2026.9.3
+          version: ${{ matrix.openclaw }}
           debug: true
-          agent-system: ${{ matrix.selection == 'published' && '0.6.0' || matrix.selection == 'source' && './agent-system-source' || matrix.selection == 'tarball' && env.LOCAL_PACKAGE || 'github:tanaabased/openclaw-agent-system#4fc7dd6abab9d511d4a6a899b65305b74e4eec7b' }}
+          agent-system: ${{ matrix.selection == 'published' && '0.8.0' || matrix.selection == 'source' && './agent-system-source' || matrix.selection == 'tarball' && env.LOCAL_PACKAGE || 'github:tanaabased/openclaw-agent-system#main' }}
           needs-secret-service: ${{ runner.os == 'Linux' }}
           needs-ssh-key: true
           yolo: true
@@ -277,7 +282,7 @@ jobs:
         id: install
         uses: ./setup-openclaw
         with:
-          version: 2026.9.3
+          version: ${{ matrix.openclaw }}
       - name: Prepare the same harness through the public helper
         if: matrix.selection == 'tarball'
         id: helper
@@ -303,7 +308,12 @@ jobs:
         run: |
           set -euo pipefail
           test "$MODE" = setup
-          test "$VERSION" = 0.6.0
+          if [[ "$SELECTION" != repository ]]; then test "$VERSION" = 0.8.0; fi
+          node --version
+          npm --version
+          openclaw --version
+          if command -v bun >/dev/null 2>&1; then bun --version; fi
+          printf 'installed Agent System: %s\nresolved source: %s\n' "$VERSION" "$SOURCE"
           test -f "$ARTIFACT"
           test -d "$PLUGIN_PATH"
           test "$PRIVATE_KEY" = "$HOME/.ssh/big-test-bucket-ssh"
@@ -329,7 +339,7 @@ jobs:
             assert.equal(report.plugin.id, "agent-system");
             assert.equal(report.plugin.status, "loaded");
             assert.equal(report.plugin.enabled, true);
-            assert.equal(report.plugin.version, "0.6.0");
+            assert.equal(report.plugin.version, process.env.VERSION);
             assert.equal(report.install.sourcePath, process.env.ARTIFACT);
             assert.equal(report.install.source, "npm");
             assert.equal(report.install.artifactKind, "npm-pack");
@@ -349,9 +359,9 @@ jobs:
             test "$ARTIFACT" = "$LOCAL_PACKAGE"
             test "$SETUP_OPENCLAW_DEBUG" = false
           elif [[ "$SELECTION" == published ]]; then
-            test "$SOURCE" = npm:@tanaab/openclaw-agent-system@0.6.0
+            test "$SOURCE" = npm:@tanaab/openclaw-agent-system@0.8.0
           else
-            test "$SOURCE" = github:tanaabased/openclaw-agent-system#4fc7dd6abab9d511d4a6a899b65305b74e4eec7b
+            [[ "$SOURCE" =~ ^github:tanaabased/openclaw-agent-system#[a-f0-9]{40}$ ]]
           fi
           gateway_log_path="$(openclaw-gateway log-path)"
           test "$gateway_log_path" = "$SETUP_OPENCLAW_STATE_DIR/gateway/gateway.log"
@@ -360,6 +370,9 @@ jobs:
           test -s "$gateway_log_path"
           openclaw gateway call agents.list --json --timeout 3000
           openclaw-gateway stop
+      - name: Diagnose failed setup
+        if: failure()
+        run: openclaw-diagnostics --exit-code 0
       - name: Clean gateway
         if: always()
         run: |

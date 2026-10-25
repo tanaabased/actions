@@ -124,6 +124,7 @@ test('action setup emits boolean inputs as bare helper switches', () => fixture(
 test('action setup and direct helper use the same model, plugin, cache, SSH and policy contract', () => fixture(directory => {
   const env = environment(directory);
   mockOpenclaw(directory, env);
+  writeFileSync(join(directory, 'bin/npm'), '#!/usr/bin/env node\nconsole.error("token=npm-probe-sentinel");process.exit(41);\n', { mode: 0o755 });
   mkdirSync(join(directory, 'package'));
   writeFileSync(join(directory, 'package/package.json'), JSON.stringify({name:'@tanaab/openclaw-agent-system',version:'0.6.0'}));
   const artifact = join(directory, 'plugin.tgz');
@@ -135,6 +136,8 @@ test('action setup and direct helper use the same model, plugin, cache, SSH and 
   const result = spawnSync('bash', ['-eo', 'pipefail', '-c', shellBlock('orchestrate')], { env, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   const calls = readFileSync(env.CALLS, 'utf8');
+  assert.match(result.stderr, /npm unavailable/);
+  assert.ok(!result.stderr.includes('npm-probe-sentinel'));
   assert.equal(calls.split('\n').filter(line => line.includes('"validate"')).length, 1);
   for (const expected of ['openai-api-key', 'openai/gpt-5.4-nano', 'codexDynamicToolsLoading', 'npm-pack:', '--accept-capabilities', 'allowConversationAccess', 'opCache', 'process-lifetime', 'exec-policy', 'yolo']) assert.ok(calls.includes(expected), expected);
   assert.ok(!result.stdout.includes(env.OPENAI_API_KEY) && !result.stderr.includes(env.OPENAI_API_KEY));
@@ -171,6 +174,63 @@ test('invalid helper flags fail before onboarding; failure diagnostics redact ra
   assert.equal(result.status, 17);
   assert.match(result.stderr, /REDACTED/);
   assert.ok(!result.stderr.includes(env.OPENAI_API_KEY));
+  const diagnostics = spawnSync('bash', [join(root, 'scripts/openclaw-diagnostics'), '--exit-code', '23'], { env, encoding:'utf8' });
+  assert.equal(diagnostics.status, 23, diagnostics.stderr);
+  assert.match(diagnostics.stderr, /setup context: incomplete/);
+  assert.match(diagnostics.stderr, /last completed stage: onboarding/);
+  assert.match(diagnostics.stderr, /current stage: configuration-validation/);
+  assert.ok(!diagnostics.stderr.includes(env.OPENAI_API_KEY));
+}));
+
+test('diagnostics read missing setup without creating directories and preserve failure on context mismatch', () => fixture(directory => {
+  const env = environment(directory);
+  mockOpenclaw(directory, env);
+  const run = () => spawnSync('bash', [join(root, 'scripts/openclaw-diagnostics'), '--profile', 'contract', '--exit-code', '23'], { env, encoding:'utf8' });
+  const missing = run();
+  assert.equal(missing.status, 23, missing.stderr);
+  assert.match(missing.stderr, /configuration: unavailable/);
+  assert.equal(existsSync(env.OPENCLAW_WORKSPACE), false);
+  assert.equal(existsSync(env.SETUP_OPENCLAW_STATE_DIR), false);
+  mkdirSync(env.OPENCLAW_WORKSPACE);
+  mkdirSync(env.SETUP_OPENCLAW_STATE_DIR);
+  writeFileSync(join(env.SETUP_OPENCLAW_STATE_DIR, 'context'), `profile=another\nworkspace=${env.OPENCLAW_WORKSPACE}\n`);
+  rmSync(env.CALLS);
+  const mismatch = run();
+  assert.equal(mismatch.status, 23, mismatch.stderr);
+  assert.match(mismatch.stderr, /profile does not match/);
+  assert.equal(existsSync(env.CALLS), false);
+}));
+
+test('repository resolution survives dependency failure and selection cleanup', () => fixture(directory => {
+  const env = environment(directory);
+  mkdirSync(join(directory, 'bin'));
+  const sourceManifest = {name:'@tanaab/openclaw-agent-system',version:'9.8.7',packageManager:'bun@1.4.2',scripts:{build:'build','plugin:check':'check'}};
+  writeFileSync(join(directory, 'bin/git'), `#!/usr/bin/env node
+const fs=require('node:fs'),path=require('node:path'),args=process.argv.slice(2);
+if(args.includes('checkout')) {fs.writeFileSync(path.join(args[1],'package.json'),${JSON.stringify(JSON.stringify(sourceManifest))});fs.writeFileSync(path.join(args[1],'bun.lock'),'');}
+if(args.includes('rev-parse')) console.log('abcdefabcdefabcdefabcdefabcdefabcdefabcd');
+`, {mode:0o755});
+  writeFileSync(join(directory, 'bin/bun'), `#!/usr/bin/env node
+if(process.argv.includes('--version')) console.log('1.4.2');
+else { console.error('token=dependency-sentinel');process.exit(29); }
+`, {mode:0o755});
+  writeFileSync(join(directory, 'bin/npm'), '#!/usr/bin/env node\nprocess.exit(41);\n', {mode:0o755});
+  env.PATH = `${join(directory, 'bin')}:${env.PATH}`;
+  const selection = join(directory, 'selection');
+  const selector = 'github:example/plugin#main';
+  const helper = (...args) => spawnSync(process.execPath, [join(root, 'scripts/lib/agent-system.mjs'), ...args, selector, selection], {env,encoding:'utf8'});
+  assert.equal(helper('prepare').status, 0);
+  const failed = helper('install');
+  assert.equal(failed.status, 29, failed.stderr);
+  assert.match(failed.stderr, /npm unavailable/);
+  assert.ok(!failed.stderr.includes('dependency-sentinel'));
+  assert.equal(helper('cleanup').status, 0);
+  const saved = JSON.parse(readFileSync(join(env.SETUP_OPENCLAW_STATE_DIR, 'setup-progress.json')));
+  assert.equal(saved.requested, selector);
+  assert.equal(saved.resolved, 'github:example/plugin#abcdefabcdefabcdefabcdefabcdefabcdefabcd');
+  assert.equal(saved.completed, 'source-resolution');
+  assert.equal(saved.current, 'dependencies');
+  assert.equal(existsSync(selection), false);
 }));
 
 test('action defaults establish a valid isolated context before run commands', () => fixture(directory => {

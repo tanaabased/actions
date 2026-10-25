@@ -75,19 +75,36 @@ configure_context() {
   if [[ "$create_paths" == 'true' ]]; then
     mkdir -p "$requested_workspace" "$requested_state_dir"
   fi
-  [[ -d "$requested_workspace" ]] || error "workspace directory does not exist: $requested_workspace"
-  [[ -d "$requested_state_dir" ]] || error "state directory does not exist: $requested_state_dir"
+  if [[ "$create_paths" != inspect ]]; then
+    [[ -d "$requested_workspace" ]] || error "workspace directory does not exist: $requested_workspace"
+    [[ -d "$requested_state_dir" ]] || error "state directory does not exist: $requested_state_dir"
+  fi
 
   profile="$requested_profile"
-  workspace="$(cd "$requested_workspace" && pwd -P)"
-  state_dir="$(cd "$requested_state_dir" && pwd -P)"
+  if [[ "$create_paths" == inspect ]]; then
+    workspace="$(diagnostic_path "$requested_workspace")"
+    state_dir="$(diagnostic_path "$requested_state_dir")"
+  else
+    workspace="$(cd "$requested_workspace" && pwd -P)"
+    state_dir="$(cd "$requested_state_dir" && pwd -P)"
+  fi
   [[ "$workspace" != '/' && "$state_dir" != '/' ]] || error 'workspace and state directory must not resolve to root' 2
   openclaw_state_dir="$state_dir/openclaw"
   openclaw_config_path="$openclaw_state_dir/openclaw.json"
   gateway_state_dir="$state_dir/gateway"
   gateway_log_path="$gateway_state_dir/gateway.log"
   context_path="$state_dir/context"
-  mkdir -p "$openclaw_state_dir" "$gateway_state_dir"
+  if [[ "$create_paths" != inspect ]]; then mkdir -p "$openclaw_state_dir" "$gateway_state_dir"; fi
+}
+
+diagnostic_path() {
+  node -e '
+    const fs = require("node:fs"), path = require("node:path");
+    const missing = [];
+    let current = path.resolve(process.argv[1]);
+    while (!fs.existsSync(current)) { missing.unshift(path.basename(current)); current = path.dirname(current); }
+    console.log(path.join(fs.realpathSync(current), ...missing));
+  ' "$1"
 }
 
 write_context() {
@@ -114,10 +131,18 @@ run_setup_command() {
     status=$?
   fi
   if ((status != 0)) || [[ "$debug_enabled" == true ]]; then
-    tail -n 30 "$log_file" | redact_stream >&2
+    redact_stream < "$log_file" | tail -n 30 | tail -c 8192 >&2 || error_message 'setup diagnostic output unavailable'
   fi
   rm -f "$log_file"
   return "$status"
+}
+
+run_setup_stage() {
+  local stage="$1"
+  shift
+  node "$command_dir/lib/setup-progress.mjs" start "$stage"
+  run_setup_command "$@"
+  node "$command_dir/lib/setup-progress.mjs" complete "$stage"
 }
 
 verify_context() {

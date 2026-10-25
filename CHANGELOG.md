@@ -1,5 +1,8 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+- Fixed `setup-openclaw` Agent System setup failures from large command output and npm pack JSON changes. [#62](https://github.com/tanaabased/actions/pull/62)
+- Fixed `setup-openclaw` diagnostics after incomplete setup to retain the original failure, source, and last completed stage. [#62](https://github.com/tanaabased/actions/pull/62)
+
 ## v1.0.5 - [October 6, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.5)
 
 - Fixed `publish-npm` to synchronize `edge` through trusted publishing without npm tokens. [#59](https://github.com/tanaabased/actions/issues/59) [#60](https://github.com/tanaabased/actions/pull/60)

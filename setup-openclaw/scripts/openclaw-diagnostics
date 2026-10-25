@@ -9,7 +9,7 @@ source "$command_dir/lib/openclaw-common.sh"
 profile=''
 workspace=''
 state_dir="${SETUP_OPENCLAW_STATE_DIR:-}"
-exit_code=0
+diagnostic_exit_code=0
 debug_setting="${SETUP_OPENCLAW_DEBUG:-auto}"
 
 usage() {
@@ -34,7 +34,7 @@ while (($# > 0)); do
         --profile) profile="$2" ;;
         --workspace) workspace="$2" ;;
         --state-dir) state_dir="$2" ;;
-        --exit-code) exit_code="$2" ;;
+        --exit-code) diagnostic_exit_code="$2" ;;
       esac
       shift 2
       ;;
@@ -54,30 +54,41 @@ while (($# > 0)); do
   esac
 done
 
-if [[ ! "$exit_code" =~ ^[0-9]+$ ]] || ((10#$exit_code > 255)); then
-  error "exit-code must be an integer from 0 through 255: $exit_code" 2
+if [[ ! "$diagnostic_exit_code" =~ ^[0-9]+$ ]] || ((10#$diagnostic_exit_code > 255)); then
+  error "exit-code must be an integer from 0 through 255: $diagnostic_exit_code" 2
 fi
+trap 'status=$?; trap - EXIT; if ((10#$diagnostic_exit_code != 0)); then exit "$diagnostic_exit_code"; else exit "$status"; fi' EXIT
 require_github_actions
 configure_debug "$debug_setting"
 resolve_saved_context
-configure_context "$profile" "$workspace" "$state_dir"
-verify_context
+configure_context "$profile" "$workspace" "$state_dir" inspect
+if [[ -f "$context_path" ]]; then
+  verify_context
+else
+  printf 'setup context: incomplete\n' >&2
+fi
+export SETUP_OPENCLAW_STATE_DIR="$state_dir"
+node "$command_dir/lib/setup-progress.mjs" report
 
 printf 'OpenClaw diagnostics\n' >&2
 if ! run_openclaw --version 2>&1 | redact_stream >&2; then
   error_message 'OpenClaw version inspection failed'
 fi
 
-set +e
-validation_report="$(run_openclaw config validate --json 2>&1)"
-validation_status=$?
-set -e
-if ((validation_status == 0)); then
-  printf 'configuration: valid\n' >&2
+if [[ -f "$openclaw_config_path" ]]; then
+  set +e
+  validation_report="$(run_openclaw config validate --json 2>&1)"
+  validation_status=$?
+  set -e
+  if ((validation_status == 0)); then
+    printf 'configuration: valid\n' >&2
+  else
+    printf 'configuration: invalid\n' >&2
+    printf '%s\n' "$validation_report" | redact_stream | tail -n 20 | tail -c 8192 >&2 || error_message 'configuration diagnostic output unavailable'
+  fi
 else
-  printf 'configuration: invalid\n' >&2
-  printf '%s\n' "$validation_report" | tail -n 20 | redact_stream >&2
+  printf 'configuration: unavailable\n' >&2
 fi
-print_gateway_diagnostics
+print_gateway_diagnostics || error_message 'gateway diagnostic output unavailable'
 
-exit "$exit_code"
+exit "$diagnostic_exit_code"
