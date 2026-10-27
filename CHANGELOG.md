@@ -1,5 +1,7 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+## v1.0.7 - [October 27, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.7)
+
 - fixed `publish-clawhub` uploads by staging every code-plugin archive. [#63](https://github.com/tanaabased/actions/issues/63) [#64](https://github.com/tanaabased/actions/pull/64)
 
 ## v1.0.6 - [October 25, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.6)
