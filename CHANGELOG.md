@@ -1,5 +1,7 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+- Updated `publish-clawhub` to CLI `0.24.1` and removed forced staged uploads. [#65](https://github.com/tanaabased/actions/issues/65)
+
 ## v1.0.7 - [October 27, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.7)
 
 - fixed `publish-clawhub` uploads by staging every code-plugin archive. [#63](https://github.com/tanaabased/actions/issues/63) [#64](https://github.com/tanaabased/actions/pull/64)
