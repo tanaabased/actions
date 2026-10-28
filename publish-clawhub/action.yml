@@ -46,7 +46,7 @@ inputs:
   clawhub-version:
     description: ClawHub CLI version installed for publication.
     required: false
-    default: 0.23.3
+    default: 0.24.1
 
 outputs:
   tarball-path:
@@ -79,38 +79,6 @@ runs:
         CLAWHUB_VERSION: ${{ inputs.clawhub-version }}
         NPM_CONFIG_LOGLEVEL: ${{ steps.debug.outputs.enabled == 'true' && 'verbose' || 'error' }}
       run: npm install --global "clawhub@$CLAWHUB_VERSION"
-
-    - name: Enable staged ClawHub uploads
-      shell: bash
-      run: |
-        set -euo pipefail
-
-        global_root="$(npm root -g)"
-        node - "$global_root" <<'NODE'
-        const { readFileSync, writeFileSync } = require('node:fs');
-        const { join } = require('node:path');
-
-        const packageRoot = join(process.argv[2], 'clawhub');
-        const packageJson = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'));
-        const schemaPath = join(packageRoot, 'dist', 'schema', 'packages.js');
-        const original = 'export const MAX_PACKAGE_MULTIPART_BYTES = 18 * 1024 * 1024;';
-        const patched = 'export const MAX_PACKAGE_MULTIPART_BYTES = 0;';
-        const source = readFileSync(schemaPath, 'utf8');
-
-        if (packageJson.name !== 'clawhub') {
-          throw new Error('Installed package at npm global root is not ClawHub');
-        }
-        if (source.split(original).length !== 2) {
-          throw new Error('Unable to apply staged-upload threshold patch to the installed ClawHub CLI');
-        }
-
-        const updated = source.replace(original, patched);
-        if (!updated.includes(patched) || updated.includes(original)) {
-          throw new Error('Staged-upload threshold patch assertion failed');
-        }
-        writeFileSync(schemaPath, updated);
-        console.log('Configured ClawHub to stage every code-plugin archive.');
-        NODE
 
     - id: inputs
       name: Validate publication inputs
