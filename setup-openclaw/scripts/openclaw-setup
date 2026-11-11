@@ -137,8 +137,9 @@ if [[ "$needs_secret_service" == true && "$(uname -s)" == Linux ]]; then
   [[ "$DBUS_SESSION_BUS_ADDRESS" == unix:path=/* && "$DBUS_SESSION_BUS_ADDRESS" != *$'\n'* && "$DBUS_SESSION_BUS_ADDRESS" != *,* ]] || error 'D-Bus address must name one absolute unix:path socket'
   socket_path="${DBUS_SESSION_BUS_ADDRESS#unix:path=}"
   [[ ! -e "$socket_path" && ! -L "$socket_path" ]] || error 'Secret Service socket already exists'
-  run_setup_command sudo apt-get update
-  run_setup_command sudo apt-get install --no-install-recommends --yes dbus-x11 gnome-keyring libsecret-tools
+  # shellcheck source=setup-openclaw/scripts/lib/secret-service-packages.sh
+  source "$command_dir/lib/secret-service-packages.sh"
+  prepare_secret_service_packages
   secret_home="$state_dir/secret-service-home"
   mkdir -p "$secret_home"
   dbus_pid="$(dbus-daemon --session --fork --address="$DBUS_SESSION_BUS_ADDRESS" --print-pid=1)"
