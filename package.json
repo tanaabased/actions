@@ -29,6 +29,17 @@
     "ci",
     "release"
   ],
+  "packageManager": "bun@1.4.2",
+  "scripts": {
+    "lint": "bun --bun eslint .lib/resolve-package.mjs '.lib/test/resolve-package.*.mjs' setup-openclaw/scripts/lib/resolve-openclaw.mjs eslint.config.js",
+    "test:unit": "node --test .lib/test/*.spec.mjs",
+    "test:component": "node --test .lib/test/*.component.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.15.0",
+    "globals": "^17.14.0"
+  },
   "files": [
     "README.md",
     "CHANGELOG.md",

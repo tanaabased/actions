@@ -133,8 +133,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
-      - name: Test discovery and fallback behavior
-        run: node --test .lib/test/resolve-package.test.mjs
       - name: Verify version selection contract
         shell: bash
         run: |

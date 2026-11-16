@@ -113,6 +113,11 @@
   `Test action / <action-name>`. Job names contain lowercase, hyphenated case
   names or runner/matrix values, separated by ` / `; do not repeat the action name.
   Preserve these check identities unless a naming change is explicitly requested.
+- Run shared resolver units (`*.spec.mjs`) through `test:unit` in
+  `pr-unit-tests.yml`, and filesystem components (`*.component.mjs`) through
+  `test:component` in `pr-component-tests.yml`. Both workflows run `lint`.
+  Keep these suites out of individual action workflows; those own real action
+  execution and its observable postconditions.
 - Run non-mutating tests and separate static lint on PRs, including example
   workflows. Avoid skipped jobs and repeated event coverage unless the payload
   changes the public contract.

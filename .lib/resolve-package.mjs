@@ -20,20 +20,10 @@ function fieldValue(manifest, field, required = true) {
   return value.trim();
 }
 
-export function resolvePackageSpec(name, requested, path, field = '') {
+export function selectPackageSpec(name, requested, manifest, field = '') {
   const input = requested.trim() || 'auto';
   if (input !== 'auto') return validateSpec(input);
-  if (!path) throw new Error('package-json must not be empty when version is auto');
-  let text;
-  try {
-    text = readFileSync(path, 'utf8');
-  } catch (error) {
-    if (error.code === 'ENOENT' && !field.trim()) return 'latest';
-    throw new Error(`cannot read package.json: ${path}`);
-  }
-  let manifest;
-  try { manifest = JSON.parse(text); }
-  catch { throw new Error(`cannot read valid JSON from ${path}`); }
+  if (manifest === undefined && !field.trim()) return 'latest';
   if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
     throw new Error('package.json must contain an object');
   }
@@ -44,6 +34,23 @@ export function resolvePackageSpec(name, requested, path, field = '') {
     throw new Error(`package.json declares conflicting ${name} versions`);
   }
   return validateSpec(development ?? runtime ?? 'latest');
+}
+
+export function resolvePackageSpec(name, requested, path, field = '') {
+  const input = requested.trim() || 'auto';
+  if (input !== 'auto') return selectPackageSpec(name, input);
+  if (!path) throw new Error('package-json must not be empty when version is auto');
+  let text;
+  try {
+    text = readFileSync(path, 'utf8');
+  } catch (error) {
+    if (error.code === 'ENOENT' && !field.trim()) return selectPackageSpec(name, input);
+    throw new Error(`cannot read package.json: ${path}`, { cause: error });
+  }
+  let manifest;
+  try { manifest = JSON.parse(text); }
+  catch { throw new Error(`cannot read valid JSON from ${path}`); }
+  return selectPackageSpec(name, input, manifest, field);
 }
 
 function validateSpec(spec) {
