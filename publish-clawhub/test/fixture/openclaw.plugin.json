@@ -3,9 +3,7 @@
   "name": "Actions ClawHub fixture",
   "description": "Code-plugin fixture for ClawHub publication validation.",
   "version": "0.0.0",
-  "categories": [
-    "agent-runtimes"
-  ],
+  "categories": ["agent-runtimes"],
   "configSchema": {
     "type": "object",
     "additionalProperties": false,

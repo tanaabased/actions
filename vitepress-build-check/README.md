@@ -38,11 +38,11 @@ invoking this action.
 
 ## Inputs
 
-| Input | Required | Default | Description |
-| --- | --- | --- | --- |
-| `debug` | No | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
-| `prepare-command` | No | — | Shell command to run before the build. |
-| `build-command` | Yes | — | Shell command that builds the VitePress site. |
+| Input             | Required | Default | Description                                                                   |
+| ----------------- | -------- | ------- | ----------------------------------------------------------------------------- |
+| `debug`           | No       | `auto`  | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
+| `prepare-command` | No       | —       | Shell command to run before the build.                                        |
+| `build-command`   | Yes      | —       | Shell command that builds the VitePress site.                                 |
 
 Caller-supplied commands are never printed or modified.
 

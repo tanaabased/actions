@@ -6,12 +6,23 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 
 const action = readFileSync(new URL('../action.yml', import.meta.url), 'utf8');
-const step = action.split(/^    - /m).find(value => value.startsWith('id: tags\n'));
+const step = action.split(/^ {4}- /m).find((value) => value.startsWith('id: tags\n'));
 assert.ok(step, 'Resolve publication tags step exists');
 const raw = step.split('      run: ')[1];
-const script = raw.slice(2).split('\n').map(line => line.slice(8)).join('\n');
+const script = raw
+  .slice(2)
+  .split('\n')
+  .map((line) => line.slice(8))
+  .join('\n');
 
-function resolve({ version = '1.2.3', event = 'push', nodeId = '', response = '', ghStatus = '0', explicit = '' } = {}) {
+function resolve({
+  version = '1.2.3',
+  event = 'push',
+  nodeId = '',
+  response = '',
+  ghStatus = '0',
+  explicit = '',
+} = {}) {
   const directory = mkdtempSync(join(tmpdir(), 'clawhub-tags-'));
   try {
     const bin = join(directory, 'bin');
@@ -19,15 +30,30 @@ function resolve({ version = '1.2.3', event = 'push', nodeId = '', response = ''
     mkdirSync(bin);
     mkdirSync(project);
     writeFileSync(join(project, 'package.json'), JSON.stringify({ version }));
-    writeFileSync(join(bin, 'gh'), `#!${process.execPath}\nprocess.stdout.write(process.env.GH_RESPONSE);process.exitCode=Number(process.env.GH_STATUS);\n`, { mode: 0o755 });
+    writeFileSync(
+      join(bin, 'gh'),
+      `#!${process.execPath}\nprocess.stdout.write(process.env.GH_RESPONSE);process.exitCode=Number(process.env.GH_STATUS);\n`,
+      { mode: 0o755 },
+    );
     const result = spawnSync('bash', ['-eo', 'pipefail', '-c', script], {
       encoding: 'utf8',
-      env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, GITHUB_OUTPUT: join(directory, 'output'),
-        GITHUB_EVENT_NAME: event, GITHUB_SERVER_URL: 'https://github.com', RELEASE_NODE_ID: nodeId,
-        WORKING_DIRECTORY: project, EXPLICIT_TAGS: explicit, GH_RESPONSE: response,
-        GH_STATUS: ghStatus, ACTION_DEBUG: 'false' },
+      env: {
+        ...process.env,
+        PATH: `${bin}:${process.env.PATH}`,
+        GITHUB_OUTPUT: join(directory, 'output'),
+        GITHUB_EVENT_NAME: event,
+        GITHUB_SERVER_URL: 'https://github.com',
+        RELEASE_NODE_ID: nodeId,
+        WORKING_DIRECTORY: project,
+        EXPLICIT_TAGS: explicit,
+        GH_RESPONSE: response,
+        GH_STATUS: ghStatus,
+        ACTION_DEBUG: 'false',
+      },
     });
-    const output = existsSync(join(directory, 'output')) ? readFileSync(join(directory, 'output'), 'utf8').trim() : '';
+    const output = existsSync(join(directory, 'output'))
+      ? readFileSync(join(directory, 'output'), 'utf8').trim()
+      : '';
     return { ...result, tags: output.startsWith('tags=') ? output.slice(5) : '' };
   } finally {
     rmSync(directory, { recursive: true, force: true });
@@ -44,8 +70,12 @@ test('release status, not SemVer syntax, selects ClawHub tags', () => {
     ['1.2.3', false, false, 'edge'],
     ['1.2.3', true, true, 'edge'],
   ]) {
-    const result = resolve({ version, event: 'release', nodeId: 'release-node',
-      response: release(latest, prerelease) });
+    const result = resolve({
+      version,
+      event: 'release',
+      nodeId: 'release-node',
+      response: release(latest, prerelease),
+    });
     assert.equal(result.status, 0, result.stderr);
     assert.equal(result.tags, expected);
   }
@@ -76,7 +106,10 @@ test('missing or unresolved authoritative release status fails closed', () => {
 });
 
 test('dry run keeps authentication conditional and publication in native dry-run mode', () => {
-  assert.match(action, /name: Authenticate with ClawHub\n      if: \$\{\{ inputs\.dry-run != 'true' \}\}/);
+  assert.match(
+    action,
+    /name: Authenticate with ClawHub\n {6}if: \$\{\{ inputs\.dry-run != 'true' \}\}/,
+  );
   assert.ok(action.includes('publish_args+=(--dry-run)'));
   assert.doesNotMatch(action, /clawhub package (?:tag|unpublish)\b/);
 });

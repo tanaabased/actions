@@ -38,15 +38,15 @@ preparation does not update `CHANGELOG.md`.
 
 ## Inputs
 
-| Input | Required | Default | Description |
-| --- | --- | --- | --- |
-| `debug` | No | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
-| `version` | No | Release tag | Semver-valid release version, or `dev` for an upstream-resolved development version. |
-| `release-date` | No | Release publication timestamp | Date or timestamp formatted as `Month D, YYYY` for the changelog. |
-| `release-url` | No | Release URL | Link recorded in the changelog. |
-| `commands` | No | — | Project-specific preparation commands. |
-| `root` | No | `${{ github.workspace }}` | Root containing the release source and `package.json`. |
-| `bun-version` | No | `auto` | [Project discovery](../setup-bun/README.md) or explicit Bun version. |
+| Input          | Required | Default                       | Description                                                                          |
+| -------------- | -------- | ----------------------------- | ------------------------------------------------------------------------------------ |
+| `debug`        | No       | `auto`                        | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`.        |
+| `version`      | No       | Release tag                   | Semver-valid release version, or `dev` for an upstream-resolved development version. |
+| `release-date` | No       | Release publication timestamp | Date or timestamp formatted as `Month D, YYYY` for the changelog.                    |
+| `release-url`  | No       | Release URL                   | Link recorded in the changelog.                                                      |
+| `commands`     | No       | —                             | Project-specific preparation commands.                                               |
+| `root`         | No       | `${{ github.workspace }}`     | Root containing the release source and `package.json`.                               |
+| `bun-version`  | No       | `auto`                        | [Project discovery](../setup-bun/README.md) or explicit Bun version.                 |
 
 Runtime discovery uses `root`; the resolved version is passed upstream.
 Release date and URL are required only when preparing a release; `dev` skips
@@ -55,8 +55,8 @@ The upstream preparation action has no debug input.
 
 ## Outputs
 
-| Output | Description |
-| --- | --- |
+| Output             | Description                                                       |
+| ------------------ | ----------------------------------------------------------------- |
 | `resolved-version` | Semver-valid version resolved by the upstream preparation action. |
 
 ## Test behavior

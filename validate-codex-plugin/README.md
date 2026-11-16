@@ -33,11 +33,11 @@ Supported runners: Linux (`ubuntu-24.04`) and macOS (`macos-26`).
 
 ## Inputs
 
-| Input | Required | Default | Description |
-| --- | --- | --- | --- |
-| `debug` | No | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
-| `plugin-directory` | No | `.` | Plugin root, relative to the workspace or absolute. |
-| `python-version` | No | `3.13` | Python version used to run the validator. |
+| Input              | Required | Default | Description                                                                   |
+| ------------------ | -------- | ------- | ----------------------------------------------------------------------------- |
+| `debug`            | No       | `auto`  | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
+| `plugin-directory` | No       | `.`     | Plugin root, relative to the workspace or absolute.                           |
+| `python-version`   | No       | `3.13`  | Python version used to run the validator.                                     |
 
 Debug enables verbose pip output.
 
@@ -47,8 +47,8 @@ bundled snapshot.
 
 ## Outputs
 
-| Output | Description |
-| --- | --- |
+| Output        | Description                                 |
+| ------------- | ------------------------------------------- |
 | `plugin-path` | Absolute path to the validated plugin root. |
 
 ## Test behavior
@@ -69,9 +69,9 @@ copied into this action as `LICENSE.openai-codex` and `NOTICE.openai-codex`.
 
 Pinned source checksums:
 
-| File | SHA-256 |
-| --- | --- |
-| `validate_plugin.py` | `f4eeadb733b28b0c3e714de263a76d6542866a672f3e99bdffcf4dbcdf85e944` |
+| File                       | SHA-256                                                            |
+| -------------------------- | ------------------------------------------------------------------ |
+| `validate_plugin.py`       | `f4eeadb733b28b0c3e714de263a76d6542866a672f3e99bdffcf4dbcdf85e944` |
 | `identifier_validation.py` | `a6d51ce4a9a7e8f85626ff5808a467a67574e7f8cdf1167ffb467c5f67e57223` |
 
 To update the snapshot, choose a reviewed OpenAI Codex commit, copy both files

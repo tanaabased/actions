@@ -8,6 +8,9 @@
     "index.js",
     "openclaw.plugin.json"
   ],
+  "devDependencies": {
+    "clawhub": "0.26.0"
+  },
   "openclaw": {
     "extensions": [
       "./index.js"

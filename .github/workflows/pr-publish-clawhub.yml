@@ -29,6 +29,7 @@ jobs:
         with:
           dry-run: true
           debug: true
+          working-directory: publish-clawhub/test/fixture
           tarball: ${{ steps.pack.outputs.tarball-path }}
           owner: tanaab
           source-repo: ${{ github.repository }}
@@ -38,3 +39,5 @@ jobs:
           PACKED_TARBALL: ${{ steps.pack.outputs.tarball-path }}
           PUBLISH_TARBALL: ${{ steps.publish.outputs.tarball-path }}
         run: test "$PUBLISH_TARBALL" = "$PACKED_TARBALL"
+      - name: Verify caller-declared CLI selection
+        run: test "$(clawhub --cli-version)" = '0.26.0'

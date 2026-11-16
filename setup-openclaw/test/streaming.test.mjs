@@ -22,16 +22,17 @@ test('both log streams exceed 16 mib without capture failure; quiet errors retai
       let evidence = false;
       let leaked = false;
       let redacted = false;
-      const run = () => command(process.execPath, ['-e', outputScript, String(status)], {
-        verbose,
-        diagnostics: text => {
-          bytes += Buffer.byteLength(text);
-          evidence ||= text.includes('last evidence');
-          leaked ||= text.includes('private-value');
-          redacted ||= text.includes('[REDACTED]');
-        },
-      });
-      if (status) await assert.rejects(run, error => error.exitCode === status);
+      const run = () =>
+        command(process.execPath, ['-e', outputScript, String(status)], {
+          verbose,
+          diagnostics: (text) => {
+            bytes += Buffer.byteLength(text);
+            evidence ||= text.includes('last evidence');
+            leaked ||= text.includes('private-value');
+            redacted ||= text.includes('[REDACTED]');
+          },
+        });
+      if (status) await assert.rejects(run, (error) => error.exitCode === status);
       else assert.equal(await run(), '');
       assert.equal(leaked, false);
       if (verbose) assert.ok(bytes > 32 * 1024 * 1024);
@@ -56,44 +57,78 @@ const poll=setInterval(()=>{if(fs.existsSync(process.argv[1])){
 fs.writeFileSync(process.argv[2],'done');clearInterval(poll);clearTimeout(timeout);}},10);`;
     await command(process.execPath, ['-e', script, ack, marker], {
       verbose: true,
-      diagnostics: () => { seenBeforeExit = !existsSync(marker); writeFileSync(ack, 'received'); },
+      diagnostics: () => {
+        seenBeforeExit = !existsSync(marker);
+        writeFileSync(ack, 'received');
+      },
     });
     assert.equal(seenBeforeExit, true);
     assert.equal(existsSync(marker), true);
-  } finally { rmSync(root, { recursive: true, force: true }); }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('machine output larger than 16 mib stays separate from logs and is returned completely', async () => {
   for (const verbose of [false, true]) {
     let reports = '';
-    const result = await command(process.execPath, ['-e', `require('node:fs').writeSync(1,JSON.stringify({data:'z'.repeat(18*1024*1024)}));console.error('token=structured-secret');`], {
-      capture: true, verbose, diagnostics: text => { reports += text; },
-    });
+    const result = await command(
+      process.execPath,
+      [
+        '-e',
+        `require('node:fs').writeSync(1,JSON.stringify({data:'z'.repeat(18*1024*1024)}));console.error('token=structured-secret');`,
+      ],
+      {
+        capture: true,
+        verbose,
+        diagnostics: (text) => {
+          reports += text;
+        },
+      },
+    );
     assert.equal(JSON.parse(result).data.length, 18 * 1024 * 1024);
     assert.ok(!reports.includes('structured-secret'));
     assert.ok(!reports.includes('zzzz'));
     if (verbose) assert.match(reports, /REDACTED/);
     else assert.equal(reports, '');
   }
-  await assert.rejects(() => command('/nonexistent/command', [], { capture: true, diagnostics: () => {} }), error => error.exitCode === 1);
+  await assert.rejects(
+    () => command('/nonexistent/command', [], { capture: true, diagnostics: () => {} }),
+    (error) => error.exitCode === 1,
+  );
 });
 
 test('redaction spans chunks, utf8 characters, private keys and multiline credentials', async () => {
-  const text = 'safe 🌿\nBearer abcdefghijklmnop\ntoken="okay" password="first words\nsecond"\n-----BEGIN OPENSSH PRIVATE KEY-----\nprivate-body\n-----END OPENSSH PRIVATE KEY-----\nknown-first\nknown-second\nend';
-  const source = Readable.from([...Buffer.from(text)].map(byte => Buffer.from([byte])));
+  const text =
+    'safe 🌿\nBearer abcdefghijklmnop\ntoken="okay" password="first words\nsecond"\n-----BEGIN OPENSSH PRIVATE KEY-----\nprivate-body\n-----END OPENSSH PRIVATE KEY-----\nknown-first\nknown-second\nend';
+  const source = Readable.from([...Buffer.from(text)].map((byte) => Buffer.from([byte])));
   const lines = [];
-  for await (const line of redactedLines(source, { API_KEY: 'known-first\nknown-second' })) lines.push(line);
+  for await (const line of redactedLines(source, { API_KEY: 'known-first\nknown-second' }))
+    lines.push(line);
   const output = lines.join('\n');
   assert.match(output, /safe 🌿/);
   assert.match(output, /end$/);
   assert.equal(redact('password="escaped\\" still-secret" tail', {}), 'password=[REDACTED] tail');
-  for (const secret of ['abcdefghijklmnop', 'first', 'second', 'private-body', 'known-first', 'known-second']) assert.ok(!output.includes(secret), secret);
+  for (const secret of [
+    'abcdefghijklmnop',
+    'first',
+    'second',
+    'private-body',
+    'known-first',
+    'known-second',
+  ])
+    assert.ok(!output.includes(secret), secret);
 });
 
 test('unbounded diagnostic lines are omitted without stopping commands or disclosing later private material', async () => {
   const reports = [];
-  await command(process.execPath, ['-e', `require('node:fs').writeSync(2,'x'.repeat(18*1024*1024)+'\\nprivate remainder');`], {
-    verbose: true, diagnostics: text => reports.push(text),
-  });
+  await command(
+    process.execPath,
+    ['-e', `require('node:fs').writeSync(2,'x'.repeat(18*1024*1024)+'\\nprivate remainder');`],
+    {
+      verbose: true,
+      diagnostics: (text) => reports.push(text),
+    },
+  );
   assert.deepEqual(reports, ['diagnostic stream omitted after an oversized line']);
 });

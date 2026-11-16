@@ -80,17 +80,17 @@ stamping. For parallel release jobs, follow the
 
 ## Inputs
 
-| Input | Required | Default | Description |
-| --- | --- | --- | --- |
-| `dry-run` | No | `false` | Prepare the real archive without uploading it or requiring credentials. |
-| `debug` | No | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
-| `plugin-directory` | No | `.` | Plugin root to archive, relative to the workspace or absolute. |
-| `archive-name` | Yes | — | Archive filename ending in `.tar.gz`, using letters, digits, dots, underscores, or hyphens. |
-| `dependency-policy` | No | `include-production` | `include-production` or `exclude-node-modules`. |
-| `bun-version` | No | `auto` | [Project discovery](../setup-bun/README.md) or explicit Bun version. |
-| `release-tag` | Yes | — | Existing GitHub Release tag that receives the archive. |
-| `repository` | No | `${{ github.repository }}` | GitHub repository containing the release. |
-| `github-token` | Live publication | — | Token with `contents: write`; omit in dry runs. |
+| Input               | Required         | Default                    | Description                                                                                 |
+| ------------------- | ---------------- | -------------------------- | ------------------------------------------------------------------------------------------- |
+| `dry-run`           | No               | `false`                    | Prepare the real archive without uploading it or requiring credentials.                     |
+| `debug`             | No               | `auto`                     | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`.               |
+| `plugin-directory`  | No               | `.`                        | Plugin root to archive, relative to the workspace or absolute.                              |
+| `archive-name`      | Yes              | —                          | Archive filename ending in `.tar.gz`, using letters, digits, dots, underscores, or hyphens. |
+| `dependency-policy` | No               | `include-production`       | `include-production` or `exclude-node-modules`.                                             |
+| `bun-version`       | No               | `auto`                     | [Project discovery](../setup-bun/README.md) or explicit Bun version.                        |
+| `release-tag`       | Yes              | —                          | Existing GitHub Release tag that receives the archive.                                      |
+| `repository`        | No               | `${{ github.repository }}` | GitHub repository containing the release.                                                   |
+| `github-token`      | Live publication | —                          | Token with `contents: write`; omit in dry runs.                                             |
 
 For a consumer pull-request dry run, set `dry-run: true`. It validates inputs
 and builds the real archive, but skips release upload. Archive
@@ -106,10 +106,10 @@ entirely. Both policies exclude version-control metadata.
 
 ## Outputs
 
-| Output | Description |
-| --- | --- |
+| Output         | Description                                      |
+| -------------- | ------------------------------------------------ |
 | `archive-path` | Absolute path to the prepared `.tar.gz` archive. |
-| `archive-name` | Filename of the prepared archive. |
+| `archive-name` | Filename of the prepared archive.                |
 
 ## Test behavior
 

@@ -47,12 +47,12 @@
   mix each category base at 16% with the `#f6fbf9` light surface for the flat
   circle, and use the category's existing darker value for the glyph.
 
-  | Category | Action role | Base | Circle | Glyph |
-  | --- | --- | --- | --- | --- |
-  | Setup | Runtime/tool installation | `#00c88a` | `#cff3e7` | `#008f64` |
+  | Category    | Action role                   | Base      | Circle    | Glyph     |
+  | ----------- | ----------------------------- | --------- | --------- | --------- |
+  | Setup       | Runtime/tool installation     | `#00c88a` | `#cff3e7` | `#008f64` |
   | Preparation | Packaging/release preparation | `#db2777` | `#f2d9e4` | `#9c1c55` |
-  | Testing | Validation/test support | `#c7a0ff` | `#eeecfa` | `#6f42c1` |
-  | Publishing | Publication/release delivery | `#5ab0ff` | `#ddeffa` | `#0069b8` |
+  | Testing     | Validation/test support       | `#c7a0ff` | `#eeecfa` | `#6f42c1` |
+  | Publishing  | Publication/release delivery  | `#5ab0ff` | `#ddeffa` | `#0069b8` |
 
   Use recognizable project marks or simple action symbols in roughly 180px
   artwork, centered in the category circle. Adapt glyphs to the category palette,
@@ -62,6 +62,7 @@
   monitoring, but add a category only when an action's primary job does not fit
   an existing group; choose and document its palette mapping from the canonical
   palette before using it.
+
 - Keep permissions and credentials beside usage. State supported operating
   systems and cover them in the action's PR matrix; add platforms for consumer needs.
 - Put standalone examples in `<name>/examples/` only when they add to the README.
@@ -71,7 +72,7 @@
 
 - Non-mutating actions expose no test or dry-run switch: they run normally.
 - An action that can mutate an external system exposes exactly `dry-run:
-  true|false`, defaulting to `false`. Dry runs require no publication
+true|false`, defaulting to `false`. Dry runs require no publication
   credentials, make no external mutations, validate real inputs and local
   artifacts, expose locally determinable outputs, and use native dry runs where
   available.
@@ -111,8 +112,13 @@
   and sentinel-secret redaction on supported runners.
 - Use matrices for meaningful input classes. Name action test workflows
   `Test action / <action-name>`. Job names contain lowercase, hyphenated case
-  names or runner/matrix values, separated by ` / `; do not repeat the action name.
+  names or runner/matrix values, separated by `/`; do not repeat the action name.
   Preserve these check identities unless a naming change is explicitly requested.
+- Run shared resolver units (`*.spec.mjs`) through `test:unit` in
+  `pr-unit-tests.yml`, and filesystem components (`*.component.mjs`) through
+  `test:component` in `pr-component-tests.yml`. Both workflows run `lint`.
+  Keep these suites out of individual action workflows; those own real action
+  execution and its observable postconditions.
 - Run non-mutating tests and separate static lint on PRs, including example
   workflows. Avoid skipped jobs and repeated event coverage unless the payload
   changes the public contract.
