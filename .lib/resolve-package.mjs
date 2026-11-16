@@ -3,7 +3,11 @@ import { pathToFileURL } from 'node:url';
 
 function fieldValue(manifest, field, required = true) {
   const segments = field.split('.');
-  if (segments.some(segment => !segment || ['__proto__', 'constructor', 'prototype'].includes(segment))) {
+  if (
+    segments.some(
+      (segment) => !segment || ['__proto__', 'constructor', 'prototype'].includes(segment),
+    )
+  ) {
     throw new Error(`package-field is invalid: ${field}`);
   }
   let value = manifest;
@@ -29,7 +33,7 @@ export function selectPackageSpec(name, requested, manifest, field = '') {
   }
   if (field.trim()) return validateSpec(fieldValue(manifest, field.trim()));
   const fields = [`devDependencies.${name}`, `dependencies.${name}`];
-  const [development, runtime] = fields.map(candidate => fieldValue(manifest, candidate, false));
+  const [development, runtime] = fields.map((candidate) => fieldValue(manifest, candidate, false));
   if (development && runtime && development !== runtime) {
     throw new Error(`package.json declares conflicting ${name} versions`);
   }
@@ -48,21 +52,31 @@ export function resolvePackageSpec(name, requested, path, field = '') {
     throw new Error(`cannot read package.json: ${path}`, { cause: error });
   }
   let manifest;
-  try { manifest = JSON.parse(text); }
-  catch { throw new Error(`cannot read valid JSON from ${path}`); }
+  try {
+    manifest = JSON.parse(text);
+  } catch {
+    throw new Error(`cannot read valid JSON from ${path}`);
+  }
   return selectPackageSpec(name, input, manifest, field);
 }
 
 function validateSpec(spec) {
   const characters = /^[0-9A-Za-z*<>=~^|._+\-\s]+$/;
   const start = /^\s*(?:[<>=~^]+\s*)?(?:v?\d|[xX*])/;
-  if (spec !== 'latest' && (!characters.test(spec) || !start.test(spec) || /^[xX*]\s*$/.test(spec))) {
+  if (
+    spec !== 'latest' &&
+    (!characters.test(spec) || !start.test(spec) || /^[xX*]\s*$/.test(spec))
+  ) {
     throw new Error('version must be an exact semantic version, range, or latest');
   }
   return spec;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  try { process.stdout.write(`${resolvePackageSpec(...process.argv.slice(2))}\n`); }
-  catch (error) { console.error(`error: ${error.message}`); process.exitCode = 1; }
+  try {
+    process.stdout.write(`${resolvePackageSpec(...process.argv.slice(2))}\n`);
+  } catch (error) {
+    console.error(`error: ${error.message}`);
+    process.exitCode = 1;
+  }
 }

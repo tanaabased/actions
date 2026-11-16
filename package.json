@@ -31,14 +31,19 @@
   ],
   "packageManager": "bun@1.4.2",
   "scripts": {
-    "lint": "bun --bun eslint .lib/resolve-package.mjs '.lib/test/resolve-package.*.mjs' setup-openclaw/scripts/lib/resolve-openclaw.mjs eslint.config.js",
+    "lint:eslint": "bun run --bun eslint .",
+    "format:check": "bun run --bun prettier . --check --ignore-unknown",
+    "format:write": "bun run --bun prettier . --write --ignore-unknown",
+    "lint": "bun run lint:eslint && bun run format:check",
     "test:unit": "node --test .lib/test/*.spec.mjs",
     "test:component": "node --test .lib/test/*.component.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint": "^10.15.0",
-    "globals": "^17.14.0"
+    "globals": "^17.14.0",
+    "prettier": "^3.10.1",
+    "eslint-config-prettier": "^10.1.8"
   },
   "files": [
     "README.md",
@@ -58,5 +63,6 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"
-  }
+  },
+  "type": "module"
 }

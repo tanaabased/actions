@@ -58,20 +58,20 @@ For parallel release jobs, follow the [shared checkout guidance](../publish-repo
 
 ## Inputs
 
-| Input | Required | Default | Description |
-| --- | --- | --- | --- |
-| `dry-run` | No | `false` | Use ClawHub's native dry run without authentication or publication. |
-| `debug` | No | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
-| `tarball` | Yes | — | Code-plugin tarball, relative to the workspace or absolute. |
-| `owner` | Yes | — | ClawHub user or organization publisher handle. |
-| `clawhub-token` | Live publication | — | ClawHub API token; omit in dry runs. |
-| `tags` | No | Automatic | Comma-separated release channels; when omitted, follows the shared release-channel policy. |
-| `source-repo` | No | `${{ github.repository }}` | Source repository recorded by ClawHub. |
-| `source-commit` | No | `${{ github.sha }}` | Source commit recorded by ClawHub. |
-| `wait-timeout` | No | `1800` | Maximum seconds to wait for definitive live publication. |
-| `working-directory` | No | `${{ github.workspace }}` | Project directory for CLI and runtime discovery. |
-| `node-version` | No | `auto` | [Project discovery](../setup-node/README.md) or explicit Node version. |
-| `clawhub-version` | No | `auto` | Explicit CLI version or range, or caller dependency discovery. |
+| Input               | Required         | Default                    | Description                                                                                |
+| ------------------- | ---------------- | -------------------------- | ------------------------------------------------------------------------------------------ |
+| `dry-run`           | No               | `false`                    | Use ClawHub's native dry run without authentication or publication.                        |
+| `debug`             | No               | `auto`                     | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`.              |
+| `tarball`           | Yes              | —                          | Code-plugin tarball, relative to the workspace or absolute.                                |
+| `owner`             | Yes              | —                          | ClawHub user or organization publisher handle.                                             |
+| `clawhub-token`     | Live publication | —                          | ClawHub API token; omit in dry runs.                                                       |
+| `tags`              | No               | Automatic                  | Comma-separated release channels; when omitted, follows the shared release-channel policy. |
+| `source-repo`       | No               | `${{ github.repository }}` | Source repository recorded by ClawHub.                                                     |
+| `source-commit`     | No               | `${{ github.sha }}`        | Source commit recorded by ClawHub.                                                         |
+| `wait-timeout`      | No               | `1800`                     | Maximum seconds to wait for definitive live publication.                                   |
+| `working-directory` | No               | `${{ github.workspace }}`  | Project directory for CLI and runtime discovery.                                           |
+| `node-version`      | No               | `auto`                     | [Project discovery](../setup-node/README.md) or explicit Node version.                     |
+| `clawhub-version`   | No               | `auto`                     | Explicit CLI version or range, or caller dependency discovery.                             |
 
 With `clawhub-version: auto`, the action reads `devDependencies.clawhub` or
 `dependencies.clawhub` from `working-directory`'s `package.json`. Both must match
@@ -97,8 +97,8 @@ The package family is fixed to `code-plugin`.
 
 ## Outputs
 
-| Output | Description |
-| --- | --- |
+| Output         | Description                            |
+| -------------- | -------------------------------------- |
 | `tarball-path` | Absolute path to the supplied tarball. |
 
 ## Test behavior

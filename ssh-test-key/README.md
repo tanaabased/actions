@@ -32,20 +32,20 @@ Omit `destination` to create the pair in an isolated directory below
 
 ## Inputs
 
-| Input | Required | Default | Description |
-| --- | --- | --- | --- |
-| `debug` | No | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
-| `destination` | No | — | Private-key destination; the public key is written at `<destination>.pub`. |
-| `comment` | No | `ssh-test-key` | Comment recorded in the public key. |
+| Input         | Required | Default        | Description                                                                   |
+| ------------- | -------- | -------------- | ----------------------------------------------------------------------------- |
+| `debug`       | No       | `auto`         | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
+| `destination` | No       | —              | Private-key destination; the public key is written at `<destination>.pub`.    |
+| `comment`     | No       | `ssh-test-key` | Comment recorded in the public key.                                           |
 
 Debug includes the public-key fingerprint and path, never private-key contents.
 
 ## Outputs
 
-| Output | Description |
-| --- | --- |
+| Output             | Description                                 |
+| ------------------ | ------------------------------------------- |
 | `private-key-path` | Absolute path to the generated private key. |
-| `public-key-path` | Absolute path to the generated public key. |
+| `public-key-path`  | Absolute path to the generated public key.  |
 
 ## Test behavior
 

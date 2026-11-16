@@ -47,14 +47,14 @@ action with the same exit code after removing its temporary directory.
 
 ## Inputs
 
-| Input | Required | Default | Description |
-| --- | --- | --- | --- |
-| `debug` | No | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
-| `scenarios` | Yes | — | Newline-delimited scenario paths or glob patterns, relative to the caller's workspace unless absolute. |
-| `shell` | Yes | — | Scenario shell: `bash` or `pwsh`. |
-| `retry` | No | `0` | Non-negative number of retries for each failed test. |
-| `stdin` | No | `true` | Whether Leia attaches standard input to scenario commands. |
-| `cleanup-header` | No | — | Optional comma-separated H2 prefixes Leia treats as cleanup sections. |
+| Input            | Required | Default | Description                                                                                            |
+| ---------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------ |
+| `debug`          | No       | `auto`  | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`.                          |
+| `scenarios`      | Yes      | —       | Newline-delimited scenario paths or glob patterns, relative to the caller's workspace unless absolute. |
+| `shell`          | Yes      | —       | Scenario shell: `bash` or `pwsh`.                                                                      |
+| `retry`          | No       | `0`     | Non-negative number of retries for each failed test.                                                   |
+| `stdin`          | No       | `true`  | Whether Leia attaches standard input to scenario commands.                                             |
+| `cleanup-header` | No       | —       | Optional comma-separated H2 prefixes Leia treats as cleanup sections.                                  |
 
 Leia has no supported verbosity control.
 
@@ -64,9 +64,9 @@ by the workflow shell.
 
 ## Outputs
 
-| Output | Description |
-| --- | --- |
-| `exit-code` | Exit code returned by Leia. |
+| Output                | Description                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------------ |
+| `exit-code`           | Exit code returned by Leia.                                                                      |
 | `temporary-directory` | Invocation-specific directory used beneath `RUNNER_TEMP` and removed before the action finishes. |
 
 ## Examples

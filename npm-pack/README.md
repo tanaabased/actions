@@ -32,20 +32,20 @@ Supported runner: Linux (`ubuntu-24.04`).
 
 ## Inputs
 
-| Input | Required | Default | Description |
-| --- | --- | --- | --- |
-| `debug` | No | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
-| `package-directory` | No | `.` | Directory containing `package.json`, relative to the workspace or absolute. |
-| `node-version` | No | `auto` | [Project discovery](../setup-node/README.md) or explicit Node version. |
+| Input               | Required | Default | Description                                                                   |
+| ------------------- | -------- | ------- | ----------------------------------------------------------------------------- |
+| `debug`             | No       | `auto`  | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
+| `package-directory` | No       | `.`     | Directory containing `package.json`, relative to the workspace or absolute.   |
+| `node-version`      | No       | `auto`  | [Project discovery](../setup-node/README.md) or explicit Node version.        |
 
 Runtime discovery uses `package-directory`.
 
 ## Outputs
 
-| Output | Description |
-| --- | --- |
-| `tarball-path` | Absolute path to the produced tarball. |
-| `package-name` | Package name recorded by `npm pack`. |
+| Output            | Description                             |
+| ----------------- | --------------------------------------- |
+| `tarball-path`    | Absolute path to the produced tarball.  |
+| `package-name`    | Package name recorded by `npm pack`.    |
 | `package-version` | Package version recorded by `npm pack`. |
 
 The action runs `npm pack --ignore-scripts --json` and fails unless npm reports

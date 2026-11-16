@@ -48,19 +48,19 @@ provide `version`, `release-date`, and `release-url` explicitly.
 
 ## Inputs
 
-| Input | Required | Default | Description |
-| --- | --- | --- | --- |
-| `dry-run` | No | `false` | Prepare locally without committing, pushing, or requiring publication credentials. |
-| `debug` | No | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
-| `version` | No | Release tag | Semver-valid exact tag and project version. |
-| `release-date` | No | Release publication timestamp | Date or timestamp formatted as `Month D, YYYY` for the changelog. |
-| `release-url` | No | Release URL | Link recorded in the changelog. |
-| `commands` | No | — | Project-specific preparation commands. |
-| `root` | No | `${{ github.workspace }}` | Repository root containing the release source and `package.json`. |
-| `bun-version` | No | `auto` | [Project discovery](../setup-bun/README.md) or explicit Bun version. |
-| `sync-branch` | No | Release target or current branch | Branch that receives the release commit. |
-| `sync-tags` | No | — | Newline-separated moving tags, such as `v1`, forced to the release commit. |
-| `sync-token` | No | `${{ github.token }}` | Token authorized to create the verified commit and push tags. |
+| Input          | Required | Default                          | Description                                                                        |
+| -------------- | -------- | -------------------------------- | ---------------------------------------------------------------------------------- |
+| `dry-run`      | No       | `false`                          | Prepare locally without committing, pushing, or requiring publication credentials. |
+| `debug`        | No       | `auto`                           | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`.      |
+| `version`      | No       | Release tag                      | Semver-valid exact tag and project version.                                        |
+| `release-date` | No       | Release publication timestamp    | Date or timestamp formatted as `Month D, YYYY` for the changelog.                  |
+| `release-url`  | No       | Release URL                      | Link recorded in the changelog.                                                    |
+| `commands`     | No       | —                                | Project-specific preparation commands.                                             |
+| `root`         | No       | `${{ github.workspace }}`        | Repository root containing the release source and `package.json`.                  |
+| `bun-version`  | No       | `auto`                           | [Project discovery](../setup-bun/README.md) or explicit Bun version.               |
+| `sync-branch`  | No       | Release target or current branch | Branch that receives the release commit.                                           |
+| `sync-tags`    | No       | —                                | Newline-separated moving tags, such as `v1`, forced to the release commit.         |
+| `sync-token`   | No       | `${{ github.token }}`            | Token authorized to create the verified commit and push tags.                      |
 
 For a consumer pull-request dry run, set `dry-run: true`. It validates release
 inputs and prepares generated files, but skips synchronization. Local release
@@ -76,8 +76,8 @@ token to publish as `tanaabot` and to satisfy repository rules.
 
 ## Outputs
 
-| Output | Description |
-| --- | --- |
+| Output             | Description                                                       |
+| ------------------ | ----------------------------------------------------------------- |
 | `resolved-version` | Semver-valid version resolved by the upstream preparation action. |
 
 ## Examples

@@ -1,4 +1,4 @@
-name: Component tests
+name: Component Tests
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 jobs:
-  tests:
+  component-tests:
     name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -25,7 +25,7 @@ jobs:
         uses: ./setup-bun
       - name: Install dependencies
         run: bun install --frozen-lockfile --ignore-scripts
-      - name: Lint resolver and tests
+      - name: Lint and check formatting
         run: bun run lint
       - name: Run component tests
         run: bun run test:component

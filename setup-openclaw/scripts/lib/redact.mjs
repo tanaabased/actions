@@ -6,16 +6,25 @@ export function redact(input, environment = process.env) {
     }
   }
   return output
-    .replace(/-----BEGIN [^-]*PRIVATE KEY-----[\s\S]*?(?:-----END [^-]*PRIVATE KEY-----|$)/g, '[REDACTED PRIVATE KEY]')
+    .replace(
+      /-----BEGIN [^-]*PRIVATE KEY-----[\s\S]*?(?:-----END [^-]*PRIVATE KEY-----|$)/g,
+      '[REDACTED PRIVATE KEY]',
+    )
     .replace(/(\bBearer\s+)[A-Za-z0-9._~+/=-]+/gi, '$1[REDACTED]')
-    .replace(/((?:"?)(?:authorization|token|password|secret|api[-_]?key|apikey|access[-_]?key|credential)(?:"?)\s*[:=]\s*)(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s,}]+)/gi, '$1[REDACTED]')
+    .replace(
+      /((?:"?)(?:authorization|token|password|secret|api[-_]?key|apikey|access[-_]?key|credential)(?:"?)\s*[:=]\s*)(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s,}]+)/gi,
+      '$1[REDACTED]',
+    )
     .replace(/\b(?:sk|ghp|github_pat)_[A-Za-z0-9_-]{8,}\b/g, '[REDACTED]');
 }
 
 /** Frame before redaction so split tokens, UTF-8 and multiline private keys cannot leak. */
 export async function* redactedLines(stream, environment = process.env) {
   const fragments = Object.entries(environment)
-    .filter(([name, value]) => /TOKEN|PASSWORD|SECRET|API_KEY|PRIVATE_KEY/i.test(name) && value.length >= 4)
+    .filter(
+      ([name, value]) =>
+        /TOKEN|PASSWORD|SECRET|API_KEY|PRIVATE_KEY/i.test(name) && value.length >= 4,
+    )
     .flatMap(([, value]) => value.split(/\r?\n/).filter(Boolean));
   let pending = '';
   let privateKey = false;
@@ -28,7 +37,7 @@ export async function* redactedLines(stream, environment = process.env) {
     }
     return -1;
   };
-  const sanitize = value => {
+  const sanitize = (value) => {
     let line = value;
     if (privateKey) {
       const end = /-----END [^-]*PRIVATE KEY-----/.exec(line);
@@ -42,8 +51,10 @@ export async function* redactedLines(stream, environment = process.env) {
       line = line.slice(end + 1);
       quote = '';
     }
-    for (const marker of line.matchAll(/-----([A-Z]+) [^-]*PRIVATE KEY-----/g)) privateKey = marker[1] === 'BEGIN';
-    const assignment = /(?:authorization|token|password|secret|api[-_]?key|apikey|access[-_]?key|credential)"?\s*[:=]\s*(["'])/gi;
+    for (const marker of line.matchAll(/-----([A-Z]+) [^-]*PRIVATE KEY-----/g))
+      privateKey = marker[1] === 'BEGIN';
+    const assignment =
+      /(?:authorization|token|password|secret|api[-_]?key|apikey|access[-_]?key|credential)"?\s*[:=]\s*(["'])/gi;
     for (const match of line.matchAll(assignment)) {
       if (closingQuote(line.slice(match.index + match[0].length), match[1]) < 0) {
         quote = match[1];

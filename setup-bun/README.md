@@ -32,18 +32,18 @@ parent directories or use this action's own version files.
 
 ## Inputs
 
-| Input | Default | Description |
-| --- | --- | --- |
-| `debug` | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
-| `bun-version` | `auto` | Project discovery or an explicit upstream version specification. |
-| `working-directory` | `${{ github.workspace }}` | Project directory, relative to the workspace or absolute. |
+| Input               | Default                   | Description                                                                   |
+| ------------------- | ------------------------- | ----------------------------------------------------------------------------- |
+| `debug`             | `auto`                    | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
+| `bun-version`       | `auto`                    | Project discovery or an explicit upstream version specification.              |
+| `working-directory` | `${{ github.workspace }}` | Project directory, relative to the workspace or absolute.                     |
 
 ## Outputs
 
-| Output | Description |
-| --- | --- |
-| `bun-version` | Installed runtime version reported by the upstream action. |
-| `version-spec` | Version specification sent to the installer. |
+| Output           | Description                                                     |
+| ---------------- | --------------------------------------------------------------- |
+| `bun-version`    | Installed runtime version reported by the upstream action.      |
+| `version-spec`   | Version specification sent to the installer.                    |
 | `version-source` | `input`, declaration filename or manifest field, or `fallback`. |
 
 ## Examples
