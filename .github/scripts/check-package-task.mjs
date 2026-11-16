@@ -27,6 +27,7 @@ const expected = [
   'LICENSE',
   '.lib/resolve-debug.sh',
   '.lib/resolve-runtime.mjs',
+  '.lib/resolve-package.mjs',
 ];
 for (const action of actions) {
   expected.push(`${action}/action.yml`, `${action}/README.md`, `${action}/icon.svg`);

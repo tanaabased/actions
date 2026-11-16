@@ -35,6 +35,7 @@
     "LICENSE",
     ".lib/resolve-debug.sh",
     ".lib/resolve-runtime.mjs",
+    ".lib/resolve-package.mjs",
     "[!.]*/action.yml",
     "[!.]*/README.md",
     "[!.]*/icon.svg",

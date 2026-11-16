@@ -69,7 +69,7 @@ Caller commands and source build scripts run with the job's permissions and cred
 | Input | Default | Description |
 | --- | --- | --- |
 | `debug` | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. Also applies to later helpers. |
-| `version` | `2026.11.3` | OpenClaw version or npm semver range; resolves to one exact published version. Use `auto` for [manifest discovery](#version). |
+| `version` | `auto` | OpenClaw version or npm semver range; resolves to one exact published version. Use `auto` for [manifest discovery](#version). |
 | `package-json` | `package.json` | Workspace-relative or absolute manifest used by `version: auto`. |
 | `package-field` | — | Dot-delimited manifest field overriding automatic discovery. |
 | `run` | — | Bash commands to execute after installation; selects run mode. |
@@ -85,15 +85,17 @@ Caller commands and source build scripts run with the job's permissions and cred
 
 ### `version`
 
-Omitting `version` installs `2026.11.3`, independently of the caller's manifest.
-
 With `version: auto`, read `devDependencies.openclaw`, then `dependencies.openclaw`
 from `package-json`. Both declarations must match when present; peer dependencies
 are ignored. `package-field` selects a different field instead.
 
-An explicit `version` bypasses manifest discovery. Dist-tags, URLs, invalid ranges,
-missing declarations, and packages without `engines.node` fail. The action installs
-Node.js to satisfy the resolved OpenClaw package's requirement.
+When the manifest or dependency declaration is absent, `auto` uses npm `latest`.
+An explicit `version` bypasses discovery. Pin a version in the caller's manifest
+or action input for repeatable selection; ranges and `latest` can change between runs.
+Malformed manifests, conflicting or invalid declarations, missing explicit
+`package-field` values, URLs, dist-tags other than `latest`, and packages without
+`engines.node` fail rather than falling back. The action installs Node.js to
+satisfy the resolved OpenClaw package's requirement.
 
 ### `agent-system`
 

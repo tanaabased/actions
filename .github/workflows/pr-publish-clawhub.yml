@@ -15,8 +15,8 @@ jobs:
         uses: actions/checkout@v7
       - name: Verify debug contract
         run: bash .github/scripts/check-debug-contract.sh publish-clawhub
-      - name: Test automatic tag selection
-        run: node --test publish-clawhub/test/tags.test.mjs
+      - name: Test version and tag selection
+        run: node --test .lib/test/resolve-package.test.mjs publish-clawhub/test/*.test.mjs
       - name: Pack code-plugin fixture
         id: pack
         uses: ./npm-pack
@@ -38,46 +38,3 @@ jobs:
           PACKED_TARBALL: ${{ steps.pack.outputs.tarball-path }}
           PUBLISH_TARBALL: ${{ steps.publish.outputs.tarball-path }}
         run: test "$PUBLISH_TARBALL" = "$PACKED_TARBALL"
-      - name: Verify default CLI selection
-        run: test "$(clawhub --cli-version)" = '0.26.0'
-
-  compatibility:
-    name: ubuntu-24.04 / ${{ matrix.case }}
-    runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - case: minimum-node
-            node-version: '22.13.0'
-            clawhub-version: '0.26.0'
-          - case: cli-override
-            node-version: '24'
-            clawhub-version: '0.24.1'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-      - name: Pack code-plugin fixture
-        id: pack
-        uses: ./npm-pack
-        with:
-          package-directory: publish-clawhub/test/fixture
-      - name: Validate ClawHub compatibility
-        id: publish
-        uses: ./publish-clawhub
-        with:
-          dry-run: true
-          node-version: ${{ matrix.node-version }}
-          clawhub-version: ${{ matrix.clawhub-version }}
-          tarball: ${{ steps.pack.outputs.tarball-path }}
-          owner: tanaab
-          source-repo: ${{ github.repository }}
-          source-commit: ${{ github.event.pull_request.head.sha }}
-      - name: Verify selected CLI and artifact handoff
-        env:
-          EXPECTED_CLI_VERSION: ${{ matrix.clawhub-version }}
-          PACKED_TARBALL: ${{ steps.pack.outputs.tarball-path }}
-          PUBLISH_TARBALL: ${{ steps.publish.outputs.tarball-path }}
-        run: |
-          test "$(clawhub --cli-version)" = "$EXPECTED_CLI_VERSION"
-          test "$PUBLISH_TARBALL" = "$PACKED_TARBALL"

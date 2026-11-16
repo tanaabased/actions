@@ -1,7 +1,7 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
-- Updated `publish-clawhub` to CLI `0.26.0`, requiring Node.js `^22.13.0 || >=24`; explicit CLI overrides remain supported. [#69](https://github.com/tanaabased/actions/issues/69)
-- Updated `setup-openclaw` to default to `2026.11.3`; manifest discovery now requires explicit `version: auto`. [#70](https://github.com/tanaabased/actions/pull/70)
+- Added caller dependency discovery to `publish-clawhub` with `clawhub-version: auto` as the default and npm `latest` as the fallback. Explicit versions remain supported. [#69](https://github.com/tanaabased/actions/issues/69)
+- Kept `setup-openclaw`'s `auto` default and added npm `latest` fallback when the caller has no OpenClaw declaration. [#70](https://github.com/tanaabased/actions/pull/70)
 
 ## v1.0.8 - [October 28, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.8)
 

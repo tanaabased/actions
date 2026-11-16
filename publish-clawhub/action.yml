@@ -36,7 +36,7 @@ inputs:
     required: false
     default: '1800'
   working-directory:
-    description: Project directory for automatic runtime selection, relative to the workspace or absolute.
+    description: Project directory for automatic CLI and runtime selection, relative to the workspace or absolute.
     required: false
     default: ${{ github.workspace }}
   node-version:
@@ -44,9 +44,9 @@ inputs:
     required: false
     default: auto
   clawhub-version:
-    description: ClawHub CLI version installed for publication.
+    description: ClawHub CLI version or range; auto uses the caller declaration or latest.
     required: false
-    default: 0.26.0
+    default: auto
 
 outputs:
   tarball-path:
@@ -77,8 +77,14 @@ runs:
       shell: bash
       env:
         CLAWHUB_VERSION: ${{ inputs.clawhub-version }}
+        WORKING_DIRECTORY: ${{ inputs.working-directory }}
         NPM_CONFIG_LOGLEVEL: ${{ steps.debug.outputs.enabled == 'true' && 'verbose' || 'error' }}
-      run: npm install --global "clawhub@$CLAWHUB_VERSION"
+      run: |
+        set -euo pipefail
+
+        package_json_path="$(node -p 'require("node:path").resolve(process.env.GITHUB_WORKSPACE, process.env.WORKING_DIRECTORY, "package.json")')"
+        version="$(node "$GITHUB_ACTION_PATH/../.lib/resolve-package.mjs" clawhub "$CLAWHUB_VERSION" "$package_json_path")"
+        npm install --global "clawhub@$version"
 
     - id: inputs
       name: Validate publication inputs
