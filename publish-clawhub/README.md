@@ -71,7 +71,11 @@ For parallel release jobs, follow the [shared checkout guidance](../publish-repo
 | `wait-timeout` | No | `1800` | Maximum seconds to wait for definitive live publication. |
 | `working-directory` | No | `${{ github.workspace }}` | Project directory for runtime discovery. |
 | `node-version` | No | `auto` | [Project discovery](../setup-node/README.md) or explicit Node version. |
-| `clawhub-version` | No | `0.24.1` | ClawHub CLI version installed for publication. |
+| `clawhub-version` | No | `0.26.0` | ClawHub CLI version installed for publication. |
+
+The default CLI requires Node.js `^22.13.0 || >=24`. If project discovery selects
+an older runtime, set `node-version: 24` for this action. Explicit
+`clawhub-version` overrides remain available and use that CLI's runtime requirements.
 
 For a consumer pull-request dry run, set `dry-run: true`. It validates the
 supplied tarball and publication metadata through ClawHub's native dry-run path,

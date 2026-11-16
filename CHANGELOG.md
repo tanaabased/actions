@@ -1,5 +1,7 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+- Updated `publish-clawhub` to CLI `0.26.0`, requiring Node.js `^22.13.0 || >=24`; explicit CLI overrides remain supported. [#69](https://github.com/tanaabased/actions/issues/69)
+
 ## v1.0.8 - [October 28, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.8)
 
 - Updated `publish-clawhub` to CLI `0.24.1` and removed forced staged uploads. [#65](https://github.com/tanaabased/actions/issues/65)

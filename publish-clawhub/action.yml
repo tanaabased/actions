@@ -46,7 +46,7 @@ inputs:
   clawhub-version:
     description: ClawHub CLI version installed for publication.
     required: false
-    default: 0.24.1
+    default: 0.26.0
 
 outputs:
   tarball-path:
