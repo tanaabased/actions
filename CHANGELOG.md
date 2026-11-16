@@ -1,5 +1,7 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+## v1.0.9 - [November 16, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.9)
+
 - Added caller dependency discovery to `publish-clawhub` with `clawhub-version: auto` as the default and npm `latest` as the fallback. Explicit versions remain supported. [#69](https://github.com/tanaabased/actions/issues/69)
 - Kept `setup-openclaw`'s `auto` default and added npm `latest` fallback when the caller has no OpenClaw declaration. [#70](https://github.com/tanaabased/actions/pull/70)
 
