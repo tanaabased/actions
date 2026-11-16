@@ -200,7 +200,6 @@ jobs:
         id: run
         uses: ./setup-openclaw
         with:
-          version: 2026.9.3
           run: |
             command -v openclaw
             command -v openclaw-setup
@@ -212,8 +211,10 @@ jobs:
         env:
           MODE: ${{ steps.run.outputs.mode }}
           CONFIG: ${{ steps.run.outputs.config-path }}
+          VERSION: ${{ steps.run.outputs.version }}
         run: |
           test "$MODE" = run
+          test "$VERSION" = '2026.11.3'
           test -f "$CONFIG"
           test "$OPENCLAW_CONFIG_PATH" = "$CONFIG"
       - name: Clean gateway
@@ -233,10 +234,10 @@ jobs:
         include:
           - os: ubuntu-24.04
             selection: repository
-            openclaw: 2026.10.6
+            openclaw: 2026.11.3
           - os: macos-26
             selection: repository
-            openclaw: 2026.10.6
+            openclaw: 2026.11.3
     steps:
       - uses: actions/checkout@v7
       - name: Checkout pinned Agent System source

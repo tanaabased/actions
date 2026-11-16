@@ -25,8 +25,6 @@ Selected when no setup inputs or `run` commands are supplied.
 
 ```yaml
 - uses: tanaabased/actions/setup-openclaw@v1
-  with:
-    version: 2026.9.3
 ```
 
 ### Setup mode
@@ -39,7 +37,6 @@ selects this mode.
 - uses: tanaabased/actions/setup-openclaw@v1
   id: openclaw
   with:
-    version: 2026.9.6
     agent-system: 0.8.0
     needs-secret-service: true
     needs-ssh-key: true
@@ -55,7 +52,6 @@ Version-selection inputs and `debug` work in all three modes.
 ```yaml
 - uses: tanaabased/actions/setup-openclaw@v1
   with:
-    version: 2026.9.3
     run: |
       openclaw-setup --workspace "$RUNNER_TEMP/main"
       trap 'openclaw-gateway stop' EXIT
@@ -73,7 +69,7 @@ Caller commands and source build scripts run with the job's permissions and cred
 | Input | Default | Description |
 | --- | --- | --- |
 | `debug` | `auto` | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. Also applies to later helpers. |
-| `version` | `auto` | OpenClaw version or npm semver range; resolves to one exact published version. See [version selection](#version). |
+| `version` | `2026.11.3` | OpenClaw version or npm semver range; resolves to one exact published version. Use `auto` for [manifest discovery](#version). |
 | `package-json` | `package.json` | Workspace-relative or absolute manifest used by `version: auto`. |
 | `package-field` | — | Dot-delimited manifest field overriding automatic discovery. |
 | `run` | — | Bash commands to execute after installation; selects run mode. |
@@ -88,6 +84,8 @@ Caller commands and source build scripts run with the job's permissions and cred
 | `yolo` | — (disabled) | `true` or `false`; allow unattended execution in this isolated profile. |
 
 ### `version`
+
+Omitting `version` installs `2026.11.3`, independently of the caller's manifest.
 
 With `version: auto`, read `devDependencies.openclaw`, then `dependencies.openclaw`
 from `package-json`. Both declarations must match when present; peer dependencies

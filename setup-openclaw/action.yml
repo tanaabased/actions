@@ -9,7 +9,7 @@ inputs:
   version:
     description: OpenClaw version or range; auto discovers the package-tested declaration.
     required: false
-    default: auto
+    default: 2026.11.3
   package-json:
     description: package.json used when version is auto, relative to the workspace or absolute.
     required: false
