@@ -272,7 +272,7 @@ jobs:
         with:
           version: ${{ matrix.openclaw }}
           debug: true
-          agent-system: ${{ matrix.selection == 'published' && '0.8.0' || matrix.selection == 'source' && './agent-system-source' || matrix.selection == 'tarball' && env.LOCAL_PACKAGE || 'github:tanaabased/openclaw-agent-system#main' }}
+          agent-system: ${{ matrix.selection == 'published' && '0.8.0' || matrix.selection == 'source' && './agent-system-source' || 'github:tanaabased/openclaw-agent-system#main' }}
           needs-secret-service: ${{ runner.os == 'Linux' }}
           needs-ssh-key: true
           yolo: true

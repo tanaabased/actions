@@ -25,6 +25,7 @@ cat > "$test_root/bin/openclaw" <<'SH'
 #!/usr/bin/env bash
 case "$*" in
   *'config get gateway.port') echo 19876 ;;
+  *'gateway run'*) printf 'startup stopped: token=diagnostic-sentinel-secret\n'; sleep 1; exit 42 ;;
   *'config validate --json') echo 'error: token=diagnostic-sentinel-secret'; exit 17 ;;
   *'--version') echo fixture ;;
   *) exit 99 ;;
@@ -112,6 +113,12 @@ test_pid=''
 # A valid record for an exited child is removed without signaling anything else.
 printf '%s\n%s\n' "$gateway_pid" "$started" > "$pid_path"
 bash "$command_dir/openclaw-gateway" stop "${context[@]}" --timeout 5
+test ! -f "$pid_path"
+
+if bash "$command_dir/openclaw-gateway" start "${context[@]}" --debug > "$test_root/output" 2>&1; then exit 1; fi
+grep -Fq 'gateway child exit status: 42' "$test_root/output"
+grep -Fq 'startup stopped: token=[REDACTED]' "$test_root/output"
+if grep -Fq diagnostic-sentinel-secret "$test_root/output"; then exit 1; fi
 test ! -f "$pid_path"
 
 printf 'error: token=diagnostic-sentinel-secret\n' > "$test_root/state/gateway/gateway.log"
