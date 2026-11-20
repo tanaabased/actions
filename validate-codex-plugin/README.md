@@ -30,11 +30,11 @@ Supported runners: Linux (`ubuntu-24.04`) and macOS (`macos-26`).
 
 ## Inputs
 
-| Input              | Required | Default | Description                                                                  |
-| ------------------ | -------- | ------- | ---------------------------------------------------------------------------- |
+| Input              | Required | Default | Description                                                                   |
+| ------------------ | -------- | ------- | ----------------------------------------------------------------------------- |
 | `debug`            | No       | `auto`  | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
-| `plugin-directory` | No       | `.`     | Plugin root, relative to workspace or absolute.                              |
-| `python-version`   | No       | `3.13`  | Python version used to run manifest checks.                                  |
+| `plugin-directory` | No       | `.`     | Plugin root, relative to workspace or absolute.                               |
+| `python-version`   | No       | `3.13`  | Deprecated compatibility input; ignored. Bun runs manifest checks.            |
 
 ## Outputs
 
@@ -49,7 +49,7 @@ results with isolated local marketplace installs using Codex CLI `0.170.0`.
 Fixtures cover Canon’s dark icon, unknown nested metadata, portable selection,
 compatibility fallback, malformed JSON, and invalid names and versions.
 To repeat installer comparisons locally, run
-`python3 validate-codex-plugin/test/compare-installer.py /path/to/codex`.
+`bun validate-codex-plugin/test/compare-installer.mjs /path/to/codex`.
 
 ## Notes
 

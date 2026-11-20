@@ -11,7 +11,7 @@ inputs:
     required: false
     default: .
   python-version:
-    description: Python version used to run the validator.
+    description: Deprecated compatibility input; ignored.
     required: false
     default: '3.13'
 
@@ -33,11 +33,6 @@ runs:
         echo "enabled=$effective_debug" >> "$GITHUB_OUTPUT"
         [[ "$effective_debug" != 'true' ]] || echo 'Diagnostics enabled for Codex plugin validation.'
 
-    - name: Set up Python
-      uses: actions/setup-python@v7
-      with:
-        python-version: ${{ inputs.python-version }}
-
     - id: inputs
       name: Validate action inputs
       shell: bash
@@ -56,8 +51,14 @@ runs:
         echo "plugin-path=$plugin_path" >> "$GITHUB_OUTPUT"
         [[ "$ACTION_DEBUG" != 'true' ]] || echo "Validating Codex plugin at $plugin_path"
 
+    - name: Set up Bun
+      uses: $/setup-bun
+      with:
+        debug: ${{ steps.debug.outputs.enabled }}
+        working-directory: ${{ github.action_path }}/..
+
     - name: Validate plugin
       shell: bash
       env:
         PLUGIN_PATH: ${{ steps.inputs.outputs.plugin-path }}
-      run: python "${{ github.action_path }}/scripts/validate_plugin.py" "$PLUGIN_PATH"
+      run: bun "$GITHUB_ACTION_PATH/scripts/validate-plugin.mjs" "$PLUGIN_PATH"

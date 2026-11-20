@@ -21,13 +21,15 @@ jobs:
         uses: actions/checkout@v7
       - name: Set up Node.js for installer comparisons
         uses: ./setup-node
+      - name: Set up Bun for installer comparisons
+        uses: ./setup-bun
       - name: Compare fixtures with isolated Codex CLI installs
         run: |
           set -euo pipefail
           codex_prefix="$(mktemp -d "${RUNNER_TEMP}/codex-cli.XXXXXX")"
           trap 'rm -rf "$codex_prefix"' EXIT
           npm install --prefix "$codex_prefix" --ignore-scripts --no-audit --no-fund @openai/codex@0.170.0
-          python3 validate-codex-plugin/test/compare-installer.py "$codex_prefix/node_modules/.bin/codex"
+          bun validate-codex-plugin/test/compare-installer.mjs "$codex_prefix/node_modules/.bin/codex"
       - name: Verify debug contract
         run: bash .github/scripts/check-debug-contract.sh validate-codex-plugin
       - name: Validate valid plugin fixture
@@ -35,6 +37,7 @@ jobs:
         uses: ./validate-codex-plugin
         with:
           debug: true
+          python-version: ignored
           plugin-directory: validate-codex-plugin/test/fixture/valid
       - name: Verify valid fixture output
         env:

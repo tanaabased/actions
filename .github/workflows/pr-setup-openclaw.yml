@@ -229,12 +229,13 @@ jobs:
         selection: [published, source, tarball]
         openclaw: [2026.9.6]
         include:
+          # Agent System main requires plugin API 2026.11.5 or newer.
           - os: ubuntu-24.04
             selection: repository
-            openclaw: 2026.11.3
+            openclaw: 2026.11.5
           - os: macos-26
             selection: repository
-            openclaw: 2026.11.3
+            openclaw: 2026.11.5
     steps:
       - uses: actions/checkout@v7
       - name: Checkout pinned Agent System source
