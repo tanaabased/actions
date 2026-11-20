@@ -25,10 +25,8 @@ Supported runners: Linux (`ubuntu-24.04`), macOS (`macos-26`), and Windows (`win
 ```
 
 `auto` checks `.node-version`, `.nvmrc`, `.tool-versions` (`nodejs`), then `package.json#engines.node`, falling back to `26.x`.
-An explicit `node-version` bypasses discovery. Empty or malformed declarations
-fail instead of falling through; the upstream installer validates version syntax
-and availability. Discovery stays inside `working-directory`; it does not walk
-parent directories or use this action's own version files.
+Discovery uses only `working-directory`. An invalid declaration fails setup.
+Set `node-version` explicitly to bypass discovery.
 
 ## Inputs
 
@@ -55,16 +53,7 @@ parent directories or use this action's own version files.
     working-directory: packages/cli
 ```
 
-## Test behavior
-
-PR tests perform normal setup and cover declaration
-precedence, overrides, missing declarations, malformed inputs, and real installs
-from files, package metadata, ranges, and fallbacks on every supported runner.
-
 ## Notes
 
-Setup selects the runtime for subsequent steps in the same job; it does not
-restore a previous version afterward. Upstream manages installation and binary
-caching. Dependency installation, package caching, and registry authentication
-remain caller-owned. Debug reports selection provenance; the upstream installer
-has no separate debug input.
+- The selected runtime stays on `PATH` for subsequent steps in the job. Install project dependencies separately.
+- Enable `debug` to see which declaration selected the version. The upstream installer has no separate verbosity setting.

@@ -121,7 +121,14 @@ grep -Fq 'startup stopped: token=[REDACTED]' "$test_root/output"
 if grep -Fq diagnostic-sentinel-secret "$test_root/output"; then exit 1; fi
 test ! -f "$pid_path"
 
-printf 'error: token=diagnostic-sentinel-secret\n' > "$test_root/state/gateway/gateway.log"
+printf '%s\n' 'token="fixture' 'warn diagnostic-sentinel-secret"' 'warn: gateway unavailable' > "$gateway_log_path"
+# The readiness excerpt starts in the middle of a multiline value.
+{
+  echo 'token="fixture'
+  for ((line=0; line<20; line++)); do echo 'fixture continuation'; done
+  echo 'diagnostic-sentinel-secret"'
+  echo 'readiness check finished'
+} > "$gateway_state_dir/gateway-call.log"
 for setting in auto true false; do
   for runner_debug in '' 1; do
     set +e
@@ -131,6 +138,8 @@ for setting in auto true false; do
     set -e
     test "$status" = 23
     grep -Fq 'configuration: invalid' "$test_root/output"
+    grep -Fq 'warn: gateway unavailable' "$test_root/output"
+    grep -Fq 'readiness check finished' "$test_root/output"
     grep -Fq '[REDACTED]' "$test_root/output"
     if grep -Fq 'diagnostic-sentinel-secret' "$test_root/output"; then exit 1; fi
     if [[ "$setting" == true || ( "$setting" == auto && "$runner_debug" == 1 ) ]]; then
@@ -147,8 +156,13 @@ status=$?
 set -e
 test "$status" = 23
 grep -Fq 'gateway log:' "$test_root/output"
+cp "$gateway_state_dir/gateway-call.log" "$gateway_log_path"
+echo 'gateway diagnostics complete' >> "$gateway_log_path"
 bash "$command_dir/openclaw-gateway" diagnostics "${context[@]}" --debug > "$test_root/output" 2>&1
 grep -Fq 'gateway log:' "$test_root/output"
+grep -Fq 'recent gateway output (redacted):' "$test_root/output"
+grep -Fq 'gateway diagnostics complete' "$test_root/output"
+if grep -Fq diagnostic-sentinel-secret "$test_root/output"; then exit 1; fi
 for helper in openclaw-setup openclaw-gateway openclaw-diagnostics; do
   args=("${context[@]}" --debug diagnostic-sentinel-secret)
   [[ "$helper" != openclaw-gateway ]] || args=(diagnostics "${args[@]}")

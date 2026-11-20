@@ -106,22 +106,18 @@ satisfy the resolved OpenClaw package's requirement.
 | `.`, `./checkout`, `/absolute/checkout`, `file:checkout`  | Existing source directory, staged without changing the checkout.                            |
 | `github:tanaabased/openclaw-agent-system#<ref>`           | Repository source; the ref resolves to a recorded commit.                                   |
 
-Missing paths fail. Source packages must declare the correct package name, an
-exact version, exact `bun@` package manager, `bun.lock`, `build`, and `plugin:check`.
-The build excludes `.git`, `node_modules`, and `dist`, installs frozen dependencies
-with lifecycle scripts disabled, then builds, checks, and packs the package.
-Action setup installs the required Bun version; later helper calls require it
-already on `PATH`.
+For source installs, the package must be `@tanaab/openclaw-agent-system` with
+an exact version, an exact `bun@` pin in `packageManager`, a `bun.lock`, and
+`build` and `plugin:check` scripts. The action installs the required Bun version.
+When invoking `openclaw-setup` directly for a source install, put that Bun version on `PATH` first.
 
-Installation authorizes capabilities and conversation hooks, applies `op-cache`,
-and checks that the requested plugin version loads. Configuration is validated once
-after setup completes.
+Installation authorizes the plugin’s capabilities and conversation hooks.
 
 ## Outputs
 
-Context outputs are available in every mode. Agent System and fixture outputs
-are populated by setup mode when requested; helper calls inside `run` own any
-additional output contract.
+Context outputs are available in every mode. If `openclaw-setup` selects a new
+workspace or profile inside `run`, use those final values in later steps.
+Agent System and fixture outputs are populated when their setup is requested.
 
 | Output                       | Description                                                             |
 | ---------------------------- | ----------------------------------------------------------------------- |
@@ -231,11 +227,9 @@ openclaw-gateway <command> [options]
 | `--debug`             | `SETUP_OPENCLAW_DEBUG` or `auto`           | Enable verbose helper and OpenClaw logging.                                          |
 | `-h`, `--help`        | —                                          | Display command help.                                                                |
 
-The gateway binds to loopback and keeps onboarding's authentication; its token is
-never an action output. Helpers verify process ownership before signaling it.
-A failed start prints diagnostics, stops its process, and preserves the failure.
-Use `openclaw-gateway log-path` when a later step needs the raw log. The command
-resolves saved or explicit helper context and prints the path, never log contents.
+The gateway listens on loopback with the profile’s authentication. Use
+`openclaw-gateway diagnostics` for redacted output or `openclaw-gateway log-path`
+when you need the raw log file.
 
 ### `openclaw-diagnostics`
 
@@ -268,12 +262,3 @@ openclaw-diagnostics [options]
 - `setup-agent-system` is retired. Use the `agent-system` input or
   `openclaw-setup --agent-system`; the old `version` maps to `agent-system`, and
   `source-directory` maps to an explicit local directory selector.
-
-## Test behavior
-
-The action always performs normal installation and setup; it has no dry-run switch.
-PR checks cover all three modes on Linux/macOS, Agent System source forms, fixtures,
-helper context, gateway readiness, invalid inputs, diagnostics, and failure cleanup.
-Local contract tests use controlled commands; PR integration tests install real
-packages. Model-provider authentication and consumer scenarios require live
-consumer validation.

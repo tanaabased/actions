@@ -6,17 +6,16 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 
 const action = readFileSync(new URL('../action.yml', import.meta.url), 'utf8');
-const step = action.split(/^ {4}- /m).find((value) => value.startsWith('id: tags\n'));
-assert.ok(step, 'Resolve publication tags step exists');
-const raw = step.split('      run: ')[1];
-const script = raw
-  .slice(2)
-  .split('\n')
-  .map((line) => line.slice(8))
-  .join('\n');
+function shellStep(header) {
+  const step = action.split(/^ {4}- /m).find((value) => value.startsWith(header + '\n'));
+  assert.ok(step, header);
+  return step.split('      run: |\n')[1].replace(/^ {8}/gm, '');
+}
+
+const tagScript = shellStep('id: tags');
+const publishScript = shellStep('name: Publish package');
 
 function resolve({
-  version = '1.2.3',
   event = 'push',
   nodeId = '',
   response = '',
@@ -26,16 +25,13 @@ function resolve({
   const directory = mkdtempSync(join(tmpdir(), 'clawhub-tags-'));
   try {
     const bin = join(directory, 'bin');
-    const project = join(directory, 'project');
     mkdirSync(bin);
-    mkdirSync(project);
-    writeFileSync(join(project, 'package.json'), JSON.stringify({ version }));
     writeFileSync(
       join(bin, 'gh'),
       `#!${process.execPath}\nprocess.stdout.write(process.env.GH_RESPONSE);process.exitCode=Number(process.env.GH_STATUS);\n`,
       { mode: 0o755 },
     );
-    const result = spawnSync('bash', ['-eo', 'pipefail', '-c', script], {
+    const result = spawnSync('bash', ['-eo', 'pipefail', '-c', tagScript], {
       encoding: 'utf8',
       env: {
         ...process.env,
@@ -44,7 +40,6 @@ function resolve({
         GITHUB_EVENT_NAME: event,
         GITHUB_SERVER_URL: 'https://github.com',
         RELEASE_NODE_ID: nodeId,
-        WORKING_DIRECTORY: project,
         EXPLICIT_TAGS: explicit,
         GH_RESPONSE: response,
         GH_STATUS: ghStatus,
@@ -64,14 +59,13 @@ function release(isLatest, isPrerelease) {
   return JSON.stringify({ data: { node: { __typename: 'Release', isLatest, isPrerelease } } });
 }
 
-test('release status, not SemVer syntax, selects ClawHub tags', () => {
-  for (const [version, latest, prerelease, expected] of [
-    ['1.2.3-beta.1', true, false, 'latest,edge'],
-    ['1.2.3', false, false, 'edge'],
-    ['1.2.3', true, true, 'edge'],
+test('GitHub release status selects ClawHub tags', () => {
+  for (const [latest, prerelease, expected] of [
+    [true, false, 'latest,edge'],
+    [false, false, 'edge'],
+    [true, true, 'edge'],
   ]) {
     const result = resolve({
-      version,
       event: 'release',
       nodeId: 'release-node',
       response: release(latest, prerelease),
@@ -81,10 +75,37 @@ test('release status, not SemVer syntax, selects ClawHub tags', () => {
   }
 });
 
-test('without release context, package SemVer selects tags', () => {
-  assert.equal(resolve({ version: '1.2.3' }).tags, 'latest,edge');
-  assert.equal(resolve({ version: '1.2.3-rc.1' }).tags, 'edge');
-  assert.equal(resolve({ version: '1.2.3+build-1' }).tags, 'latest,edge');
+test('outside release events the CLI receives only explicitly supplied tags', () => {
+  for (const explicit of ['', 'edge']) {
+    const result = resolve({ explicit });
+    assert.equal(result.status, 0, result.stderr);
+    const published = spawnSync(
+      'bash',
+      ['-c', 'clawhub() { printf "%s\\n" "$@"; }\n' + publishScript],
+      {
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          TARBALL_PATH: 'fixture.tgz',
+          OWNER: 'fixture',
+          SOURCE_REPO: 'fixture/plugin',
+          SOURCE_COMMIT: 'fixture-commit',
+          DRY_RUN: 'true',
+          TAGS: result.tags,
+        },
+      },
+    );
+    assert.equal(published.status, 0, published.stderr);
+    const args = published.stdout.trimEnd().split('\n');
+    assert.ok(args.includes('--dry-run'));
+    const tagIndex = args.indexOf('--tags');
+    if (explicit) {
+      assert.notEqual(tagIndex, -1);
+      assert.equal(args[tagIndex + 1], explicit);
+    } else {
+      assert.equal(tagIndex, -1);
+    }
+  }
 });
 
 test('explicit tags override automatic selection without querying GitHub', () => {
@@ -110,6 +131,5 @@ test('dry run keeps authentication conditional and publication in native dry-run
     action,
     /name: Authenticate with ClawHub\n {6}if: \$\{\{ inputs\.dry-run != 'true' \}\}/,
   );
-  assert.ok(action.includes('publish_args+=(--dry-run)'));
   assert.doesNotMatch(action, /clawhub package (?:tag|unpublish)\b/);
 });

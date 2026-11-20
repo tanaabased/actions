@@ -12,8 +12,6 @@
   <a href="https://github.com/tanaabased/actions/actions/workflows/pr-ssh-test-key.yml"><img src="https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-ssh-test-key.yml?event=pull_request&amp;label=PR%20tests" alt="PR tests" /></a>
 </p>
 
-Generates one local Ed25519 SSH key pair for a test fixture.
-
 Supported runners: Linux (`ubuntu-24.04`) and macOS (`macos-26`).
 
 ## Usage
@@ -47,16 +45,7 @@ Debug includes the public-key fingerprint and path, never private-key contents.
 | `private-key-path` | Absolute path to the generated private key. |
 | `public-key-path`  | Absolute path to the generated public key.  |
 
-## Test behavior
-
-PR tests perform the real, local `ssh-keygen` operation in an isolated temporary
-directory when no destination is supplied. The action
-does not register a GitHub key, install a key, or make a remote SSH connection.
-
 ## Notes
 
-The action refuses to overwrite either destination file and reports the
-collision. It writes the private key with mode `600` and the public key with
-mode `644`. Callers own fixture cleanup; remove the containing temporary
-directory when the key is no longer needed. The action never prints private
-key material.
+- Choose an unused destination. The action refuses to overwrite either file in the pair.
+- The private key is written with mode `600` and the public key with mode `644`. Remove the key pair when your job finishes using it.

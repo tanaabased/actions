@@ -23,10 +23,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
       - name: Verify debug contract
+        if: matrix.selection == 'auto'
         run: bash .github/scripts/check-debug-contract.sh setup-openclaw
       - name: Verify harness contracts
+        if: matrix.selection == 'auto'
         run: node --test setup-openclaw/test/*.test.mjs
       - name: Verify helper ownership and diagnostics
+        if: matrix.selection == 'auto'
         run: bash setup-openclaw/test/helpers.sh
       - name: Install OpenClaw
         id: openclaw
@@ -224,11 +227,14 @@ jobs:
         env:
           MODE: ${{ steps.run.outputs.mode }}
           CONFIG: ${{ steps.run.outputs.config-path }}
+          WORKSPACE: ${{ steps.run.outputs.workspace }}
         run: |
           test "$MODE" = run
           test -f "$RUNNER_TEMP/setup-openclaw-run-mode"
           test -f "$CONFIG"
           test "$OPENCLAW_CONFIG_PATH" = "$CONFIG"
+          test "$WORKSPACE" = "$(cd "$RUNNER_TEMP/scenario-workspace" && pwd -P)"
+          test "$OPENCLAW_WORKSPACE" = "$WORKSPACE"
 
   agent-system:
     env:
@@ -260,10 +266,14 @@ jobs:
           path: agent-system-source
       - name: Preserve source changes
         if: matrix.selection == 'source'
+        working-directory: agent-system-source
         run: |
-          printf '\nlocal source marker\n' >> agent-system-source/README.md
-          printf 'local source marker\n' > agent-system-source/assets/harness-marker.txt
-          echo "SOURCE_README_HASH=$(shasum -a 256 agent-system-source/README.md | cut -d ' ' -f 1)" >> "$GITHUB_ENV"
+          printf '\nlocal source marker\n' >> README.md
+          printf 'local source marker\n' > assets/harness-marker.txt
+          echo "SOURCE_README_HASH=$(shasum -a 256 README.md | cut -d ' ' -f 1)" >> "$GITHUB_ENV"
+          ln -s README.md harness-readme
+          build="$(node -p 'require("./package.json").scripts.build')"
+          npm pkg set "scripts.build=$build && echo staged-marker >> harness-readme"
       - name: Set up package build runtime
         if: matrix.selection == 'tarball'
         uses: ./setup-bun
@@ -304,10 +314,9 @@ jobs:
           args=(--agent-system "$LOCAL_PACKAGE" --needs-ssh-key --yolo)
           if [[ "$RUNNER_OS" == Linux ]]; then args+=(--needs-secret-service); fi
           openclaw-setup "${args[@]}"
-          echo 'mode=setup' >> "$GITHUB_OUTPUT"
       - name: Verify installed plugin and fixture outputs
         env:
-          MODE: ${{ steps.setup.outputs.mode || steps.helper.outputs.mode }}
+          MODE: ${{ steps.setup.outputs.mode }}
           ARTIFACT: ${{ steps.setup.outputs.agent-system-artifact-path || steps.helper.outputs.agent-system-artifact-path }}
           PLUGIN_PATH: ${{ steps.setup.outputs.agent-system-plugin-path || steps.helper.outputs.agent-system-plugin-path }}
           VERSION: ${{ steps.setup.outputs.agent-system-version || steps.helper.outputs.agent-system-version }}
@@ -318,7 +327,7 @@ jobs:
           SELECTION: ${{ matrix.selection }}
         run: |
           set -euo pipefail
-          test "$MODE" = setup
+          if [[ "$SELECTION" != tarball ]]; then test "$MODE" = setup; fi
           if [[ "$SELECTION" != repository ]]; then test "$VERSION" = 0.8.0; fi
           node --version
           npm --version
@@ -362,6 +371,7 @@ jobs:
           if [[ "$SELECTION" == source ]]; then
             test "$(shasum -a 256 agent-system-source/README.md | cut -d ' ' -f 1)" = "$SOURCE_README_HASH"
             test "$(tar -xOf "$ARTIFACT" package/assets/harness-marker.txt)" = 'local source marker'
+            test "$(tar -xOf "$ARTIFACT" package/README.md | tail -n 1)" = 'staged-marker'
             test ! -d agent-system-source/node_modules
           elif [[ "$SELECTION" == tarball ]]; then
             test "$ARTIFACT" = "$LOCAL_PACKAGE"

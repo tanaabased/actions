@@ -12,8 +12,7 @@
   <a href="https://github.com/tanaabased/actions/actions/workflows/pr-npm-pack.yml"><img src="https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-npm-pack.yml?event=pull_request&amp;label=PR%20tests" alt="PR tests" /></a>
 </p>
 
-Packs one npm package and exposes its exact tarball for tests and publication.
-Package scripts are disabled; prepare release files before packing.
+Prepare release files before packing. The action disables npm lifecycle scripts.
 
 Supported runner: Linux (`ubuntu-24.04`).
 
@@ -48,11 +47,5 @@ Runtime discovery uses `package-directory`.
 | `package-name`    | Package name recorded by `npm pack`.    |
 | `package-version` | Package version recorded by `npm pack`. |
 
-The action runs `npm pack --ignore-scripts --json` and fails unless npm reports
-exactly one existing tarball with name and version metadata. It neither uploads
-the artifact nor publishes it to a registry.
-
-## Test behavior
-
-PR tests run normal packing, then inspect, install, and exercise the exact
-fixture tarball.
+Each call writes one tarball to a separate directory under `RUNNER_TEMP`, even
+when the project sets `dry-run=true`. Use `tarball-path` in later steps.

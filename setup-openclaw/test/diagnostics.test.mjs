@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
+import { packFilename, parsePackResult } from '../../.lib/pack-result.cjs';
 import { command, report } from '../scripts/lib/command.mjs';
-import { packFilename } from '../scripts/lib/pack-result.mjs';
 import { redact } from '../scripts/lib/redact.mjs';
 
 test('stdout-only failure and a broken diagnostic renderer cannot mask command status', async () => {
@@ -58,57 +58,17 @@ test('report redacts before clipping, bounds one huge line, and fails closed', (
   assert.equal(redact('raw-known-value', { PRIVATE_KEY: 'raw-known-value' }), '[REDACTED]');
 });
 
-test('pack results distinguish malformed JSON, shape, count and unsafe paths', () => {
-  for (const filename of ['tanaab-openclaw-agent-system-9.8.7.tgz', 'another-safe-artifact.tgz']) {
-    assert.equal(packFilename(JSON.stringify([{ filename }])), filename);
-    assert.equal(
-      packFilename(JSON.stringify({ '@example/plugin': { name: '@example/plugin', filename } })),
-      filename,
-    );
-  }
-  const oldError = console.error;
+test('pack diagnostics redact npm output before reporting it', () => {
   const reports = [];
-  console.error = (text) => reports.push(text);
-  try {
-    assert.throws(() => packFilename('token=pack-secret'), /invalid JSON/);
-    for (const value of [
-      null,
-      'text',
-      3,
-      { filename: 'flat.tgz' },
-      { one: { name: 'different', filename: 'one.tgz' } },
-    ])
-      assert.throws(() => packFilename(JSON.stringify(value)), /result shape/);
-    for (const value of [
-      [],
-      {},
-      [{}, {}],
-      { one: { name: 'one', filename: 'one.tgz' }, two: { name: 'two', filename: 'two.tgz' } },
-    ])
-      assert.throws(() => packFilename(JSON.stringify(value)), /archive count/);
-    for (const value of [null, [], {}, { filename: 7 }, { filename: '' }])
-      assert.throws(() => packFilename(JSON.stringify([value])), /archive shape/);
-    for (const filename of [
-      '/tmp/escape.tgz',
-      '../escape.tgz',
-      'sub/file.tgz',
-      'sub\\file.tgz',
-      '..',
-      '.',
-      'bad\nname.tgz',
-    ]) {
-      assert.throws(() => packFilename(JSON.stringify([{ filename }])), /unsafe archive filename/);
-      assert.throws(
-        () =>
-          packFilename(
-            JSON.stringify({ '@example/plugin': { name: '@example/plugin', filename } }),
-          ),
-        /unsafe archive filename/,
-      );
-    }
-    assert.ok(!reports.join('\n').includes('pack-secret'));
-    assert.match(reports.join('\n'), /REDACTED/);
-  } finally {
-    console.error = oldError;
+  const diagnostic = (text) => report(text, { write: (line) => reports.push(line) });
+  assert.throws(() => parsePackResult('token=pack-secret', diagnostic), /invalid JSON/);
+  assert.throws(
+    () => packFilename({ filename: '../token=pack-secret' }, diagnostic),
+    /unsafe archive filename/,
+  );
+  assert.equal(reports.length, 2);
+  for (const line of reports) {
+    assert.match(line, /REDACTED/);
+    assert.ok(!line.includes('pack-secret'));
   }
 });

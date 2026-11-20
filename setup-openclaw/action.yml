@@ -66,16 +66,16 @@ outputs:
     value: ${{ steps.inputs.outputs.mode }}
   profile:
     description: Isolated OpenClaw profile.
-    value: ${{ steps.context.outputs.profile }}
+    value: ${{ steps.orchestrate.outputs.profile || steps.context.outputs.profile }}
   workspace:
     description: Absolute isolated agent workspace.
-    value: ${{ steps.context.outputs.workspace }}
+    value: ${{ steps.orchestrate.outputs.workspace || steps.context.outputs.workspace }}
   state-dir:
     description: Absolute helper state directory.
-    value: ${{ steps.context.outputs.state-dir }}
+    value: ${{ steps.orchestrate.outputs.state-dir || steps.context.outputs.state-dir }}
   config-path:
     description: Absolute OpenClaw configuration path; created during setup.
-    value: ${{ steps.context.outputs.config-path }}
+    value: ${{ steps.orchestrate.outputs.config-path || steps.context.outputs.config-path }}
   agent-system-version:
     description: Exact installed Agent System version in setup mode.
     value: ${{ steps.orchestrate.outputs.agent-system-version }}
@@ -291,17 +291,17 @@ runs:
       run: |
         set -euo pipefail
         if [[ "$HARNESS_MODE" == setup ]]; then
-          args=()
+          setup_command=(openclaw-setup)
           for option in model agent-system op-cache; do
             variable="SETUP_$(printf '%s' "$option" | tr '[:lower:]-' '[:upper:]_')"
             value="${!variable}"
-            [[ -z "$value" ]] || args+=("--$option" "$value")
+            [[ -z "$value" ]] || setup_command+=("--$option" "$value")
           done
           for option in needs-secret-service needs-ssh-key yolo; do
             variable="SETUP_$(printf '%s' "$option" | tr '[:lower:]-' '[:upper:]_')"
-            [[ "${!variable}" != true ]] || args+=("--$option")
+            [[ "${!variable}" != true ]] || setup_command+=("--$option")
           done
-          openclaw-setup "${args[@]}"
+          "${setup_command[@]}"
         elif [[ "$HARNESS_MODE" == run ]]; then
           script="$(mktemp "$RUNNER_TEMP/openclaw-run.XXXXXX")"
           trap 'rm -f "$script"' EXIT

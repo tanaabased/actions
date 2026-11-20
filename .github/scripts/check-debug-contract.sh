@@ -80,7 +80,7 @@ export NODE_AUTH_TOKEN="$sentinel" GH_TOKEN="$sentinel" CLAWHUB_TOKEN="$sentinel
 export DRY_RUN=true PACKAGE_DIRECTORY="$test_root/missing" TARBALL="$test_root/missing.tgz"
 export RELEASE_DATE=invalid DEPENDENCY_POLICY=exclude-node-modules ARCHIVE_NAME=fixture.tar.gz
 export PLUGIN_DIRECTORY="$test_root/missing" RELEASE_TAG=fixture REPOSITORY=fixture/fixture
-export SELECTED_VERSION='' SOURCE_DIRECTORY='' PACKAGE_JSON=missing.json PACKAGE_FIELD='' VERSION_SPEC=auto
+export PACKAGE_JSON=missing.json PACKAGE_FIELD='' VERSION_SPEC=auto
 if [[ "$action_name" == setup-openclaw ]]; then VERSION_SPEC=invalid; fi
 export COMMENT=fixture DESTINATION="$test_root/existing-key" BUILD_COMMAND=''
 export RUNTIME="${action_name#setup-}" RUNTIME_VERSION='' PROJECT_DIRECTORY="$test_root"

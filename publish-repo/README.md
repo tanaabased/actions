@@ -21,6 +21,10 @@ Supported runner: Linux (`ubuntu-24.04`).
 
 ## Usage
 
+Supply a `sync-token` authorized to commit to the target branch and push tags.
+GitHub attributes the verified commit to the token’s account. Use the bot’s token
+when repository rules require publication as `tanaabot`.
+
 ```yaml
 jobs:
   publish-repo:
@@ -39,12 +43,9 @@ jobs:
           sync-token: ${{ secrets.RELEASE_SYNC_TOKEN }}
 ```
 
-Run this in an independent job so a package publisher can fail or be retried
-without coupling its registry result to Git synchronization. Every release job
-must check out `ref: ${{ github.sha }}` and prepare its own files from that
-original commit: this action moves the release tag, which can otherwise break
-a peer job's checkout or change its retry inputs. Outside a `release` event,
-provide `version`, `release-date`, and `release-url` explicitly.
+Run each publisher in its own job and check out `github.sha`. This action moves
+the release tag, so a peer job checking out that tag can receive a different commit.
+Outside a release event, supply `version`, `release-date`, and `release-url`.
 
 ## Inputs
 
@@ -62,17 +63,8 @@ provide `version`, `release-date`, and `release-url` explicitly.
 | `sync-tags`    | No       | —                                | Newline-separated moving tags, such as `v1`, forced to the release commit.         |
 | `sync-token`   | No       | `${{ github.token }}`            | Token authorized to create the verified commit and push tags.                      |
 
-For a consumer pull-request dry run, set `dry-run: true`. It validates release
-inputs and prepares generated files, but skips synchronization. Local release
-outputs remain meaningful; a live release proves sync.
-
 Runtime discovery uses `root`; the resolved version is passed upstream.
 The upstream preparation action has no debug input.
-
-The local synchronization identity is fixed to
-`tanaabot <tanaabot@tanaab.dev>` and verified commit mode. GitHub attributes
-the verified commit to the `sync-token` account, so use the established bot
-token to publish as `tanaabot` and to satisfy repository rules.
 
 ## Outputs
 
@@ -85,26 +77,7 @@ token to publish as `tanaabot` and to satisfy repository rules.
 See [the combined release example](../publish-npm/examples/release.yml) for npm
 and repository publication in independent jobs.
 
-## Test behavior
-
-Dry run prepares files locally without synchronizing or supplying the sync token.
-PR tests assert metadata, changelog, commands, and unchanged history. Live releases
-prove verified commits and branch/tag updates.
-
 ## Notes
 
-### File and retry behavior
-
-`package.json` is required at `root` and its version is updated. An existing
-`CHANGELOG.md` has its current unreleased tokens resolved and receives a fresh
-unreleased header; a missing changelog is left missing. `commands` run from
-`root` and may use `PREPARE_RELEASE_VERSION`.
-
-The upstream preparation action's result determines synchronization success.
-This wrapper does not re-read remote branches or tags afterward.
-
-A retry runs preparation again, creates a commit when files change, and forces
-the exact and moving tags to the resulting commit. This makes repository
-publication independently retryable, not unconditionally idempotent. In
-particular, already-prepared changelog content can acquire a duplicate release
-header.
+- Package and changelog updates follow the [release preparation rules](../prepare-release/README.md#notes).
+- Retry from the original release commit. Each run prepares the files again and moves the requested tags to the resulting commit.

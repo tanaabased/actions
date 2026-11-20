@@ -18,24 +18,34 @@ jobs:
         uses: actions/checkout@v7
       - name: Verify debug contract
         run: bash .github/scripts/check-debug-contract.sh npm-pack
-      - name: Set fixture version
+      - name: Set fixture version and conflicting npm pack settings
         working-directory: npm-pack/test/fixture
-        run: npm pkg set "version=$PACKAGE_VERSION"
+        run: |
+          npm pkg set "version=$PACKAGE_VERSION"
+          printf 'dry-run=true\npack-destination=%s\n' "$RUNNER_TEMP" > .npmrc
       - name: Pack fixture
         id: pack
         uses: ./npm-pack
         with:
           debug: true
           package-directory: npm-pack/test/fixture
-      - name: Verify and install packed artifact
+      - name: Pack the same version again
+        id: repack
+        uses: ./npm-pack
+        with:
+          package-directory: npm-pack/test/fixture
+      - name: Verify both archives and install the repacked artifact
         env:
           PACKED_NAME: ${{ steps.pack.outputs.package-name }}
           PACKED_VERSION: ${{ steps.pack.outputs.package-version }}
-          TARBALL_PATH: ${{ steps.pack.outputs.tarball-path }}
+          FIRST_TARBALL: ${{ steps.pack.outputs.tarball-path }}
+          TARBALL_PATH: ${{ steps.repack.outputs.tarball-path }}
         run: |
           test "$PACKED_NAME" = "$PACKAGE_NAME"
           test "$PACKED_VERSION" = "$PACKAGE_VERSION"
-          test -f "$TARBALL_PATH"
+          test -f "$FIRST_TARBALL"
+          test "$FIRST_TARBALL" != "$TARBALL_PATH"
+          test -z "$(find npm-pack/test/fixture -name '*.tgz' -print)"
           test "$(tar -tzf "$TARBALL_PATH" | sort)" = $'package/index.js\npackage/package.json'
 
           consumer="$(mktemp -d)"

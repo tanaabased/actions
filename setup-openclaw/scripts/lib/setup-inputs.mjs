@@ -1,6 +1,8 @@
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+import { withoutBuildMetadata } from '../../../.lib/resolve-runtime.mjs';
+
 export const setupInputs = [
   'profile',
   'workspace',
@@ -64,7 +66,13 @@ export function selectAgentSystem(
         'source requires exact bun@ packageManager, bun.lock, build, and plugin:check',
       );
     }
-    return { mode: 'source', path, source: path, version: manifest.version, bunVersion };
+    return {
+      mode: 'source',
+      path,
+      source: path,
+      version: manifest.version,
+      bunVersion: withoutBuildMetadata(bunVersion),
+    };
   }
   if (!statSync(path).isFile() || !path.endsWith('.tgz'))
     throw new Error('local Agent System file must be an npm .tgz tarball');

@@ -30,9 +30,13 @@
 
 ## Documentation
 
-- Keep the root README to the catalog and common behavior. Action READMEs own
-  usage, inputs, outputs, distinct examples, test behavior, and operational notes,
-  in that order. Omit empty sections and duplicated explanations.
+- Keep the root README to the catalog and common behavior. In each action README,
+  state supported runners and use this order: Usage, Inputs, Outputs when present,
+  distinct Examples, then optional Notes. Use short unordered lists for operational
+  caveats in Notes. Keep public CLI references with their owning action.
+- Write for callers configuring, using, or recovering the action. Keep CI narration,
+  fixture coverage, and maintainer verification procedures out of action READMEs.
+  Describe caller-visible dry runs in the input row or usage example.
 - Keep each action self-contained: store its README artwork as
   `<name>/icon.svg` and link it from that action's README.
 - Use a consistent README header: action name, centered artwork, concise
@@ -78,8 +82,6 @@ true|false`, defaulting to `false`. Dry runs require no publication
   available.
 - Caller commands are not sandboxed. PR fixtures must avoid external side effects;
   local installation and artifact preparation are expected.
-- Each action's Test behavior section identifies what runs locally and what
-  requires a live lifecycle to prove.
 
 ## Debug
 

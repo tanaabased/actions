@@ -15,41 +15,10 @@
 **Deprecated for new Codex plugin releases.** Use [`npm-pack`](../npm-pack/README.md)
 → [`publish-npm`](../publish-npm/README.md) for npm distribution. This v1 action
 still prepares and optionally uploads a release archive for existing callers.
-Removing it requires a breaking release after known callers have migrated or
-have an explicit supported archive alternative.
 
 Supported runner: Linux (`ubuntu-24.04`).
 
 ## Usage
-
-For npm distribution, build all required runtime files before packing:
-`npm-pack` disables package scripts, and Codex does not run install-time
-lifecycle scripts. Inspect and test the **extracted npm tarball**, including
-the plugin manifest, every required resource it references, and packaged runtime
-code. Exercise runtime entry points from the extracted package, not the source
-checkout. Only then pass the **same tarball** to `publish-npm`:
-
-```yaml
-- id: pack
-  uses: tanaabased/actions/npm-pack@v1
-- name: Verify extracted plugin package
-  env:
-    TARBALL: ${{ steps.pack.outputs.tarball-path }}
-  run: |
-    package_root="$(mktemp -d)"
-    tar -xzf "$TARBALL" -C "$package_root"
-    test -f "$package_root/package/.codex-plugin/plugin.json"
-    ./scripts/check-plugin-package.sh "$package_root/package"
-- uses: tanaabased/actions/publish-npm@v1
-  with:
-    tarball: ${{ steps.pack.outputs.tarball-path }}
-```
-
-The caller-owned `check-plugin-package.sh` must check the plugin's actual
-required resources and execute a smoke test of its packaged runtime code; the
-paths and commands depend on that plugin. See each action's README for setup,
-credentials, and release behavior. [`validate-codex-plugin`](../validate-codex-plugin/README.md)
-remains supported for plugin validation.
 
 For existing archive consumers, live upload requires job-level `contents: write`
 permission and a token with access to the target repository:
@@ -73,9 +42,8 @@ steps:
       github-token: ${{ github.token }}
 ```
 
-Run generic and repository-specific validation before publication; this action
-owns archive preparation and upload, not consumer policy checks or manifest
-stamping. For parallel release jobs, follow the
+Check the manifest with [validate-codex-plugin](../validate-codex-plugin/README.md) before uploading.
+For parallel release jobs, follow the
 [shared checkout guidance](../publish-repo/README.md#usage).
 
 ## Inputs
@@ -92,10 +60,6 @@ stamping. For parallel release jobs, follow the
 | `repository`        | No               | `${{ github.repository }}` | GitHub repository containing the release.                                                   |
 | `github-token`      | Live publication | —                          | Token with `contents: write`; omit in dry runs.                                             |
 
-For a consumer pull-request dry run, set `dry-run: true`. It validates inputs
-and builds the real archive, but skips release upload. Archive
-outputs remain meaningful; a live release proves delivery.
-
 Runtime discovery uses `plugin-directory`. Debug enables verbose Bun output.
 
 `include-production` removes the plugin root's existing `node_modules` and runs
@@ -111,18 +75,29 @@ entirely. Both policies exclude version-control metadata.
 | `archive-path` | Absolute path to the prepared `.tar.gz` archive. |
 | `archive-name` | Filename of the prepared archive.                |
 
-## Test behavior
+## Examples
 
-Dry run prepares the real archive under `RUNNER_TEMP` without GitHub access.
-PR tests compare unpacked contents for both dependency policies. Release access,
-asset replacement, and download require a live consumer release.
+### Migrate to npm distribution
+
+Build the plugin before packing. Codex does not run install-time lifecycle scripts.
+Supply your own `check-plugin-package.sh` to verify the manifest, required resources,
+and runtime entry points in the extracted package. Publish the same tarball.
+
+```yaml
+- id: pack
+  uses: tanaabased/actions/npm-pack@v1
+- name: Verify extracted plugin package
+  env:
+    TARBALL: ${{ steps.pack.outputs.tarball-path }}
+  run: |
+    package_root="$(mktemp -d)"
+    tar -xzf "$TARBALL" -C "$package_root"
+    ./scripts/check-plugin-package.sh "$package_root/package"
+- uses: tanaabased/actions/publish-npm@v1
+  with:
+    tarball: ${{ steps.pack.outputs.tarball-path }}
+```
 
 ## Notes
 
-### Upload replacement and retries
-
-Live mode calls `gh release upload` once with `--clobber`. An existing asset
-with the same name is replaced; an absent release, invalid token, or failed
-upload fails the action. The action does not retry automatically. Inspect the
-release before rerunning after an ambiguous transport failure, then rerun the
-workflow to replace the named asset. A successful upload command completes the action.
+- Uploading an archive replaces any release asset with the same name. If an upload is interrupted, inspect the release assets before retrying.

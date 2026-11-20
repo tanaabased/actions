@@ -34,6 +34,10 @@ jobs:
           version: ${{ matrix.version }}
           release-date: '2026-01-01T00:00:00Z'
           release-url: https://github.com/tanaabased/actions/releases/tag/v${{ matrix.version }}
+      - name: Seed a local Python cache before packing
+        run: |
+          mkdir -p validate-codex-plugin/scripts/__pycache__
+          touch validate-codex-plugin/scripts/__pycache__/fixture.pyc
       - name: Pack catalog
         id: pack
         uses: ./npm-pack

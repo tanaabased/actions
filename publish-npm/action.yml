@@ -18,10 +18,11 @@ inputs:
     required: false
     default: https://registry.npmjs.org
   registry-token:
-    description: Optional publication token for registries without trusted publishing; omit for supported npm trusted publishing.
+    description: Optional token for publication and channel syncing when the registry requires token authentication.
     required: false
   channel-token:
-    description: Optional edge-tag sync token; omit for supported npm trusted publishing.
+    description: Deprecated v1 token override for edge-tag syncing. Use trusted publishing or registry-token.
+    deprecationMessage: Use trusted publishing, or set registry-token for both publication and channel syncing.
     required: false
   latest-tag:
     description: Distribution tag used for GitHub Latest releases or stable SemVer fallback.
@@ -171,6 +172,8 @@ runs:
         METADATA_JSON="$metadata_json" TARBALL_PATH="$tarball_path" node <<'NODE' >> "$GITHUB_OUTPUT"
         const { execFileSync } = require('node:child_process');
         const fs = require('node:fs');
+        const path = require('node:path');
+        const { parsePackResult } = require(path.join(process.env.GITHUB_ACTION_PATH, '../.lib/pack-result.cjs'));
 
         function resolveInput(preferredName, legacyName, preferredEnv, legacyEnv, fallback) {
           const current = process.env[preferredEnv] || '';
@@ -192,12 +195,7 @@ runs:
           throw new Error('sync-edge-tag must be true or false');
         }
 
-        const result = JSON.parse(fs.readFileSync(process.env.METADATA_JSON, 'utf8'));
-        if (!Array.isArray(result) || result.length !== 1) {
-          throw new Error(`tarball inspection must return exactly one package; received ${result.length ?? 'invalid output'}`);
-        }
-
-        const [{ name, version }] = result;
+        const { name, version } = parsePackResult(fs.readFileSync(process.env.METADATA_JSON, 'utf8'));
         if (!name || !version) {
           throw new Error('tarball inspection did not return package name and version');
         }

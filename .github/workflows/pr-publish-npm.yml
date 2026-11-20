@@ -19,6 +19,7 @@ jobs:
             expected-channel: latest
           - case: prerelease
             version: 1.2.3-next.1
+            npm_version: '^12.2.0'
             expected-channel: edge
           - case: preferred-inputs
             version: 1.2.3
@@ -39,6 +40,7 @@ jobs:
       - name: Verify debug contract
         run: bash .github/scripts/check-debug-contract.sh publish-npm
       - name: Test publication command results
+        if: matrix.case == 'stable'
         run: node --test publish-npm/test/publication.test.mjs
       - name: Set fixture version
         working-directory: publish-npm/test/fixture
@@ -54,6 +56,7 @@ jobs:
         uses: ./publish-npm
         with:
           dry-run: true
+          npm-version: ${{ matrix.npm_version || '^11.21.0' }}
           debug: true
           tarball: ${{ steps.pack.outputs.tarball-path }}
           latest-tag: ${{ matrix.latest_tag }}

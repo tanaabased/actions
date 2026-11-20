@@ -33,7 +33,7 @@ inputs:
 outputs:
   resolved-version:
     description: Semver-valid version resolved for this release.
-    value: ${{ steps.prepare.outputs.resolved-version }}
+    value: ${{ steps.prepare-release.outputs.resolved-version || steps.prepare-dev.outputs.resolved-version }}
 
 runs:
   using: composite
@@ -106,11 +106,3 @@ runs:
         root: ${{ inputs.root }}
         sync: false
         version: dev
-
-    - id: prepare
-      name: Expose resolved version
-      shell: bash
-      env:
-        RELEASE_VERSION: ${{ steps.prepare-release.outputs.resolved-version }}
-        DEVELOPMENT_VERSION: ${{ steps.prepare-dev.outputs.resolved-version }}
-      run: echo "resolved-version=${RELEASE_VERSION:-$DEVELOPMENT_VERSION}" >> "$GITHUB_OUTPUT"

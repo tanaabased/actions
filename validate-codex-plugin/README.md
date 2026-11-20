@@ -42,28 +42,8 @@ Supported runners: Linux (`ubuntu-24.04`) and macOS (`macos-26`).
 | ------------- | ----------------------------- |
 | `plugin-path` | Absolute path to plugin root. |
 
-## Test behavior
-
-PR tests exercise this action on both supported runners and compare fixture
-results with isolated local marketplace installs using Codex CLI `0.170.0`.
-Fixtures cover Canon’s dark icon, unknown nested metadata, portable selection,
-compatibility fallback, malformed JSON, and invalid names and versions.
-To repeat installer comparisons locally, run
-`bun validate-codex-plugin/test/compare-installer.mjs /path/to/codex`.
-
 ## Notes
 
-[Portable Agent Plugins manifests](https://developers.openai.com/plugins/build/plugins)
-use root `plugin.json` with its Agent Plugins schema. Recognized schema
-namespaces take precedence; unsupported Agent Plugins versions fail rather
-than falling back. Unrelated root JSON is ignored when Codex looks for
-compatibility manifests, starting with `.codex-plugin/plugin.json`.
-With no OpenAI extension object, Codex can read that compatibility manifest
-as overlay metadata for portable packages.
-
-Compatibility names may come from source directory names, and marketplaces
-can supply missing manifests. When no manifest is selected, this action
-reports that installation depends on marketplace fallback. This check cannot
-confirm marketplace name agreement, publication eligibility, asset availability,
-or plugin runtime behavior. For end-to-end evidence, install from your actual
-marketplace.
+- A root `plugin.json` with a recognized Agent Plugins schema takes precedence. An unsupported schema version fails validation. See the [portable manifest format](https://developers.openai.com/plugins/build/plugins).
+- For compatibility manifests, lookup starts at `.codex-plugin/plugin.json`. A portable plugin without an OpenAI extension can also use this file for overlay metadata.
+- A marketplace can supply a missing manifest or name. Install the plugin from your marketplace to verify that fallback and exercise its runtime.
