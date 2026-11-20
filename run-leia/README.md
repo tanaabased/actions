@@ -12,11 +12,6 @@
   <a href="https://github.com/tanaabased/actions/actions/workflows/pr-run-leia.yml"><img src="https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-run-leia.yml?event=pull_request&amp;label=PR%20tests" alt="PR tests" /></a>
 </p>
 
-Runs caller-provided Leia scenarios with explicit shell, retry, standard-input,
-cleanup-header, and temporary-directory behavior. The action consumes an
-existing Bun runtime and local Leia installation; runtime installation,
-scenario setup, credentials, and assertions remain with the caller.
-
 Supported runners: Linux (`ubuntu-24.04`) and macOS (`macos-26`) with Bash, and
 Windows (`windows-2025`) with PowerShell.
 
@@ -42,9 +37,6 @@ Install Leia in the caller's project before invoking the action.
     stdin: true
 ```
 
-The action streams Leia's normal output. A failing Leia invocation fails the
-action with the same exit code after removing its temporary directory.
-
 ## Inputs
 
 | Input            | Required | Default | Description                                                                                            |
@@ -58,9 +50,7 @@ action with the same exit code after removing its temporary directory.
 
 Leia has no supported verbosity control.
 
-Blank lines in `scenarios` are ignored. Each nonblank line is passed to Leia as
-one argument, so glob patterns should remain quoted by YAML rather than expanded
-by the workflow shell.
+Supply one path or glob per line in `scenarios`. Blank lines are ignored.
 
 ## Outputs
 
@@ -84,23 +74,7 @@ by the workflow shell.
     cleanup-header: Destroy tests
 ```
 
-## Test behavior
-
-PR tests run the supplied scenarios normally and cover success, failure,
-temporary state, and cleanup on every supported runner. Caller scenarios must
-avoid external side effects; the action does not sandbox them.
-
 ## Notes
 
-### Temporary state and cleanup
-
-Each invocation creates a unique directory beneath `RUNNER_TEMP`, exposes the
-same path to Leia as `TMPDIR`, `TMP`, and `TEMP`, and removes it after Leia
-finishes. Cleanup also runs after failure. If Leia and cleanup both fail, the
-action reports both problems and preserves Leia's exit code; a cleanup failure
-fails an otherwise successful invocation.
-
-The action invokes the caller's local Leia installation with `bun run leia` and
-passes scenario values without evaluating them as shell commands. Leia remains
-responsible for expanding supported glob patterns and for executing the
-commands contained in each scenario.
+- Scenarios execute with the job’s permissions. Leia expands the glob patterns you supply.
+- Leia uses an isolated temporary directory for each invocation. Cleanup runs even after a failure. If Leia and cleanup both fail, the action returns Leia’s exit code.

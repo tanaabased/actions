@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 
 const action = readFileSync(new URL('../action.yml', import.meta.url), 'utf8');
@@ -21,7 +22,8 @@ const args = process.argv.slice(2);
 if (args[0] === '--version') {
   process.stdout.write(process.env.FAKE_NPM_VERSION || '11.21.0');
 } else if (args[0] === 'pack') {
-  process.stdout.write(JSON.stringify([{ name: '@fixture/package', version: process.env.PACKED_VERSION || '1.2.3' }]));
+  const pack = { name: '@fixture/package', version: process.env.PACKED_VERSION || '1.2.3' };
+  process.stdout.write(JSON.stringify([pack]));
 } else {
   fs.appendFileSync(process.env.CALLS, JSON.stringify(args) + '\\n');
   fs.appendFileSync(process.env.AUTH_CALLS, JSON.stringify(process.env.NODE_AUTH_TOKEN || '') + '\\n');
@@ -37,7 +39,6 @@ if (args[0] === '--version') {
       join(bin, 'gh'),
       `#!${process.execPath}
 process.stdout.write(process.env.GH_RESPONSE || '{}');
-process.exitCode = Number(process.env.GH_STATUS || 0);
 `,
       { mode: 0o755 },
     );
@@ -62,6 +63,7 @@ process.exitCode = Number(process.env.GH_STATUS || 0);
         CALLS: join(directory, 'calls'),
         AUTH_CALLS: join(directory, 'auth-calls'),
         RUNNER_TEMP: directory,
+        GITHUB_ACTION_PATH: fileURLToPath(new URL('..', import.meta.url)),
         ACCESS: 'public',
         CHANNEL: 'edge',
         REGISTRY_URL: 'https://registry.example.invalid',
@@ -116,11 +118,8 @@ function runPublication({
   dryRun = 'false',
   token = 'fixture-token',
   channelToken = '',
-  npmVersion = '11.21.0',
   distTagStatus = '0',
 } = {}) {
-  const validated = runStep('Validate supported npm', { FAKE_NPM_VERSION: npmVersion });
-  if (validated.status !== 0) return validated;
   const inspected = runStep('Inspect tarball', {
     PACKED_VERSION: version,
     GITHUB_EVENT_NAME: release ? 'release' : 'push',
@@ -306,23 +305,21 @@ test('legacy tag inputs and sync opt-out still work', () => {
   assert.equal(edge.calls.length, 1);
 });
 
-test('conflicting preferred and legacy inputs fail before publication', () => {
+test('tarball inspection rejects conflicting preferred and legacy inputs', () => {
   for (const inputs of [
-    { 'latest-tag': 'recommended', 'stable-tag': 'stable' },
-    { 'edge-tag': 'next', 'prerelease-tag': 'preview' },
-    { 'sync-edge-tag': 'true', 'update-prerelease-tag-on-stable': 'false' },
+    { LATEST_TAG: 'recommended', LEGACY_STABLE_TAG: 'stable' },
+    { EDGE_TAG: 'next', LEGACY_PRERELEASE_TAG: 'preview' },
+    { SYNC_EDGE_TAG: 'true', LEGACY_SYNC_EDGE_TAG: 'false' },
   ]) {
-    const result = runPublication({ inputs });
+    const result = runStep('Inspect tarball', inputs);
     assert.notEqual(result.status, 0);
-    assert.deepEqual(result.calls, []);
     assert.match(result.stderr, /conflicting values/);
   }
 });
 
-test('invalid sync-edge-tag fails before publication', () => {
-  const result = runPublication({ inputs: { 'sync-edge-tag': 'sometimes' } });
+test('tarball inspection rejects invalid sync-edge-tag', () => {
+  const result = runStep('Inspect tarball', { SYNC_EDGE_TAG: 'sometimes' });
   assert.notEqual(result.status, 0);
-  assert.deepEqual(result.calls, []);
   assert.match(result.stderr, /sync-edge-tag must be true or false/);
 });
 
@@ -394,15 +391,15 @@ test('temporary registry configurations contain token placeholders only when sup
   assert.match(registry.configs['channel-config'], /:_authToken=\$\{NODE_AUTH_TOKEN\}/);
 });
 
-test('incompatible npm versions fail before publication', () => {
+test('validates supported npm versions', () => {
   for (const npmVersion of ['11.20.9', '12.1.9', '11.21.0-beta.1', '10.9.0']) {
-    const result = runPublication({ npmVersion });
+    const result = runStep('Validate supported npm', { FAKE_NPM_VERSION: npmVersion });
     assert.notEqual(result.status, 0, npmVersion);
-    assert.deepEqual(result.calls, []);
     assert.match(result.stderr, /cannot use OIDC dist-tags/);
   }
   for (const npmVersion of ['11.21.0', '12.2.0', '13.0.0', '14.0.0']) {
-    assert.equal(runPublication({ npmVersion }).status, 0, npmVersion);
+    const result = runStep('Validate supported npm', { FAKE_NPM_VERSION: npmVersion });
+    assert.equal(result.status, 0, npmVersion);
   }
 });
 

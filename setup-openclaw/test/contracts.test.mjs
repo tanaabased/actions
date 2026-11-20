@@ -182,6 +182,24 @@ test('run mode provides helpers, executes multiline commands, preserves failure,
     );
   }));
 
+test('workspace-only setup on the system Bash onboards the selected workspace', () =>
+  fixture((directory) => {
+    const env = environment(directory);
+    mockOpenclaw(directory, env);
+    env.SETUP_WORKSPACE = env.OPENCLAW_WORKSPACE;
+    env.HARNESS_MODE = 'setup';
+    env.PATH = `${join(root, 'scripts')}:${env.PATH}`;
+    const result = spawnSync('/bin/bash', ['-c', shellBlock('orchestrate')], {
+      env,
+      encoding: 'utf8',
+    });
+    assert.equal(result.status, 0, result.stderr);
+    const calls = readFileSync(env.CALLS, 'utf8').trim().split('\n').map(JSON.parse);
+    const onboard = calls.find((args) => args.includes('onboard'));
+    assert.ok(onboard.includes('--workspace'));
+    assert.equal(onboard[onboard.indexOf('--workspace') + 1], env.SETUP_WORKSPACE);
+  }));
+
 test('action setup emits boolean inputs as bare helper switches', () =>
   fixture((directory) => {
     const env = environment(directory);
@@ -364,7 +382,7 @@ test('repository resolution survives dependency failure and selection cleanup', 
     const sourceManifest = {
       name: '@tanaab/openclaw-agent-system',
       version: '9.8.7',
-      packageManager: 'bun@1.4.2',
+      packageManager: 'bun@1.4.2+sha512.example',
       scripts: { build: 'build', 'plugin:check': 'check' },
     };
     writeFileSync(
@@ -397,6 +415,7 @@ else { console.error('token=dependency-sentinel');process.exit(29); }
         { env, encoding: 'utf8' },
       );
     assert.equal(helper('prepare').status, 0);
+    assert.match(readFileSync(env.GITHUB_OUTPUT, 'utf8'), /^bun-version=1\.4\.2$/m);
     const failed = helper('install');
     assert.equal(failed.status, 29, failed.stderr);
     assert.match(failed.stderr, /npm unavailable/);

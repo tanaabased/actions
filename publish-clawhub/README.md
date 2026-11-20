@@ -12,28 +12,20 @@
   <a href="https://github.com/tanaabased/actions/actions/workflows/pr-publish-clawhub.yml"><img src="https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-publish-clawhub.yml?event=pull_request&amp;label=PR%20tests" alt="PR tests" /></a>
 </p>
 
-Publishes one supplied code-plugin tarball to ClawHub with explicit owner,
-source, and release-channel metadata. Live publication waits for security checks
-and a definitive result.
-
-Use [`npm-pack`](../npm-pack/README.md) to produce the artifact.
+Pass the code-plugin tarball produced by [npm-pack](../npm-pack/README.md).
+Live publication waits for ClawHub’s security checks and publication result.
 
 Supported runner: Linux (`ubuntu-24.04`).
 
 ## Usage
 
-Create the token in ClawHub and store it as a GitHub Actions secret. The action
-uses the token only for `clawhub login`, stores the resulting CLI state in an
-isolated temporary configuration, and removes that configuration afterward.
-The token's ClawHub actor must have publisher access to `owner`.
+Store a ClawHub token with publisher access to `owner` in a GitHub Actions secret.
 
-When `tags` is omitted, the action applies the shared
-[package publishing release-channel policy](https://github.com/tanaabased/canon/blob/4514ec5ee40bf7f83c1fe299467b21f0921cbef2/references/coding-stack-preferences.md#npm-package-publishing)
-to ClawHub's `latest` and `edge` channels. Release workflows need
-`contents: read` so the action can verify GitHub release status. An explicit
-`tags` value overrides automatic selection. To migrate, remove expressions
-such as `${{ github.event.release.prerelease && 'edge' || 'latest,edge' }}` and
-omit `tags`; retain the input only for a deliberate custom override.
+On a GitHub release event, the default tags are `latest,edge` for a Latest
+non-prerelease release and `edge` for other releases. The workflow needs
+`contents: read` to check release status. Outside release events, omitting
+`tags` uses the ClawHub CLI default (currently `latest`). Set `tags: edge`
+to publish a manual preview. Explicit tags take precedence on any event.
 
 ```yaml
 - uses: actions/checkout@v7
@@ -49,8 +41,6 @@ omit `tags`; retain the input only for a deliberate custom override.
   with:
     tarball: ${{ steps.pack.outputs.tarball-path }}
     owner: tanaab
-    source-repo: ${{ github.repository }}
-    source-commit: ${{ github.sha }}
     clawhub-token: ${{ secrets.CLAWHUB_TOKEN }}
 ```
 
@@ -58,20 +48,20 @@ For parallel release jobs, follow the [shared checkout guidance](../publish-repo
 
 ## Inputs
 
-| Input               | Required         | Default                    | Description                                                                                |
-| ------------------- | ---------------- | -------------------------- | ------------------------------------------------------------------------------------------ |
-| `dry-run`           | No               | `false`                    | Use ClawHub's native dry run without authentication or publication.                        |
-| `debug`             | No               | `auto`                     | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`.              |
-| `tarball`           | Yes              | —                          | Code-plugin tarball, relative to the workspace or absolute.                                |
-| `owner`             | Yes              | —                          | ClawHub user or organization publisher handle.                                             |
-| `clawhub-token`     | Live publication | —                          | ClawHub API token; omit in dry runs.                                                       |
-| `tags`              | No               | Automatic                  | Comma-separated release channels; when omitted, follows the shared release-channel policy. |
-| `source-repo`       | No               | `${{ github.repository }}` | Source repository recorded by ClawHub.                                                     |
-| `source-commit`     | No               | `${{ github.sha }}`        | Source commit recorded by ClawHub.                                                         |
-| `wait-timeout`      | No               | `1800`                     | Maximum seconds to wait for definitive live publication.                                   |
-| `working-directory` | No               | `${{ github.workspace }}`  | Project directory for CLI and runtime discovery.                                           |
-| `node-version`      | No               | `auto`                     | [Project discovery](../setup-node/README.md) or explicit Node version.                     |
-| `clawhub-version`   | No               | `auto`                     | Explicit CLI version or range, or caller dependency discovery.                             |
+| Input               | Required         | Default                    | Description                                                                   |
+| ------------------- | ---------------- | -------------------------- | ----------------------------------------------------------------------------- |
+| `dry-run`           | No               | `false`                    | Use ClawHub's native dry run without authentication or publication.           |
+| `debug`             | No               | `auto`                     | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
+| `tarball`           | Yes              | —                          | Code-plugin tarball, relative to the workspace or absolute.                   |
+| `owner`             | Yes              | —                          | ClawHub user or organization publisher handle.                                |
+| `clawhub-token`     | Live publication | —                          | ClawHub API token; omit in dry runs.                                          |
+| `tags`              | No               | Automatic                  | Comma-separated channels overriding the release or CLI default.               |
+| `source-repo`       | No               | `${{ github.repository }}` | Source repository recorded by ClawHub.                                        |
+| `source-commit`     | No               | `${{ github.sha }}`        | Source commit recorded by ClawHub.                                            |
+| `wait-timeout`      | No               | `1800`                     | Maximum seconds to wait for definitive live publication.                      |
+| `working-directory` | No               | `${{ github.workspace }}`  | Project directory for CLI and runtime discovery.                              |
+| `node-version`      | No               | `auto`                     | [Project discovery](../setup-node/README.md) or explicit Node version.        |
+| `clawhub-version`   | No               | `auto`                     | Explicit CLI version or range, or caller dependency discovery.                |
 
 With `clawhub-version: auto`, the action reads `devDependencies.clawhub` or
 `dependencies.clawhub` from `working-directory`'s `package.json`. Both must match
@@ -86,14 +76,7 @@ change between runs. CLI `0.26.0` requires Node.js `^22.13.0 || >=24`; if runtim
 discovery selects an older Node version, set `node-version: 24`. Other CLI versions
 use their own runtime requirements.
 
-For a consumer pull-request dry run, set `dry-run: true`. It validates the
-supplied tarball and publication metadata through ClawHub's native dry-run path,
-but skips authentication and publication. Its local artifact outputs
-remain meaningful; a live release proves publication.
-
 Debug enables verbose npm output; ClawHub has no supported verbosity control.
-
-The package family is fixed to `code-plugin`.
 
 ## Outputs
 
@@ -101,22 +84,6 @@ The package family is fixed to `code-plugin`.
 | -------------- | -------------------------------------- |
 | `tarball-path` | Absolute path to the supplied tarball. |
 
-## Test behavior
-
-Dry run uses ClawHub's native dry-run path to validate the supplied tarball
-and publication metadata without logging in or changing ClawHub. It does not
-prove token access, asynchronous security checks, final channel visibility, or
-timeout behavior.
-
 ## Notes
 
-### Waiting and retries
-
-Live runs call `clawhub package publish` once with `--wait` and the bounded
-`--wait-timeout`. The step succeeds only when ClawHub reports successful
-publication; terminal security-check failures, authentication failures, and
-timeouts fail the action.
-
-The action does not retry publication automatically. After a failure or
-timeout, inspect the package and attempt in ClawHub before rerunning the
-workflow; a timed-out client does not prove the registry abandoned the attempt.
+- If publication times out, check the attempt in ClawHub before retrying. The upload may still be processing.

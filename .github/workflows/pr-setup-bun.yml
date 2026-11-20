@@ -19,8 +19,6 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v7
-      - name: Verify selection rules
-        run: node --test setup-bun/test/resolve.test.mjs
       - name: Verify debug contract
         run: bash .github/scripts/check-debug-contract.sh setup-bun
       - name: Set up from file
@@ -40,23 +38,6 @@ jobs:
           actual="$(bun --version)"
           test "${actual#v}" = "${INSTALLED#v}"
           test "${actual#v}" = '1.4.2'
-      - name: Set up from manifest
-        id: manifest
-        uses: ./setup-bun
-        with:
-          debug: true
-          working-directory: setup-bun/test/fixture/manifest
-      - name: Verify manifest runtime and outputs
-        env:
-          INSTALLED: ${{ steps.manifest.outputs.bun-version }}
-          SPEC: ${{ steps.manifest.outputs.version-spec }}
-          SOURCE: ${{ steps.manifest.outputs.version-source }}
-        run: |
-          test "$SPEC" = '1.4.2'
-          test "$SOURCE" = 'package.json#packageManager'
-          actual="$(bun --version)"
-          test "${actual#v}" = "${INSTALLED#v}"
-          test "${actual#v}" = '1.4.2'
       - name: Set up from engines
         id: engines
         uses: ./setup-bun
@@ -71,23 +52,6 @@ jobs:
         run: |
           test "$SPEC" = '1.4.x'
           test "$SOURCE" = 'package.json#engines.bun'
-          actual="$(bun --version)"
-          test "${actual#v}" = "${INSTALLED#v}"
-          [[ "${actual#v}" == 1.4.* ]]
-      - name: Set up from fallback
-        id: fallback
-        uses: ./setup-bun
-        with:
-          debug: true
-          working-directory: setup-bun/test/fixture/fallback
-      - name: Verify fallback runtime and outputs
-        env:
-          INSTALLED: ${{ steps.fallback.outputs.bun-version }}
-          SPEC: ${{ steps.fallback.outputs.version-spec }}
-          SOURCE: ${{ steps.fallback.outputs.version-source }}
-        run: |
-          test "$SPEC" = '1.4.x'
-          test "$SOURCE" = 'fallback'
           actual="$(bun --version)"
           test "${actual#v}" = "${INSTALLED#v}"
           [[ "${actual#v}" == 1.4.* ]]

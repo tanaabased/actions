@@ -12,32 +12,16 @@
   <a href="https://github.com/tanaabased/actions/actions/workflows/pr-publish-npm.yml"><img src="https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-publish-npm.yml?event=pull_request&amp;label=PR%20tests" alt="PR tests" /></a>
 </p>
 
-Publishes one supplied, tested npm tarball without repacking the checkout. For
-GitHub release events, a Latest non-prerelease release publishes to `latest-tag`
-(default `latest`), then optionally syncs `edge-tag` (default `edge`) to that
-version. GitHub prereleases and regular releases that are not Latest update only
-`edge-tag`. Without release context, the package version's SemVer prerelease
-suffix selects the channel. These are
-separate concepts: npm `latest` is the default install tag, not a SemVer stability
-guarantee, and `edge` is the project's moving iterative tag. A first published
-GitHub release follows its reported status; no bootstrap exception is needed.
-A first GitHub prerelease updates only `edge-tag` and does not establish npm
-`latest`.
-Existing registry versions cannot be republished.
-
-Use [`npm-pack`](../npm-pack/README.md) to produce the artifact.
+Publishes the supplied tarball without repacking it. Use [npm-pack](../npm-pack/README.md) to produce it.
 
 Supported runner: Linux (`ubuntu-24.04`).
 
 ## Usage
 
-For supported npm trusted-publishing workflows, omit both token inputs; npm
-uses the workflow's OIDC identity for publication and channel syncing. The
-action selects the project's Node version and installs a compatible npm 11
-release by default. Token inputs remain available for registries and
-environments that require them; `registry-token` can also authenticate the tag
-update when `channel-token` is omitted.
-Release events also require `contents: read` to query GitHub's Latest status.
+For [trusted publishing](https://docs.npmjs.com/trusted-publishers/), grant the job
+`id-token: write` and enable `npm publish` in the trusted publisher configuration.
+Enable `npm dist-tag` there too if the workflow syncs channels. Omit both token inputs. For token-authenticated
+registries, supply `registry-token`. Release events need `contents: read` for tag selection.
 
 ```yaml
 permissions:
@@ -57,27 +41,25 @@ steps:
 
 ## Inputs
 
-| Input               | Required | Effective default            | Description                                                                                                      |
-| ------------------- | -------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `dry-run`           | No       | `false`                      | Use npm's native dry run without registry mutation or publication credentials.                                   |
-| `debug`             | No       | `auto`                       | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`.                                    |
-| `tarball`           | Yes      | —                            | Tested npm tarball, relative to the workspace or absolute.                                                       |
-| `registry-url`      | No       | `https://registry.npmjs.org` | npm-compatible registry URL.                                                                                     |
-| `registry-token`    | No       | —                            | Optional publication token for registries without trusted publishing; omit for supported npm trusted publishing. |
-| `channel-token`     | No       | —                            | Optional `edge-tag` sync token; omit for supported npm trusted publishing.                                       |
-| `latest-tag`        | No       | `latest`                     | Distribution tag for GitHub Latest releases or stable SemVer fallback.                                           |
-| `edge-tag`          | No       | `edge`                       | Distribution tag for other releases or prerelease SemVer fallback.                                               |
-| `sync-edge-tag`     | No       | `true`                       | Also move `edge-tag` after a `latest-tag` publication.                                                           |
-| `access`            | No       | `public`                     | Access passed to `npm publish`; leave empty for registry defaults.                                               |
-| `working-directory` | No       | `${{ github.workspace }}`    | Project directory for runtime discovery.                                                                         |
-| `node-version`      | No       | `auto`                       | [Project discovery](../setup-node/README.md) or explicit Node version.                                           |
-| `npm-version`       | No       | `^11.21.0`                   | npm version range installed for publication.                                                                     |
+| Input               | Required | Effective default            | Description                                                                                                 |
+| ------------------- | -------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `dry-run`           | No       | `false`                      | Use npm's native dry run without registry mutation or publication credentials.                              |
+| `debug`             | No       | `auto`                       | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`.                               |
+| `tarball`           | Yes      | —                            | Tested npm tarball, relative to the workspace or absolute.                                                  |
+| `registry-url`      | No       | `https://registry.npmjs.org` | npm-compatible registry URL.                                                                                |
+| `registry-token`    | No       | —                            | Token for publication and channel syncing when the registry requires token authentication.                  |
+| `channel-token`     | No       | —                            | Deprecated in v1. Overrides the token for channel syncing only. Use trusted publishing or `registry-token`. |
+| `latest-tag`        | No       | `latest`                     | Distribution tag for GitHub Latest releases or stable SemVer fallback.                                      |
+| `edge-tag`          | No       | `edge`                       | Distribution tag for other releases or prerelease SemVer fallback.                                          |
+| `sync-edge-tag`     | No       | `true`                       | Also move `edge-tag` after a `latest-tag` publication.                                                      |
+| `access`            | No       | `public`                     | Access passed to `npm publish`; leave empty for registry defaults.                                          |
+| `working-directory` | No       | `${{ github.workspace }}`    | Project directory for runtime discovery.                                                                    |
+| `node-version`      | No       | `auto`                       | [Project discovery](../setup-node/README.md) or explicit Node version.                                      |
+| `npm-version`       | No       | `^11.21.0`                   | npm version range installed for publication.                                                                |
 
-For [trusted publishing](https://docs.npmjs.com/trusted-publishers/), enable `npm publish` for publication and `npm dist-tag` for channel syncing.
-
-For a consumer pull-request dry run, set `dry-run: true`. It inspects and
-validates the supplied tarball through npm's native dry-run path without
-publication or channel updates. Its local artifact outputs remain meaningful.
+A GitHub Latest release without a prerelease flag publishes to `latest-tag` and syncs
+`edge-tag` unless `sync-edge-tag: false`. Other releases update only `edge-tag`.
+Outside release events, prerelease versions use `edge-tag` and stable versions use `latest-tag`.
 
 Debug enables verbose npm output.
 
@@ -139,33 +121,12 @@ For a complete workflow, see [the release example](examples/release.yml), which
 publishes npm and repository changes in independent jobs after a GitHub Release
 is published. Adapt its preparation commands and moving tag to the consumer.
 
-## Test behavior
-
-Dry run inspects the tarball, selects its channel, and runs npm's native dry
-run without registry or channel credentials. PR tests cover all release-status
-decisions with fake GitHub and npm commands, stable and prerelease artifacts,
-and command failure propagation. Live releases exercise authentication,
-publication, and channel mutation.
-
 ## Notes
 
-### Publication and retries
+- npm versions are immutable. After an interrupted upload or a failed channel update, check the version and tags before retrying. If the version exists, repair the tag:
 
-The action inspects the tarball offline and makes one live
-`npm publish --ignore-scripts` attempt. npm enforces version immutability and
-reports publication errors. Successful publication is sufficient; the action
-never polls registry visibility or retries publication.
-
-A `latest-tag` publication syncs `edge-tag` by default. Set
-`sync-edge-tag: false` to keep the tags separate. The action preserves any
-`npm dist-tag add` failure; it does not silently switch authentication or skip
-the update. Dry runs need neither token and never update tags.
-
-After an interrupted publication or a failed tag update, inspect the version
-and tags before retrying. If the version exists, repair only the tag:
-
-```sh
-npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version
-npm dist-tag ls "$PACKAGE_NAME"
-npm dist-tag add "$PACKAGE_NAME@$PACKAGE_VERSION" "$CHANNEL"
-```
+  ```sh
+  npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version
+  npm dist-tag ls "$PACKAGE_NAME"
+  npm dist-tag add "$PACKAGE_NAME@$PACKAGE_VERSION" "$CHANNEL"
+  ```

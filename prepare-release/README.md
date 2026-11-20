@@ -12,10 +12,7 @@
   <a href="https://github.com/tanaabased/actions/actions/workflows/pr-prepare-release.yml"><img src="https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-prepare-release.yml?event=pull_request&amp;label=PR%20tests" alt="PR tests" /></a>
 </p>
 
-Prepares a release in the caller's checkout without pushing changes. It wraps
-[`tanaabased/prepare-release-action@v1`](https://github.com/tanaabased/prepare-release-action)
-with the shared release date and `CHANGELOG.md` contract used by Tanaab
-publishers.
+Updates release files in the caller’s checkout without pushing changes.
 
 Supported runner: Linux (`ubuntu-24.04`).
 
@@ -31,10 +28,8 @@ Supported runner: Linux (`ubuntu-24.04`).
       version-injector dist/index.js --style js --version "$PREPARE_RELEASE_VERSION"
 ```
 
-Outside a `release` event, provide `version`, `release-date`, and `release-url`
-for a release. Use `version: dev` for a development build; the upstream action
-resolves its version, and release date and URL are not required. Development
-preparation does not update `CHANGELOG.md`.
+Outside a GitHub release event, supply `version`, `release-date`, and `release-url`.
+For a development build, use `version: dev` alone. It leaves the changelog untouched.
 
 ## Inputs
 
@@ -49,8 +44,6 @@ preparation does not update `CHANGELOG.md`.
 | `bun-version`  | No       | `auto`                        | [Project discovery](../setup-bun/README.md) or explicit Bun version.                 |
 
 Runtime discovery uses `root`; the resolved version is passed upstream.
-Release date and URL are required only when preparing a release; `dev` skips
-release metadata and changelog updates.
 The upstream preparation action has no debug input.
 
 ## Outputs
@@ -59,19 +52,8 @@ The upstream preparation action has no debug input.
 | ------------------ | ----------------------------------------------------------------- |
 | `resolved-version` | Semver-valid version resolved by the upstream preparation action. |
 
-## Test behavior
-
-PR tests run normal local preparation and verify package metadata,
-changelog, commands, resolved version, and unchanged Git history.
-
 ## Notes
 
-### File behavior
-
-`package.json` is required at `root` and its version is updated. An existing
-`CHANGELOG.md` has its current unreleased tokens resolved and receives a fresh
-unreleased header; a missing changelog is left missing. `commands` run from
-`root` and may use `PREPARE_RELEASE_VERSION`.
-
-Retries can add another changelog header to already-prepared files. Start from
-the original release source.
+- Release preparation updates the version in `package.json` under `root`. If a changelog exists, it fills in the unreleased header and adds a fresh one.
+- Preparation commands run from `root` with `PREPARE_RELEASE_VERSION` set.
+- Retry from the original release commit to avoid duplicating a changelog header.

@@ -2,11 +2,19 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+export function withoutBuildMetadata(version) {
+  return version.split('+', 1)[0];
+}
+
 function selection(version, source) {
   if (typeof version !== 'string' || !version.trim() || /[\r\n\0]/.test(version.trim())) {
     throw new Error(`Runtime version in ${source} must be a nonempty single-line string`);
   }
   return { version: version.trim(), source };
+}
+
+function stripComments(text) {
+  return text.replace(/#[^\r\n]*/g, '');
 }
 
 export function resolveRuntime(runtime, requested, directory) {
@@ -17,13 +25,15 @@ export function resolveRuntime(runtime, requested, directory) {
     throw new Error('Runtime project directory does not exist');
   const files = runtime === 'node' ? ['.node-version', '.nvmrc'] : ['.bun-version'];
   for (const file of files) {
-    if (existsSync(resolve(root, file)))
-      return selection(readFileSync(resolve(root, file), 'utf8'), file);
+    if (existsSync(resolve(root, file))) {
+      const text = readFileSync(resolve(root, file), 'utf8');
+      return selection(file === '.nvmrc' ? stripComments(text) : text, file);
+    }
   }
   const toolFile = resolve(root, '.tool-versions');
   if (existsSync(toolFile)) {
     const tool = runtime === 'node' ? 'nodejs' : 'bun';
-    const line = readFileSync(toolFile, 'utf8')
+    const line = stripComments(readFileSync(toolFile, 'utf8'))
       .split(/\r?\n/)
       .find((value) => new RegExp(`^\\s*${tool}(?:\\s|$)`).test(value));
     if (line !== undefined)
@@ -45,7 +55,7 @@ export function resolveRuntime(runtime, requested, directory) {
         throw new Error('packageManager must be a string');
       if (manifest.packageManager.startsWith('bun@')) {
         return selection(
-          manifest.packageManager.slice(4).split('+')[0],
+          withoutBuildMetadata(manifest.packageManager.slice(4)),
           'package.json#packageManager',
         );
       }

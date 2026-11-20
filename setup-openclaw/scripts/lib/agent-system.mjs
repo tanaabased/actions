@@ -2,8 +2,8 @@ import { appendFileSync, cpSync, mkdtempSync, readFileSync, rmSync, writeFileSyn
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { packFilename, parsePackResult } from '../../../.lib/pack-result.cjs';
 import { command as runCommand, report } from './command.mjs';
-import { packFilename } from './pack-result.mjs';
 import { exactVersion, selectAgentSystem } from './setup-inputs.mjs';
 import { progress, stage } from './setup-progress.mjs';
 
@@ -89,6 +89,7 @@ async function install() {
       temporary.push(cwd);
       cpSync(selection.path, cwd, {
         recursive: true,
+        verbatimSymlinks: true,
         filter: (path) => !['.git', 'node_modules', 'dist'].includes(basename(path)),
       });
       await stage('dependencies', () =>
@@ -116,7 +117,8 @@ async function install() {
         ],
         { cwd, capture: true },
       );
-      return join(artifactDirectory, packFilename(archive));
+      const pack = parsePackResult(archive, report);
+      return join(artifactDirectory, packFilename(pack, report));
     });
   }
   progress('start', 'artifact-verification');

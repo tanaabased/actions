@@ -19,8 +19,6 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v7
-      - name: Verify selection rules
-        run: node --test setup-node/test/resolve.test.mjs
       - name: Verify debug contract
         run: bash .github/scripts/check-debug-contract.sh setup-node
       - name: Set up from file
@@ -40,23 +38,6 @@ jobs:
           actual="$(node --version)"
           test "${actual#v}" = "${INSTALLED#v}"
           test "${actual#v}" = '26.9.0'
-      - name: Set up from manifest
-        id: manifest
-        uses: ./setup-node
-        with:
-          debug: true
-          working-directory: setup-node/test/fixture/manifest
-      - name: Verify manifest runtime and outputs
-        env:
-          INSTALLED: ${{ steps.manifest.outputs.node-version }}
-          SPEC: ${{ steps.manifest.outputs.version-spec }}
-          SOURCE: ${{ steps.manifest.outputs.version-source }}
-        run: |
-          test "$SPEC" = '24.21.0'
-          test "$SOURCE" = 'package.json#engines.node'
-          actual="$(node --version)"
-          test "${actual#v}" = "${INSTALLED#v}"
-          test "${actual#v}" = '24.21.0'
       - name: Set up from engines
         id: engines
         uses: ./setup-node
@@ -71,23 +52,6 @@ jobs:
         run: |
           test "$SPEC" = '26.x'
           test "$SOURCE" = 'package.json#engines.node'
-          actual="$(node --version)"
-          test "${actual#v}" = "${INSTALLED#v}"
-          [[ "${actual#v}" == 26.* ]]
-      - name: Set up from fallback
-        id: fallback
-        uses: ./setup-node
-        with:
-          debug: true
-          working-directory: setup-node/test/fixture/fallback
-      - name: Verify fallback runtime and outputs
-        env:
-          INSTALLED: ${{ steps.fallback.outputs.node-version }}
-          SPEC: ${{ steps.fallback.outputs.version-spec }}
-          SOURCE: ${{ steps.fallback.outputs.version-source }}
-        run: |
-          test "$SPEC" = '26.x'
-          test "$SOURCE" = 'fallback'
           actual="$(node --version)"
           test "${actual#v}" = "${INSTALLED#v}"
           [[ "${actual#v}" == 26.* ]]

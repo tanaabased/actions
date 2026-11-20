@@ -12,16 +12,12 @@
   <a href="https://github.com/tanaabased/actions/actions/workflows/pr-vitepress-build-check.yml"><img src="https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-vitepress-build-check.yml?event=pull_request&amp;label=PR%20tests" alt="PR tests" /></a>
 </p>
 
-Runs an optional VitePress preparation command followed by the required build
-command. Callers retain their runner, caches, runtime setup, dependency
-installation, and check identity.
-
 Supported runner: Linux (`ubuntu-24.04`).
 
 ## Usage
 
-Set up Bun, install dependencies, and configure caches in the caller job before
-invoking this action.
+Set up your runtime and install dependencies before invoking the action.
+The preparation and build commands run with the job’s permissions.
 
 ```yaml
 - name: Set up Bun
@@ -56,9 +52,3 @@ For a multiversion build, supply preparation alongside the build command:
     prepare-command: bun run mvb
     build-command: bun run build
 ```
-
-## Test behavior
-
-PR tests run the same preparation and build commands and build a real
-VitePress fixture and assert its output, preparation marker, and failure propagation.
-Caller commands must avoid external side effects.

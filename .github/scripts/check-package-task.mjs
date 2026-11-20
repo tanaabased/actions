@@ -30,6 +30,7 @@ const expected = [
   'README.md',
   'CHANGELOG.md',
   'LICENSE',
+  '.lib/pack-result.cjs',
   '.lib/resolve-debug.sh',
   '.lib/resolve-runtime.mjs',
   '.lib/resolve-package.mjs',
@@ -38,7 +39,12 @@ for (const action of actions) {
   expected.push(`${action}/action.yml`, `${action}/README.md`, `${action}/icon.svg`);
   for (const directory of ['scripts', 'examples']) {
     const path = join(root, action, directory);
-    if (existsSync(path)) expected.push(...files(path, `${action}/${directory}`));
+    if (existsSync(path)) {
+      const publicFiles = files(path, `${action}/${directory}`).filter(
+        (name) => !name.includes('/__pycache__/') && !/\.py[co]$/.test(name),
+      );
+      expected.push(...publicFiles);
+    }
   }
   expected.push(
     ...readdirSync(join(root, action))

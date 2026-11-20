@@ -1,13 +1,11 @@
-import { basename } from 'node:path';
+const { basename } = require('node:path');
 
-import { report } from './command.mjs';
-
-export function packFilename(output) {
+function parsePackResult(output, report) {
   let packs;
   try {
     packs = JSON.parse(output);
   } catch {
-    report(`npm pack invalid JSON (${Buffer.byteLength(output)} bytes): ${output}`);
+    report?.(`npm pack invalid JSON (${Buffer.byteLength(output)} bytes): ${output}`);
     throw new Error('npm pack returned invalid JSON');
   }
   // npm emits either an archive array or a map keyed by package name.
@@ -30,22 +28,23 @@ export function packFilename(output) {
   if (packs.length !== 1)
     throw new Error(`npm pack archive count: expected 1, received ${packs.length}`);
   const pack = packs[0];
-  if (
-    !pack ||
-    typeof pack !== 'object' ||
-    Array.isArray(pack) ||
-    typeof pack.filename !== 'string' ||
-    !pack.filename
-  ) {
-    throw new Error('npm pack invalid archive shape: expected an object with a nonempty filename');
-  }
+  if (!pack || typeof pack !== 'object' || Array.isArray(pack))
+    throw new Error('npm pack invalid archive shape: expected an object');
+  return pack;
+}
+
+function packFilename(pack, report) {
+  if (typeof pack.filename !== 'string' || !pack.filename)
+    throw new Error('npm pack invalid archive shape: expected a nonempty filename');
   if (
     basename(pack.filename) !== pack.filename ||
     /[\\\r\n\0]/.test(pack.filename) ||
     ['.', '..'].includes(pack.filename)
   ) {
-    report(`npm pack unsafe filename: ${JSON.stringify(pack.filename)}`);
+    report?.(`npm pack unsafe filename: ${JSON.stringify(pack.filename)}`);
     throw new Error('npm pack returned an unsafe archive filename');
   }
   return pack.filename;
 }
+
+module.exports = { parsePackResult, packFilename };

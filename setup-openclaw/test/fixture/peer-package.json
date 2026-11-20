@@ -1,8 +1,0 @@
-{
-  "name": "setup-openclaw-peer-fixture",
-  "version": "0.0.0",
-  "private": true,
-  "peerDependencies": {
-    "openclaw": ">=2026.9.0"
-  }
-}

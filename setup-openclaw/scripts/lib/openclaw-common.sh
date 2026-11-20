@@ -214,17 +214,22 @@ print_gateway_diagnostics() {
 
   if [[ -f "$call_log_path" ]]; then
     printf 'latest readiness failure:\n' >&2
-    tail -n 20 "$call_log_path" | redact_stream >&2
+    redact_stream < "$call_log_path" | tail -n 20 | tail -c 8192 >&2 || error_message 'readiness diagnostic output unavailable'
   fi
   if [[ -f "$log_path" ]]; then
     printf 'recent gateway warnings and errors:\n' >&2
-    grep -E '(^|[^[:alpha:]])(warn|WARN|error|ERROR|fatal|FATAL)([^[:alpha:]]|$)' "$log_path" \
-      | tail -n 40 | redact_stream >&2 || true
+    # Multiline redaction needs the full stream before warnings or tails are selected.
+    local warnings
+    warnings="$(redact_stream < "$log_path" \
+      | grep -E '(^|[^[:alpha:]])(warn|WARN|error|ERROR|fatal|FATAL)([^[:alpha:]]|$)' \
+      | tail -n 40 | tail -c 8192)" || true
+    if [[ -n "$warnings" ]]; then
+      printf '%s\n' "$warnings" >&2
+    elif [[ "${debug_enabled:-false}" == 'true' ]]; then
+      printf 'recent gateway output (redacted):\n' >&2
+      redact_stream < "$log_path" | tail -n 20 | tail -c 8192 >&2 || error_message 'gateway diagnostic output unavailable'
+    fi
     if [[ "${debug_enabled:-false}" == 'true' ]]; then
-      if ! grep -Eq '(^|[^[:alpha:]])(warn|WARN|error|ERROR|fatal|FATAL)([^[:alpha:]]|$)' "$log_path"; then
-        printf 'recent gateway output (redacted):\n' >&2
-        tail -n 20 "$log_path" | redact_stream >&2 || true
-      fi
       printf 'gateway log: %s bytes at %s\n' "$(wc -c < "$log_path" | tr -d ' ')" "$log_path" >&2
     fi
   fi

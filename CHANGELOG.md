@@ -1,5 +1,16 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+- Added support for comments in `.nvmrc` and `.tool-versions` during runtime discovery.
+- Aligned `validate-codex-plugin` with the Codex installer. Portable manifests and unfamiliar metadata are supported, and the deprecated `python-version` input is ignored. [#71](https://github.com/tanaabased/actions/issues/71) [#72](https://github.com/tanaabased/actions/pull/72)
+- Changed `publish-clawhub` to use the CLI’s default tag when `tags` is omitted outside a GitHub release event. Set `tags: edge` for manual previews.
+- Deprecated `publish-npm`’s `channel-token`. Omit tokens for trusted publishing or use `registry-token` for both publication and channel updates.
+- Excluded Python bytecode caches from the npm catalog package.
+- Fixed `npm-pack` to write each tarball to its own temporary directory, even when the project enables npm dry runs. Use the `tarball-path` output to find it.
+- Fixed `npm-pack` and `publish-npm` to read tarball metadata from both npm 11 and npm 12.
+- Fixed `setup-openclaw` Agent System source builds to preserve relative symlinks and accept Bun version pins with build metadata.
+- Fixed `setup-openclaw` gateway diagnostics to redact multiline secrets before selecting log excerpts and report the exit status when the gateway exits during startup.
+- Fixed `setup-openclaw` to accept workspace-only setup on macOS and return the profile and paths selected by `openclaw-setup` in run mode.
+
 ## v1.0.9 - [November 16, 2026](https://github.com/tanaabased/actions/releases/tag/v1.0.9)
 
 - Added caller dependency discovery to `publish-clawhub` with `clawhub-version: auto` as the default and npm `latest` as the fallback. Explicit versions remain supported. [#69](https://github.com/tanaabased/actions/issues/69)
