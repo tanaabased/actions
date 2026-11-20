@@ -19,6 +19,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+      - name: Set up Node.js for installer comparisons
+        uses: ./setup-node
+      - name: Set up Bun for installer comparisons
+        uses: ./setup-bun
+      - name: Compare fixtures with isolated Codex CLI installs
+        run: |
+          set -euo pipefail
+          codex_prefix="$(mktemp -d "${RUNNER_TEMP}/codex-cli.XXXXXX")"
+          trap 'rm -rf "$codex_prefix"' EXIT
+          npm install --prefix "$codex_prefix" --ignore-scripts --no-audit --no-fund @openai/codex@0.170.0
+          bun validate-codex-plugin/test/compare-installer.mjs "$codex_prefix/node_modules/.bin/codex"
       - name: Verify debug contract
         run: bash .github/scripts/check-debug-contract.sh validate-codex-plugin
       - name: Validate valid plugin fixture
@@ -26,11 +37,22 @@ jobs:
         uses: ./validate-codex-plugin
         with:
           debug: true
+          python-version: ignored
           plugin-directory: validate-codex-plugin/test/fixture/valid
       - name: Verify valid fixture output
         env:
           PLUGIN_PATH: ${{ steps.valid.outputs.plugin-path }}
         run: test "$PLUGIN_PATH" = "$GITHUB_WORKSPACE/validate-codex-plugin/test/fixture/valid"
+      - name: Validate portable plugin fixture
+        uses: ./validate-codex-plugin
+        with:
+          plugin-directory: validate-codex-plugin/test/fixture/portable
+      - name: Reject malformed plugin manifest
+        id: malformed
+        continue-on-error: true
+        uses: ./validate-codex-plugin
+        with:
+          plugin-directory: validate-codex-plugin/test/fixture/malformed
       - name: Reject invalid plugin fixture
         id: invalid
         continue-on-error: true
@@ -40,4 +62,7 @@ jobs:
       - name: Verify invalid fixture failed
         env:
           INVALID_OUTCOME: ${{ steps.invalid.outcome }}
-        run: test "$INVALID_OUTCOME" = failure
+          MALFORMED_OUTCOME: ${{ steps.malformed.outcome }}
+        run: |
+          test "$INVALID_OUTCOME" = failure &&
+          test "$MALFORMED_OUTCOME" = failure

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "portable",
+  "version": "preview/build",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "future": {
+          "variant": "dark"
+        }
+      }
+    }
+  }
+}

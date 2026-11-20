@@ -221,6 +221,10 @@ print_gateway_diagnostics() {
     grep -E '(^|[^[:alpha:]])(warn|WARN|error|ERROR|fatal|FATAL)([^[:alpha:]]|$)' "$log_path" \
       | tail -n 40 | redact_stream >&2 || true
     if [[ "${debug_enabled:-false}" == 'true' ]]; then
+      if ! grep -Eq '(^|[^[:alpha:]])(warn|WARN|error|ERROR|fatal|FATAL)([^[:alpha:]]|$)' "$log_path"; then
+        printf 'recent gateway output (redacted):\n' >&2
+        tail -n 20 "$log_path" | redact_stream >&2 || true
+      fi
       printf 'gateway log: %s bytes at %s\n' "$(wc -c < "$log_path" | tr -d ' ')" "$log_path" >&2
     fi
   fi

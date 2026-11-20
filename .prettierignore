@@ -7,3 +7,8 @@ _site
 .vitepress/cache
 .vitepress/dist
 bun.lock
+
+# Intentionally malformed Codex manifests for parser rejection and precedence tests.
+/validate-codex-plugin/test/fixture/invalid-overlay/.codex-plugin/plugin.json
+/validate-codex-plugin/test/fixture/malformed/.codex-plugin/plugin.json
+/validate-codex-plugin/test/fixture/portable/.codex-plugin/plugin.json

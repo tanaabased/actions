@@ -163,7 +163,7 @@ stop_gateway() {
 
 start_gateway() {
   local start_timeout="$1"
-  local failure_status
+  local failure_status child_status launched_pid
 
   if [[ -f "$pid_path" ]]; then
     if ! read_gateway_pid; then
@@ -198,7 +198,8 @@ start_gateway() {
         --bind loopback \
         --port "$gateway_port" >> "$log_path" 2>&1 < /dev/null
   ) &
-  gateway_pid="$!"
+  launched_pid="$!"
+  gateway_pid="$launched_pid"
   if ! gateway_started="$(gateway_process_start "$gateway_pid")" || [[ -z "$gateway_started" ]]; then
     error_message 'could not record gateway process identity'
     # This is the child just launched above, never a PID read from disk.
@@ -211,6 +212,11 @@ start_gateway() {
     return 0
   else
     failure_status=$?
+  fi
+  if ! kill -0 "$launched_pid" 2>/dev/null; then
+    child_status=0
+    wait "$launched_pid" || child_status=$?
+    printf 'gateway child exit status: %s\n' "$child_status" >&2
   fi
   print_gateway_diagnostics
   stop_gateway 10 || true
