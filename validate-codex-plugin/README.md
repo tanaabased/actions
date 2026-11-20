@@ -5,27 +5,24 @@
 </p>
 
 <p align="center">
-  Validate a Codex plugin package.
+  Check local Codex plugin manifests.
 </p>
 
 <p align="center">
   <a href="https://github.com/tanaabased/actions/actions/workflows/pr-validate-codex-plugin.yml"><img src="https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-validate-codex-plugin.yml?event=pull_request&amp;label=PR%20tests" alt="PR tests" /></a>
 </p>
 
-Validates one local Codex plugin with a pinned snapshot of OpenAI's Python
-validator. The action checks the generic plugin ingestion contract; repository
-checks for links, automations, routing, and local skill policy remain separate
-and may run before or after it.
+Check manifest requirements for local installation without installing or running
+plugins. This action checks selected manifest JSON, portable schema and names,
+and explicit compatibility names and versions. Unfamiliar fields and omitted
+listing metadata are not errors. Keep repository policy checks separate.
 
 Supported runners: Linux (`ubuntu-24.04`) and macOS (`macos-26`).
 
 ## Usage
 
 ```yaml
-- name: Validate repository policy
-  run: bun run codex:validate
-
-- name: Validate generic Codex plugin contract
+- name: Check Codex plugin manifest
   uses: tanaabased/actions/validate-codex-plugin@v1
   with:
     plugin-directory: .
@@ -33,49 +30,40 @@ Supported runners: Linux (`ubuntu-24.04`) and macOS (`macos-26`).
 
 ## Inputs
 
-| Input              | Required | Default | Description                                                                   |
-| ------------------ | -------- | ------- | ----------------------------------------------------------------------------- |
+| Input              | Required | Default | Description                                                                  |
+| ------------------ | -------- | ------- | ---------------------------------------------------------------------------- |
 | `debug`            | No       | `auto`  | `auto`, `true`, or `false`; `auto` enables diagnostics when `RUNNER_DEBUG=1`. |
-| `plugin-directory` | No       | `.`     | Plugin root, relative to the workspace or absolute.                           |
-| `python-version`   | No       | `3.13`  | Python version used to run the validator.                                     |
-
-Debug enables verbose pip output.
-
-The action installs the validator's sole non-standard dependency,
-[`PyYAML==6.0.2`](https://pypi.org/project/PyYAML/6.0.2/), before invoking the
-bundled snapshot.
+| `plugin-directory` | No       | `.`     | Plugin root, relative to workspace or absolute.                              |
+| `python-version`   | No       | `3.13`  | Python version used to run manifest checks.                                  |
 
 ## Outputs
 
-| Output        | Description                                 |
-| ------------- | ------------------------------------------- |
-| `plugin-path` | Absolute path to the validated plugin root. |
+| Output        | Description                   |
+| ------------- | ----------------------------- |
+| `plugin-path` | Absolute path to plugin root. |
 
 ## Test behavior
 
-Validation is non-mutating. Pull requests exercise valid and invalid plugin
-fixtures on every supported runner; consumer workflows should preserve their
-own checks.
+PR tests exercise this action on both supported runners and compare fixture
+results with isolated local marketplace installs using Codex CLI `0.170.0`.
+Fixtures cover Canon’s dark icon, unknown nested metadata, portable selection,
+compatibility fallback, malformed JSON, and invalid names and versions.
+To repeat installer comparisons locally, run
+`python3 validate-codex-plugin/test/compare-installer.py /path/to/codex`.
 
 ## Notes
 
-### Validator provenance
+[Portable Agent Plugins manifests](https://developers.openai.com/plugins/build/plugins)
+use root `plugin.json` with its Agent Plugins schema. Recognized schema
+namespaces take precedence; unsupported Agent Plugins versions fail rather
+than falling back. Unrelated root JSON is ignored when Codex looks for
+compatibility manifests, starting with `.codex-plugin/plugin.json`.
+With no OpenAI extension object, Codex can read that compatibility manifest
+as overlay metadata for portable packages.
 
-`scripts/validate_plugin.py` and `scripts/identifier_validation.py` are
-unmodified files from OpenAI Codex commit
-[`2b59d92dbdd69fc600ed95250867d305942912e1`](https://github.com/openai/codex/tree/2b59d92dbdd69fc600ed95250867d305942912e1/codex-rs/skills/src/assets/samples/plugin-creator/scripts).
-They are redistributed under that repository's Apache-2.0 license and NOTICE,
-copied into this action as `LICENSE.openai-codex` and `NOTICE.openai-codex`.
-
-Pinned source checksums:
-
-| File                       | SHA-256                                                            |
-| -------------------------- | ------------------------------------------------------------------ |
-| `validate_plugin.py`       | `f4eeadb733b28b0c3e714de263a76d6542866a672f3e99bdffcf4dbcdf85e944` |
-| `identifier_validation.py` | `a6d51ce4a9a7e8f85626ff5808a467a67574e7f8cdf1167ffb467c5f67e57223` |
-
-To update the snapshot, choose a reviewed OpenAI Codex commit, copy both files
-from the same `plugin-creator/scripts` directory without modification, refresh
-the bundled license and NOTICE if upstream changed them, and update the commit,
-checksums, and pinned PyYAML version here. Verify both SHA-256 values locally,
-then run the valid/invalid runner matrix.
+Compatibility names may come from source directory names, and marketplaces
+can supply missing manifests. When no manifest is selected, this action
+reports that installation depends on marketplace fallback. This check cannot
+confirm marketplace name agreement, publication eligibility, asset availability,
+or plugin runtime behavior. For end-to-end evidence, install from your actual
+marketplace.

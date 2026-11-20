@@ -34,7 +34,7 @@ Server does not support.
 | [setup-bun](setup-bun/README.md)                         | Discover and install the caller’s Bun version.                      | [![setup-bun](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-setup-bun.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-setup-bun.yml)                                     |
 | [setup-openclaw](setup-openclaw/README.md)               | Install OpenClaw and prepare isolated Agent System test fixtures.   | [![setup-openclaw](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-setup-openclaw.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-setup-openclaw.yml)                      |
 | [ssh-test-key](ssh-test-key/README.md)                   | Generate a local Ed25519 SSH key pair for test fixtures.            | [![ssh-test-key](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-ssh-test-key.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-ssh-test-key.yml)                            |
-| [validate-codex-plugin](validate-codex-plugin/README.md) | Validate a Codex plugin against a pinned OpenAI validator snapshot. | [![validate-codex-plugin](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-validate-codex-plugin.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-validate-codex-plugin.yml) |
+| [validate-codex-plugin](validate-codex-plugin/README.md) | Check installer requirements for local Codex plugin manifests. | [![validate-codex-plugin](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-validate-codex-plugin.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-validate-codex-plugin.yml) |
 | [vitepress-build-check](vitepress-build-check/README.md) | Run optional VitePress preparation and a required build command.    | [![vitepress-build-check](https://img.shields.io/github/actions/workflow/status/tanaabased/actions/pr-vitepress-build-check.yml?event=pull_request&label=Tests)](https://github.com/tanaabased/actions/actions/workflows/pr-vitepress-build-check.yml) |
 
 ### Deprecated actions
@@ -67,4 +67,3 @@ Made with [contrib.rocks](https://contrib.rocks).
 ## License
 
 - Repository-owned actions and helpers: [MIT](LICENSE), Tanaab Maneuvering Systems LLC.
-- Vendored OpenAI Codex validator: [Apache-2.0](validate-codex-plugin/LICENSE.openai-codex), with its [notice](validate-codex-plugin/NOTICE.openai-codex).
