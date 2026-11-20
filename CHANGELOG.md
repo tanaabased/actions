@@ -1,5 +1,7 @@
 ## {{ UNRELEASED_VERSION }} - [{{ UNRELEASED_DATE }}]({{ UNRELEASED_LINK }})
 
+## v1.1.0 - [November 20, 2026](https://github.com/tanaabased/actions/releases/tag/v1.1.0)
+
 ### Behavior changes and deprecations
 
 - Changed `publish-clawhub` to use the CLI’s default tag outside GitHub release events when `tags` is omitted. Set `tags: edge` for manual previews.
